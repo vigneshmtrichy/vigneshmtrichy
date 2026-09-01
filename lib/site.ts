@@ -1,4 +1,4 @@
-export const WHATSAPP_URL = 'https://wa.me/910000000000'
+export const WHATSAPP_URL = 'https://wa.me/919585808590'
 
 export const NAV_LINKS = [
   { label: 'Home', href: '/' },
