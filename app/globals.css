@@ -1,0 +1,90 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Brand tokens */
+  --color-cream: var(--cream);
+  --color-maroon: var(--maroon);
+  --color-terracotta: var(--terracotta);
+  --color-leaf: var(--leaf);
+  --color-peach: var(--peach);
+  --color-beige: var(--beige);
+
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.4);
+}
+
+:root {
+  color-scheme: light;
+  --radius: 0.75rem;
+
+  /* Core brand palette */
+  --cream: #f6efe1;
+  --maroon: #57121f;
+  --terracotta: #d15a2b;
+  --leaf: #5f6f39;
+  --peach: #f6ddce;
+  --beige: #efe6d3;
+
+  --background: #f6efe1;
+  --foreground: #3a1118;
+
+  --card: #fbf6ec;
+  --card-foreground: #3a1118;
+  --popover: #fbf6ec;
+  --popover-foreground: #3a1118;
+
+  --primary: #57121f;
+  --primary-foreground: #fbf6ec;
+
+  --secondary: #efe6d3;
+  --secondary-foreground: #57121f;
+
+  --muted: #ece2cf;
+  --muted-foreground: #7a5b52;
+
+  --accent: #d15a2b;
+  --accent-foreground: #fbf6ec;
+
+  --destructive: #b3261e;
+
+  --border: #e2d6bf;
+  --input: #e2d6bf;
+  --ring: #57121f;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
