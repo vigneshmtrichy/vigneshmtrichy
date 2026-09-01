@@ -45,45 +45,60 @@
   color-scheme: light;
   --radius: 0.75rem;
 
-  /* Core brand palette */
-  --cream: #f6efe1;
-  --maroon: #57121f;
-  --terracotta: #d15a2b;
-  --leaf: #5f6f39;
-  --peach: #f6ddce;
-  --beige: #efe6d3;
+  /* ========================================
+     TENOO — SLATE + LIME PALETTE
+  ======================================== */
 
-  --background: #f6efe1;
-  --foreground: #3a1118;
+  /* Brand tokens */
+  --cream: #f7f8f6;
+  --maroon: #263238;
+  --terracotta: #8fbd24;
+  --leaf: #7fb51b;
+  --peach: #edf3dc;
+  --beige: #f0f3ee;
 
-  --card: #fbf6ec;
-  --card-foreground: #3a1118;
-  --popover: #fbf6ec;
-  --popover-foreground: #3a1118;
+  /* Core theme */
+  --background: #f7f8f6;
+  --foreground: #263238;
 
-  --primary: #57121f;
-  --primary-foreground: #fbf6ec;
+  /* Cards */
+  --card: #ffffff;
+  --card-foreground: #263238;
 
-  --secondary: #efe6d3;
-  --secondary-foreground: #57121f;
+  /* Popover */
+  --popover: #ffffff;
+  --popover-foreground: #263238;
 
-  --muted: #ece2cf;
-  --muted-foreground: #7a5b52;
+  /* Primary — Slate */
+  --primary: #263238;
+  --primary-foreground: #ffffff;
 
-  --accent: #d15a2b;
-  --accent-foreground: #fbf6ec;
+  /* Secondary */
+  --secondary: #edf1ed;
+  --secondary-foreground: #263238;
 
+  /* Muted */
+  --muted: #eef1ef;
+  --muted-foreground: #66736f;
+
+  /* Accent — Lime */
+  --accent: #8fbd24;
+  --accent-foreground: #1f2a18;
+
+  /* Destructive */
   --destructive: #b3261e;
 
-  --border: #e2d6bf;
-  --input: #e2d6bf;
-  --ring: #57121f;
+  /* Borders & inputs */
+  --border: #dce2dd;
+  --input: #dce2dd;
+  --ring: #8fbd24;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -28,19 +28,33 @@ export function FamilyBanner() {
   return (
     <section aria-labelledby="family-heading">
 
-      <div className="relative isolate overflow-hidden">
+      <div className="relative isolate h-[420px] overflow-hidden sm:h-[500px]">
+
+        {/* Soft background fill */}
         <Image
           src="/lifestyle/family.png"
-          alt="Three generations of a family sharing a warm meal together"
-          width={1920}
-          height={800}
-          className="h-[280px] w-full object-cover object-center sm:h-[340px]"
+          alt=""
+          fill
+          aria-hidden="true"
+          className="scale-110 object-cover blur-2xl opacity-30"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-primary from-[2%] via-primary/40 via-45% to-transparent to-[75%]" />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/75 to-primary/20" />
 
+        {/* Full family photo — NOT cropped */}
+        <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
+          <Image
+            src="/lifestyle/family.png"
+            alt="Three generations of a family sharing a warm meal together"
+            fill
+            className="object-contain object-center"
+          />
+        </div>
+
+        {/* Text */}
         <div className="absolute inset-0 flex items-center">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+          <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
             <div className="max-w-md text-primary-foreground">
 
               <h2
@@ -52,7 +66,7 @@ export function FamilyBanner() {
 
               <div className="mt-3 h-px w-20 bg-primary-foreground/40" />
 
-              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/85 sm:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/90 sm:text-base">
                 Wholesome ingredients, time-honoured recipes and nutritious
                 blends for every stage of life.
               </p>
