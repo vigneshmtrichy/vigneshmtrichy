@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://www.tenoo.in'),
 
   title: {
-    default: 'TENOO | Good Food. Made for Every Generation.',
-    template: '%s | TENOO',
+    default: 'Tenoo | Good Food. Made for Every Generation.',
+    template: '%s | Tenoo',
   },
 
   description:
