@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { ProductGallery } from '@/components/product-gallery'
+
 import {
   ALL_PRODUCTS,
   getProductBySlug,
@@ -33,52 +35,127 @@ export default async function ProductPage({
       ? 'For Little Ones & Families'
       : 'For Adults & Wellness'
 
+  const galleryImages = Array.from({ length: 10 }, (_, index) => {
+    return `/products/${product.slug}/${index + 1}.jpg`
+  })
+
+  const relatedProducts = ALL_PRODUCTS.filter(
+    (item) => item.slug !== product.slug
+  ).slice(0, 4)
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
 
       <main className="flex-1">
 
-        {/* ================= PRODUCT HERO ================= */}
+        {/* =========================================================
+            PRODUCT HERO
+            ========================================================= */}
         <section className="px-5 py-8 md:px-10 md:py-12">
-          <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-2 md:gap-14">
+          <div className="mx-auto max-w-6xl">
 
-            {/* Product Image */}
-            <div className="relative mx-auto aspect-square w-full max-w-[520px] overflow-hidden rounded-[2rem] bg-card/50">
-              <Image
-                src={product.image || '/placeholder.svg'}
-                alt={`${product.name} product pack`}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-contain p-7 md:p-10"
-              />
-            </div>
+            {/* =====================================================
+                MOBILE ONLY — PRODUCT INTRO ABOVE IMAGE
+                ===================================================== */}
+            <div className="mb-6 md:hidden">
 
-            {/* Product Information */}
-            <div className="md:py-4">
-
-              <Link
-                href="/products"
-                className="text-xs font-semibold uppercase tracking-[0.18em] text-accent"
-              >
-                ← Our Products
-              </Link>
-
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                 {categoryLabel}
               </p>
 
-              <h1 className="mt-2 font-serif text-3xl font-bold leading-tight text-primary md:text-5xl">
+              <h1 className="mt-2 font-serif text-3xl font-bold leading-tight text-primary">
                 {product.name}
               </h1>
 
-              <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
+              <p className="mt-3 text-base leading-7 text-muted-foreground">
                 {product.tagline}
               </p>
 
-              {/* Badges */}
-              <div className="mt-6 flex flex-wrap gap-2">
+            </div>
+
+            {/* =====================================================
+                DESKTOP — TWO COLUMN LAYOUT
+                ===================================================== */}
+            <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+
+              {/* ===================================================
+                  PRODUCT GALLERY
+                  =================================================== */}
+              <div className="mx-auto w-full max-w-[520px]">
+                <ProductGallery
+                  images={galleryImages}
+                  productName={product.name}
+                  fallbackImage={product.image}
+                />
+              </div>
+
+              {/* ===================================================
+                  DESKTOP PRODUCT INFORMATION
+                  =================================================== */}
+              <div className="hidden md:block md:py-4">
+
+                {/* Back Button — Desktop Only */}
+                <Link
+                  href="/products"
+                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent transition-opacity hover:opacity-70"
+                >
+                  ← Our Products
+                </Link>
+
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                  {categoryLabel}
+                </p>
+
+                <h1 className="mt-2 font-serif text-3xl font-bold leading-tight text-primary md:text-5xl">
+                  {product.name}
+                </h1>
+
+                <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
+                  {product.tagline}
+                </p>
+
+                {/* Product Badges */}
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {product.badges.map((badge) => (
+                    <span
+                      key={badge}
+                      className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-primary"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Pack Size */}
+                {product.packSize && (
+                  <div className="mt-6">
+                    <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
+                      Net Weight: {product.packSize}
+                    </span>
+                  </div>
+                )}
+
+                {/* WhatsApp Order */}
+                <div className="mt-7">
+                  <a
+                    href={whatsAppOrderUrl(product.name)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  >
+                    ORDER ON WHATSAPP
+                  </a>
+                </div>
+
+              </div>
+            </div>
+
+            {/* =====================================================
+                MOBILE ONLY — BADGES
+                ===================================================== */}
+            <div className="mt-5 md:hidden">
+              <div className="flex flex-wrap gap-2">
                 {product.badges.map((badge) => (
                   <span
                     key={badge}
@@ -88,18 +165,23 @@ export default async function ProductPage({
                   </span>
                 ))}
               </div>
+            </div>
 
-              {/* Pack Size */}
+            {/* =====================================================
+                MOBILE ONLY — NET WEIGHT + WHATSAPP
+                Comes AFTER IMAGE
+                ===================================================== */}
+            <div className="mt-6 md:hidden">
+
               {product.packSize && (
-                <div className="mt-6">
+                <div>
                   <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
                     Net Weight: {product.packSize}
                   </span>
                 </div>
               )}
 
-              {/* Order Button */}
-              <div className="mt-7">
+              <div className="mt-5">
                 <a
                   href={whatsAppOrderUrl(product.name)}
                   target="_blank"
@@ -109,11 +191,15 @@ export default async function ProductPage({
                   ORDER ON WHATSAPP
                 </a>
               </div>
+
             </div>
+
           </div>
         </section>
 
-        {/* ================= PRODUCT INFORMATION ================= */}
+        {/* =========================================================
+            PRODUCT INFORMATION
+            ========================================================= */}
         <section className="bg-card/40 px-5 py-10 md:px-10 md:py-14">
           <div className="mx-auto max-w-6xl">
 
@@ -161,28 +247,23 @@ export default async function ProductPage({
                   Nutritional information
                 </h2>
 
-                {product.nutrition &&
-                product.nutrition.length > 0 ? (
+                {product.nutrition && product.nutrition.length > 0 ? (
                   <div className="mt-4 overflow-hidden rounded-xl border border-border">
                     {product.nutrition.map((item, index) => (
                       <div
                         key={item}
-                        className={`grid grid-cols-2 gap-4 px-4 py-2.5 text-sm ${
-                          index !== product.nutrition.length - 1
-                            ? 'border-b border-border'
-                            : ''
-                        }`}
+                        className={
+                          index !== product.nutrition!.length - 1
+                            ? 'grid grid-cols-2 gap-4 border-b border-border px-4 py-2.5 text-sm'
+                            : 'grid grid-cols-2 gap-4 px-4 py-2.5 text-sm'
+                        }
                       >
                         <span className="text-muted-foreground">
                           {item.split(':')[0]}
                         </span>
 
                         <span className="text-right font-semibold text-primary">
-                          {item
-                            .split(':')
-                            .slice(1)
-                            .join(':')
-                            .trim()}
+                          {item.split(':').slice(1).join(':').trim()}
                         </span>
                       </div>
                     ))}
@@ -214,7 +295,9 @@ export default async function ProductPage({
           </div>
         </section>
 
-        {/* ================= PRODUCT DETAILS ================= */}
+        {/* =========================================================
+            PRODUCT DETAILS
+            ========================================================= */}
         <section className="px-5 py-10 md:px-10 md:py-14">
           <div className="mx-auto max-w-6xl">
 
@@ -224,7 +307,7 @@ export default async function ProductPage({
                 Product Details
               </p>
 
-              <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
                 {/* Allergen */}
                 {product.allergen && (
@@ -265,54 +348,95 @@ export default async function ProductPage({
                   </div>
                 )}
 
-                {/* Manufacturer */}
-                {product.manufacturedBy && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-primary">
-                      Manufactured By
-                    </h3>
-
-                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                      {product.manufacturedBy}
-                    </p>
-                  </div>
-                )}
-
               </div>
             </div>
           </div>
         </section>
 
-        {/* ================= BOTTOM CTA ================= */}
-        {/* ================= BOTTOM CTA ================= */}
-<section className="bg-background px-5 py-10 md:px-10 md:py-14">
-  <div className="mx-auto max-w-6xl">
-    <div className="rounded-[2rem] bg-primary px-6 py-10 text-center md:px-10 md:py-14">
+        {/* =========================================================
+            YOU MAY ALSO LIKE
+            ========================================================= */}
+        <section className="px-5 pb-12 pt-4 md:px-10 md:pb-20">
+          <div className="mx-auto max-w-6xl">
 
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/70">
-        TENOO
-      </p>
+            <div className="mb-7 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                TENOO
+              </p>
 
-      <h2 className="mt-2 font-serif text-3xl font-bold text-primary-foreground md:text-5xl">
-        Discover your Tenoo favourite.
-      </h2>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-primary md:text-4xl">
+                You may also like.
+              </h2>
 
-      <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/80 md:text-base">
-        Good food, made for every generation.
-      </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Discover more from Tenoo.
+              </p>
+            </div>
 
-      <a
-        href={whatsAppOrderUrl(product.name)}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-7 inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
-      >
-        CHAT WITH US ON WHATSAPP
-      </a>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+              {relatedProducts.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/products/${item.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 hover:-translate-y-1"
+                >
+                  <div className="relative aspect-square overflow-hidden bg-background">
+                    <Image
+                      src={item.image || '/placeholder.svg'}
+                      alt={`${item.name} product`}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
 
-    </div>
-  </div>
-</section>
+                  <div className="p-4">
+                    <h3 className="font-serif text-base font-bold text-primary md:text-lg">
+                      {item.name}
+                    </h3>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      View product →
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+          </div>
+        </section>
+
+        {/* =========================================================
+            BOTTOM CTA
+            ========================================================= */}
+        <section className="bg-background px-5 py-10 md:px-10 md:py-14">
+          <div className="mx-auto max-w-6xl">
+            <div className="rounded-[2rem] bg-primary px-6 py-10 text-center md:px-10 md:py-14">
+
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/70">
+                TENOO
+              </p>
+
+              <h2 className="mt-2 font-serif text-3xl font-bold text-primary-foreground md:text-5xl">
+                Discover your Tenoo favourite.
+              </h2>
+
+              <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/80 md:text-base">
+                Good food, made for every generation.
+              </p>
+
+              <a
+                href={whatsAppOrderUrl(product.name)}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-7 inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
+              >
+                CHAT WITH US ON WHATSAPP
+              </a>
+
+            </div>
+          </div>
+        </section>
 
       </main>
 
