@@ -10,27 +10,66 @@ export default function AboutPage() {
       <SiteHeader />
 
       <main>
-
         {/* =====================================================
             HERO
             ===================================================== */}
         <ScrollReveal>
-          <section className="px-5 pb-12 pt-12 md:px-10 md:pb-16 md:pt-16">
+          <section className="px-5 pb-14 pt-10 md:px-10 md:pb-16 md:pt-16">
             <div className="mx-auto max-w-6xl text-center">
+
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                 ABOUT TENOO
               </p>
 
-              <h1 className="mx-auto mt-3 max-w-5xl font-serif text-4xl font-bold leading-[0.95] text-primary md:text-6xl lg:text-7xl">
-                Good Food.
-                <br />
-                Made with Purpose.
-              </h1>
+              <div className="relative mx-auto mt-3 max-w-5xl">
 
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+                {/* DESKTOP MASCOT */}
+                <div className="pointer-events-none absolute bottom-[1px] left-[19%] z-10 hidden w-[135px] md:block lg:left-[18%] lg:w-[150px]">
+                  <Image
+                    src="/tenoo-mascot-mature.png"
+                    alt=""
+                    width={1299}
+                    height={1211}
+                    priority
+                    className="h-auto w-full object-contain"
+                  />
+                </div>
+
+                {/* HERO TITLE */}
+                <div className="md:-translate-x-[18px] md:translate-y-[15px]">
+                  <h1 className="mx-auto font-serif text-4xl font-bold leading-[0.95] text-primary sm:text-5xl md:text-6xl lg:text-7xl">
+                    <span className="block">Good Food.</span>
+
+                   <span
+  className="block max-md:relative max-md:left-17.5 
+    md:translate-x-[120px]
+    lg:translate-x-[140px]"
+    style={{ transform: 'scale(0.75)', transformOrigin: 'left center' }}
+>
+  Made with Purpose.
+</span>
+                  </h1>
+                </div>
+
+              </div>
+
+              {/* TAGLINE */}
+              <p className="mx-auto mt-6 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7 md:mt-5 md:text-lg">
                 Thoughtfully crafted food products inspired by Indian
                 ingredients, made for every generation.
               </p>
+
+             {/* MOBILE MASCOT */}
+<div className="mx-auto mt-2 -mb-[170px] w-[90px] -translate-x-29.5 -translate-y-53.5 sm:mt-3 sm:-mb-[128px] sm:w-[100px] sm:-translate-x-10 sm:-translate-y-32 md:hidden">
+  <Image
+    src="/tenoo-mascot-mature.png"
+    alt=""
+    width={1299}
+    height={1211}
+    className="h-auto w-full object-contain"
+  />
+</div>
+
             </div>
           </section>
         </ScrollReveal>
@@ -245,6 +284,7 @@ export default function AboutPage() {
         <ScrollReveal delay={80}>
           <section className="px-5 py-14 md:px-10 md:py-20">
             <div className="mx-auto max-w-5xl text-center">
+
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">
                 Our Promise
               </p>
@@ -264,6 +304,7 @@ export default function AboutPage() {
               <p className="mt-10 font-serif text-2xl font-bold text-primary md:text-3xl">
                 Good Food. Made for Every Generation.
               </p>
+
             </div>
           </section>
         </ScrollReveal>
