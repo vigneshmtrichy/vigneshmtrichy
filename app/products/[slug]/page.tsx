@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductGallery } from '@/components/product-gallery'
+import { RelatedProductsCarousel } from '@/components/related-products-carousel'
 
 import {
   ALL_PRODUCTS,
@@ -41,7 +42,7 @@ export default async function ProductPage({
 
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
-  ).slice(0, 4)
+  )
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -77,17 +78,19 @@ export default async function ProductPage({
             {/* =====================================================
                 DESKTOP — TWO COLUMN LAYOUT
                 ===================================================== */}
-            <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+            <div className="grid items-start gap-8 md:grid-cols-2 md:gap-14">
 
               {/* ===================================================
                   PRODUCT GALLERY
                   =================================================== */}
               <div className="mx-auto w-full max-w-[520px]">
-                <ProductGallery
-                  images={galleryImages}
-                  productName={product.name}
-                  fallbackImage={product.image}
-                />
+               <ProductGallery
+  images={galleryImages}
+  productName={product.name}
+  tagline={product.tagline}
+  packSize={product.packSize}
+  fallbackImage={product.image}
+/>
               </div>
 
               {/* ===================================================
@@ -329,9 +332,9 @@ export default async function ProductPage({
                       Storage
                     </h3>
 
-                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                      {product.storage}
-                    </p>
+                   <p className="mt-1.5 max-w-[260px] text-sm leading-6 text-muted-foreground">
+  {product.storage}
+</p>
                   </div>
                 )}
 
@@ -353,58 +356,7 @@ export default async function ProductPage({
           </div>
         </section>
 
-        {/* =========================================================
-            YOU MAY ALSO LIKE
-            ========================================================= */}
-        <section className="px-5 pb-12 pt-4 md:px-10 md:pb-20">
-          <div className="mx-auto max-w-6xl">
-
-            <div className="mb-7 text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-                TENOO
-              </p>
-
-              <h2 className="mt-2 font-serif text-3xl font-bold text-primary md:text-4xl">
-                You may also like.
-              </h2>
-
-              <p className="mt-2 text-sm text-muted-foreground">
-                Discover more from Tenoo.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {relatedProducts.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/products/${item.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 hover:-translate-y-1"
-                >
-                  <div className="relative aspect-square overflow-hidden bg-background">
-                    <Image
-                      src={item.image || '/placeholder.svg'}
-                      alt={`${item.name} product`}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-
-                  <div className="p-4">
-                    <h3 className="font-serif text-base font-bold text-primary md:text-lg">
-                      {item.name}
-                    </h3>
-
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      View product →
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-          </div>
-        </section>
+       <RelatedProductsCarousel products={relatedProducts} />
 
         {/* =========================================================
             BOTTOM CTA

@@ -40,7 +40,7 @@ export const PRODUCT_BADGES = [
 export const KIDS_PRODUCTS: Product[] = [
   {
   slug: 'millet-abc',
-  name: 'Millet ABC Nutrimix',
+  name: 'Meltiva Nutrimix',
   tagline: 'Nuts, Seeds & Millets For Growing You',
   descLines: ['Nuts, Seeds & Millets', 'For Growing You'],
   image: '/products/millet-abc.png',
@@ -60,7 +60,7 @@ export const KIDS_PRODUCTS: Product[] = [
     'Iron: 0.89 mg',
   ],
   preparation:
-    'Add 1 tablespoon of Millet ABC Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
+    'Add 1 tablespoon of Meltiva Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
   packSize: '200g',
   price: '',
   allergen: 'Contains Milk, Nuts and Barley.',
@@ -72,10 +72,10 @@ countryOfOrigin: 'India',
 
 manufacturedBy:
   'Tiny Dot Foods Private Limited, 51, Kavarai Street, Athipet, Chennai - 600058.',
-},
+  },
   {
     slug: 'pink-abc',
-    name: 'Pink ABC Nutrimix',
+    name: 'Rubyblend Nutrimix',
     tagline: 'Nuts, Seeds & Beetroot Mix For Stronger You',
     descLines: ['Nuts, Seeds & Beetroot Mix', 'For Stronger You'],
     image: '/products/pink-abc.png',
@@ -97,7 +97,7 @@ manufacturedBy:
     ],
 
     preparation:
-      'Add 1 tablespoon of Pink ABC Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
+      'Add 1 tablespoon of Rubyblend Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
 
     packSize: '250g',
 
@@ -286,49 +286,49 @@ export const ADULT_PRODUCTS: Product[] = [
     'Veetoon, 68/B2, Erode Road (West), Muthur Post, Tiruppur Dt - 638105, Tamil Nadu, India.',
 },
    {
-    slug: 'mudavaattu-kizhangu-soup-mix',
-    name: 'Mudavaattu Kizhangu Soup Mix',
-    tagline: 'Traditional & Wholesome Soup For Everyday Wellness',
-    descLines: ['Traditional & Wholesome Soup', 'For Everyday Wellness'],
-    image: '/products/mudavatu-soup-mix.png',
-    category: 'adults',
-    badges: [...PRODUCT_BADGES],
+     slug: 'mudavaattu-kizhangu-soup-mix',
+     name: 'Mudavaattu Kizhangu Soup Mix',
+     tagline: 'Traditional & Wholesome Soup For Everyday Wellness',
+     descLines: ['Traditional & Wholesome Soup', 'For Everyday Wellness'],
+     image: '/products/mudavatu-soup-mix.png',
+     category: 'adults',
+     badges: [...PRODUCT_BADGES],
 
-    description:
-      'A traditional soup mix made with Mudavaattu Kizhangu, lentils, seeds, herbs and warming spices for a wholesome everyday soup.',
+     description:
+       'A traditional soup mix made with Mudavaattu Kizhangu, lentils, seeds, herbs and warming spices for a wholesome everyday soup.',
 
-    ingredients:
-      'Mudavaattu Kizhangu, Pepper, Fennel Seeds, Black Urad Dal, Toor Dal, Chana Dal, Cumin Seeds, Coriander, Dried Ginger, Garlic, Cinnamon, Curry Leaves, Salt, Clove, Turmeric & Bay Leaf.',
+     ingredients:
+       'Mudavaattu Kizhangu, Pepper, Fennel Seeds, Black Urad Dal, Toor Dal, Chana Dal, Cumin Seeds, Coriander, Dried Ginger, Garlic, Cinnamon, Curry Leaves, Salt, Clove, Turmeric & Bay Leaf.',
 
-    nutrition: [
-      'Energy: 394.43 kcal',
-      'Carbohydrates: 77.24 g',
-      'Total Fibre: 8.42 g',
-      'Total Fat: 6.99 g',
-      'Total Protein: 4.53 g',
-      'Calcium: 2596 mg',
-      'Potassium: 495 mg',
-      'Cholesterol: 0 mg',
-    ],
+     nutrition: [
+       'Energy: 394.43 kcal',
+       'Carbohydrates: 77.24 g',
+       'Total Fibre: 8.42 g',
+       'Total Fat: 6.99 g',
+       'Total Protein: 4.53 g',
+       'Calcium: 2596 mg',
+       'Potassium: 495 mg',
+       'Cholesterol: 0 mg',
+     ],
 
-    preparation:
-      'Mix 1 teaspoon of Mudavaattu Kizhangu Soup Mix in 2 glasses of water. Boil for 5–7 minutes and consume warm.',
+     preparation:
+       'Mix 1 teaspoon of Mudavaattu Kizhangu Soup Mix in 2 glasses of water. Boil for 5–7 minutes and consume warm.',
 
-    packSize: '150g',
+     packSize: '150g',
 
-    price: '',
+     price: '',
 
-    allergen:
-      'May contain nuts, wheat/gluten or sesame. Check the ingredient list before use if you have any food allergies.',
+     allergen:
+       'May contain nuts, wheat/gluten or sesame. Check the ingredient list before use if you have any food allergies.',
 
-    storage:
-      'Store in a cool and dry place. Keep the pack airtight after opening.',
+     storage:
+       'Store in a cool and dry place. Keep the pack airtight after opening.',
 
-    countryOfOrigin: 'India',
+     countryOfOrigin: 'India',
 
-    manufacturedBy:
-      'Veetoon, No. 68/B2, Erode Main Rd, Muthur Post, Tiruppur Dt - 638105, Tamil Nadu, India.',
-  },
+     manufacturedBy:
+       'Veetoon, No. 68/B2, Erode Main Rd, Muthur Post, Tiruppur Dt - 638105, Tamil Nadu, India.',
+   },
 ]
 
 export const ALL_PRODUCTS: Product[] = [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]

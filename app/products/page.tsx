@@ -13,7 +13,7 @@ export default function ProductsPage() {
         {/* =========================
             PAGE HERO
         ========================== */}
-        <section className="px-6 pb-10 pt-14 md:px-10 md:pb-14 md:pt-16">
+        <section className="px-6 pb-6 pt-7 md:px-10 md:pb-10 md:pt-8">
           <div className="mx-auto max-w-5xl text-center">
 
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-orange-600 md:mb-4 md:text-sm">

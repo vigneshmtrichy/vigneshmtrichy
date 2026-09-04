@@ -28,7 +28,7 @@ export function BrandLogo({
         priority
         className={cn(
           'h-auto w-auto object-contain',
-          withTagline ? 'max-w-[190px]' : 'max-w-[125px]',
+          withTagline ? 'max-w-[135px]' : 'max-w-[125px]',
           tone === 'light' && 'brightness-110',
         )}
       />
