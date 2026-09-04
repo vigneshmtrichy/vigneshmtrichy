@@ -27,7 +27,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
 
       {/* TOP ROW */}
-     <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-1 md:px-8 md:py-2">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-1 md:px-8 md:py-2">
 
         <BrandLogo />
 
@@ -110,20 +110,26 @@ export function SiteHeader() {
           className="mx-auto flex max-w-7xl items-center justify-center gap-10 px-8 py-1"
           aria-label="Main navigation"
         >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'group inline-flex items-center gap-1 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary',
-                pathname === link.href && 'text-[#8fbd24]',
-              )}
-            >
-              {link.label}
+          {NAV_LINKS.map((link) => {
+            const isProductsActive =
+              link.href === '/products'
+                ? pathname === '/products' ||
+                  pathname.startsWith('/products/')
+                : pathname === link.href
 
-             
-            </Link>
-          ))}
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'group inline-flex items-center gap-1 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary',
+                  isProductsActive && 'text-[#8fbd24]',
+                )}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
         </nav>
       </div>
 
@@ -181,17 +187,28 @@ export function SiteHeader() {
           </div>
 
           <ul className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground/80 hover:bg-secondary hover:text-primary"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isProductsActive =
+                link.href === '/products'
+                  ? pathname === '/products' ||
+                    pathname.startsWith('/products/')
+                  : pathname === link.href
+
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      'block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground/80 hover:bg-secondary hover:text-primary',
+                      isProductsActive && 'text-[#8fbd24]',
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              )
+            })}
 
             <li className="mt-2">
               <a

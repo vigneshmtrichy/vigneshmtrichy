@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductGallery } from '@/components/product-gallery'
 import { RelatedProductsCarousel } from '@/components/related-products-carousel'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 import {
   ALL_PRODUCTS,
@@ -84,13 +85,13 @@ export default async function ProductPage({
                   PRODUCT GALLERY
                   =================================================== */}
               <div className="mx-auto w-full max-w-[520px]">
-               <ProductGallery
-  images={galleryImages}
-  productName={product.name}
-  tagline={product.tagline}
-  packSize={product.packSize}
-  fallbackImage={product.image}
-/>
+                <ProductGallery
+                  images={galleryImages}
+                  productName={product.name}
+                  tagline={product.tagline}
+                  packSize={product.packSize}
+                  fallbackImage={product.image}
+                />
               </div>
 
               {/* ===================================================
@@ -209,90 +210,98 @@ export default async function ProductPage({
             <div className="grid gap-5 md:grid-cols-2">
 
               {/* About */}
-              <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  About the Product
-                </p>
+              <ScrollReveal delay={0}>
+                <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                    About the Product
+                  </p>
 
-                <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
-                  Made for everyday goodness.
-                </h2>
+                  <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
+                    Made for everyday goodness.
+                  </h2>
 
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  {product.description ||
-                    'Product information coming soon.'}
-                </p>
-              </div>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {product.description ||
+                      'Product information coming soon.'}
+                  </p>
+                </div>
+              </ScrollReveal>
 
               {/* Ingredients */}
-              <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  Ingredients
-                </p>
+              <ScrollReveal delay={100}>
+                <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                    Ingredients
+                  </p>
 
-                <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
-                  What&apos;s inside
-                </h2>
+                  <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
+                    What&apos;s inside
+                  </h2>
 
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  {product.ingredients ||
-                    'Product information coming soon.'}
-                </p>
-              </div>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {product.ingredients ||
+                      'Product information coming soon.'}
+                  </p>
+                </div>
+              </ScrollReveal>
 
               {/* Nutrition */}
-              <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  Nutrition
-                </p>
-
-                <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
-                  Nutritional information
-                </h2>
-
-                {product.nutrition && product.nutrition.length > 0 ? (
-                  <div className="mt-4 overflow-hidden rounded-xl border border-border">
-                    {product.nutrition.map((item, index) => (
-                      <div
-                        key={item}
-                        className={
-                          index !== product.nutrition!.length - 1
-                            ? 'grid grid-cols-2 gap-4 border-b border-border px-4 py-2.5 text-sm'
-                            : 'grid grid-cols-2 gap-4 px-4 py-2.5 text-sm'
-                        }
-                      >
-                        <span className="text-muted-foreground">
-                          {item.split(':')[0]}
-                        </span>
-
-                        <span className="text-right font-semibold text-primary">
-                          {item.split(':').slice(1).join(':').trim()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Nutrition information coming soon.
+              <ScrollReveal delay={200}>
+                <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                    Nutrition
                   </p>
-                )}
-              </div>
+
+                  <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
+                    Nutritional information
+                  </h2>
+
+                  {product.nutrition && product.nutrition.length > 0 ? (
+                    <div className="mt-4 overflow-hidden rounded-xl border border-border">
+                      {product.nutrition.map((item, index) => (
+                        <div
+                          key={item}
+                          className={
+                            index !== product.nutrition!.length - 1
+                              ? 'grid grid-cols-2 gap-4 border-b border-border px-4 py-2.5 text-sm'
+                              : 'grid grid-cols-2 gap-4 px-4 py-2.5 text-sm'
+                          }
+                        >
+                          <span className="text-muted-foreground">
+                            {item.split(':')[0]}
+                          </span>
+
+                          <span className="text-right font-semibold text-primary">
+                            {item.split(':').slice(1).join(':').trim()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                      Nutrition information coming soon.
+                    </p>
+                  )}
+                </div>
+              </ScrollReveal>
 
               {/* Preparation */}
-              <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  How to Prepare
-                </p>
+              <ScrollReveal delay={300}>
+                <div className="rounded-2xl border border-border bg-background p-6 md:p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                    How to Prepare
+                  </p>
 
-                <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
-                  Simple everyday preparation
-                </h2>
+                  <h2 className="mt-2 font-serif text-xl font-bold text-primary md:text-2xl">
+                    Simple everyday preparation
+                  </h2>
 
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  {product.preparation ||
-                    'Preparation information coming soon.'}
-                </p>
-              </div>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {product.preparation ||
+                      'Preparation information coming soon.'}
+                  </p>
+                </div>
+              </ScrollReveal>
 
             </div>
           </div>
@@ -301,94 +310,103 @@ export default async function ProductPage({
         {/* =========================================================
             PRODUCT DETAILS
             ========================================================= */}
-        <section className="px-5 py-10 md:px-10 md:py-14">
-          <div className="mx-auto max-w-6xl">
+        <ScrollReveal>
+          <section className="px-5 py-10 md:px-10 md:py-14">
+            <div className="mx-auto max-w-6xl">
 
-            <div className="rounded-2xl border border-border bg-background p-6 md:p-8">
+              <div className="rounded-2xl border border-border bg-background p-6 md:p-8">
 
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                Product Details
-              </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                  Product Details
+                </p>
 
-              <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-                {/* Allergen */}
-                {product.allergen && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-primary">
-                      Allergen Information
-                    </h3>
+                  {/* Allergen */}
+                  {product.allergen && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-primary">
+                        Allergen Information
+                      </h3>
 
-                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                      {product.allergen}
-                    </p>
-                  </div>
-                )}
+                      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                        {product.allergen}
+                      </p>
+                    </div>
+                  )}
 
-                {/* Storage */}
-                {product.storage && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-primary">
-                      Storage
-                    </h3>
+                  {/* Storage */}
+                  {product.storage && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-primary">
+                        Storage
+                      </h3>
 
-                   <p className="mt-1.5 max-w-[260px] text-sm leading-6 text-muted-foreground">
-  {product.storage}
-</p>
-                  </div>
-                )}
+                      <p className="mt-1.5 max-w-[260px] text-sm leading-6 text-muted-foreground">
+                        {product.storage}
+                      </p>
+                    </div>
+                  )}
 
-                {/* Country */}
-                {product.countryOfOrigin && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-primary">
-                      Country of Origin
-                    </h3>
+                  {/* Country */}
+                  {product.countryOfOrigin && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-primary">
+                        Country of Origin
+                      </h3>
 
-                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                      {product.countryOfOrigin}
-                    </p>
-                  </div>
-                )}
+                      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                        {product.countryOfOrigin}
+                      </p>
+                    </div>
+                  )}
 
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </ScrollReveal>
 
-       <RelatedProductsCarousel products={relatedProducts} />
+        {/* =========================================================
+            RELATED PRODUCTS
+            ========================================================= */}
+        <ScrollReveal>
+          <RelatedProductsCarousel products={relatedProducts} />
+        </ScrollReveal>
 
         {/* =========================================================
             BOTTOM CTA
             ========================================================= */}
-        <section className="bg-background px-5 py-10 md:px-10 md:py-14">
-          <div className="mx-auto max-w-6xl">
-            <div className="rounded-[2rem] bg-primary px-6 py-10 text-center md:px-10 md:py-14">
+        <ScrollReveal delay={100}>
+          <section className="bg-background px-5 py-10 md:px-10 md:py-14">
+            <div className="mx-auto max-w-6xl">
+              <div className="rounded-[2rem] bg-primary px-6 py-10 text-center md:px-10 md:py-14">
 
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/70">
-                TENOO
-              </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/70">
+                  TENOO
+                </p>
 
-              <h2 className="mt-2 font-serif text-3xl font-bold text-primary-foreground md:text-5xl">
-                Discover your Tenoo favourite.
-              </h2>
+                <h2 className="mt-2 font-serif text-3xl font-bold text-primary-foreground md:text-5xl">
+                  Discover your Tenoo favourite.
+                </h2>
 
-              <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/80 md:text-base">
-                Good food, made for every generation.
-              </p>
+                <p className="mx-auto mt-3 max-w-xl text-sm text-primary-foreground/80 md:text-base">
+                  Good food, made for every generation.
+                </p>
 
-              <a
-                href={whatsAppOrderUrl(product.name)}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-7 inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
-              >
-                CHAT WITH US ON WHATSAPP
-              </a>
+                <a
+                  href={whatsAppOrderUrl(product.name)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-7 inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
+                >
+                  CHAT WITH US ON WHATSAPP
+                </a>
 
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </ScrollReveal>
 
       </main>
 
