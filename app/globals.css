@@ -97,9 +97,62 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body {
     @apply bg-background text-foreground;
+
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow-x: clip;
+  }
+
+  /*
+    Global responsive safety
+    Prevent images/media/forms from becoming wider
+    than the available viewport.
+  */
+
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  img {
+    height: auto;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    max-width: 100%;
+  }
+
+  /*
+    Flex and grid children are allowed to shrink
+    instead of forcing horizontal overflow.
+  */
+
+  main,
+  header,
+  footer,
+  section,
+  article,
+  aside,
+  nav,
+  div {
+    min-width: 0;
   }
 }
