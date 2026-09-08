@@ -3,6 +3,9 @@ import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { ScrollReveal } from '@/components/scroll-reveal'
 import { KIDS_PRODUCTS, ADULT_PRODUCTS } from '@/lib/site'
+const VISIBLE_KIDS_PRODUCTS = KIDS_PRODUCTS.filter(
+  (product) => product.slug !== 'black-rice-milk-mix',
+)
 
 export default function ProductsPage() {
   return (
@@ -70,7 +73,7 @@ export default function ProductsPage() {
 
             {/* Kids Products */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-7 md:gap-y-12">
-              {KIDS_PRODUCTS.map((product, index) => (
+              {VISIBLE_KIDS_PRODUCTS.map((product, index) => (
                 <ScrollReveal
                   key={product.slug}
                   delay={index * 100}

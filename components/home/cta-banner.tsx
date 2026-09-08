@@ -1,52 +1,57 @@
-import Image from 'next/image'
-import { WhatsAppIcon } from '@/components/whatsapp-icon'
-import { WHATSAPP_URL } from '@/lib/site'
-
 export function CtaBanner() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-5 md:px-8">
-      <div className="relative isolate flex items-center justify-between gap-3 overflow-hidden rounded-3xl bg-primary px-5 py-6 text-center text-primary-foreground sm:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-12">
+      <div className="rounded-3xl bg-primary px-6 py-12 text-center md:px-12 md:py-16">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-leaf">
+          Made for every generation
+        </p>
 
-        <div className="relative hidden h-28 w-36 shrink-0 sm:block">
-          <Image
-            src="/lifestyle/cta-bowl.png"
-            alt="Bowl of porridge topped with nuts"
-            fill
-            sizes="144px"
-            className="object-contain"
-          />
+        <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-white md:text-5xl">
+          Good food for every generation.
+        </h2>
+
+        <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
+          From growing years to everyday wellness, TENOO brings familiar
+          Indian goodness into modern life.
+        </p>
+
+        <div className="mx-auto mt-10 grid max-w-4xl gap-8 border-t border-white/10 pt-8 sm:grid-cols-3">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.15em] text-leaf">
+              01
+            </p>
+            <h3 className="mt-2 font-serif text-xl font-semibold text-white">
+              Growing Years
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-white/65">
+              Thoughtfully crafted nourishment for little ones.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.15em] text-leaf">
+              02
+            </p>
+            <h3 className="mt-2 font-serif text-xl font-semibold text-white">
+              Family Everyday
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-white/65">
+              Simple food choices for busy family life.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.15em] text-leaf">
+              03
+            </p>
+            <h3 className="mt-2 font-serif text-xl font-semibold text-white">
+              Everyday Wellness
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-white/65">
+              Traditional ingredients made convenient for today.
+            </p>
+          </div>
         </div>
-
-        <div className="mx-auto max-w-xl">
-          <h2 className="font-serif text-2xl font-bold text-balance sm:text-3xl">
-            Discover Your Tenoo Favourite.
-          </h2>
-
-          <p className="mt-1.5 text-sm text-primary-foreground/80">
-            Good food choices today. Better generations tomorrow.
-          </p>
-
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-terracotta px-6 py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-transform hover:scale-[1.03]"
-          >
-            <WhatsAppIcon className="h-4 w-4" />
-            Chat with us on WhatsApp
-          </a>
-        </div>
-
-        <div className="relative hidden h-28 w-36 shrink-0 sm:block">
-          <Image
-            src="/lifestyle/cta-bowl-2.png"
-            alt="Bowl of yogurt topped with fresh berries"
-            fill
-            sizes="144px"
-            className="object-contain"
-          />
-        </div>
-
       </div>
     </section>
   )

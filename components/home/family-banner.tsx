@@ -1,104 +1,77 @@
 import Image from 'next/image'
 import { Utensils, HeartHandshake, Leaf, Clock } from 'lucide-react'
 
-const VALUES = [
-  {
-    icon: Utensils,
-    title: 'Indian Food Inspiration',
-    desc: 'Rooted in our culture, made for today.',
-  },
-  {
-    icon: HeartHandshake,
-    title: 'Made with Care',
-    desc: 'Hygienic, safe and high quality.',
-  },
-  {
-    icon: Leaf,
-    title: 'Thoughtfully Selected Ingredients',
-    desc: 'Only the best nature has to offer.',
-  },
-  {
-    icon: Clock,
-    title: 'Easy for Everyday Life',
-    desc: 'Quick to make, easy to love.',
-  },
-]
+
 
 export function FamilyBanner() {
   return (
-    <section aria-labelledby="family-heading">
+    <section aria-labelledby="family-heading" className="px-4 md:px-8">
 
-      <div className="relative isolate h-[420px] overflow-hidden sm:h-[500px]">
+      {/* Premium Family Banner */}
+      <div className="relative isolate mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-primary shadow-sm">
 
-        {/* Soft background fill */}
+        {/* Background image */}
         <Image
           src="/lifestyle/family.png"
           alt=""
           fill
           aria-hidden="true"
-          className="scale-110 object-cover blur-2xl opacity-30"
+          className="scale-105 object-cover opacity-10 blur-xl"
         />
 
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/75 to-primary/20" />
+        {/* Main layout */}
+        <div className="relative grid min-h-[430px] lg:grid-cols-[42%_58%]">
 
-        {/* Full family photo — NOT cropped */}
-        <div className="absolute inset-y-0 right-0 w-full sm:w-[62%]">
-          <Image
-            src="/lifestyle/family.png"
-            alt="Three generations of a family sharing a warm meal together"
-            fill
-            className="object-contain object-center"
-          />
-        </div>
+          {/* Text panel */}
+          <div className="relative z-10 flex items-center px-8 py-14 sm:px-12 lg:px-14 xl:px-16">
 
-        {/* Text */}
-        <div className="absolute inset-0 flex items-center">
-          <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-            <div className="max-w-md text-primary-foreground">
+            {/* Subtle vertical accent */}
+            <div className="absolute left-0 top-1/2 hidden h-28 w-px -translate-y-1/2 bg-lime-400/50 lg:block" />
+
+            <div className="max-w-lg text-primary-foreground">
+
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-lime-400">
+                Made for Every Generation
+              </p>
 
               <h2
                 id="family-heading"
-                className="font-serif text-3xl font-bold leading-tight text-balance sm:text-4xl"
+                className="font-serif text-3xl font-bold leading-[1.12] sm:text-4xl"
               >
-                Good food brings generations together.
+                Good food brings
+                <br />
+                generations together.
               </h2>
 
-              <div className="mt-3 h-px w-20 bg-primary-foreground/40" />
+              <div className="my-6 h-px w-14 bg-primary-foreground/30" />
 
-              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/90 sm:text-base">
+              <p className="max-w-md text-sm leading-7 text-primary-foreground/75 sm:text-base sm:leading-8">
                 Wholesome ingredients, time-honoured recipes and nutritious
                 blends for every stage of life.
               </p>
 
             </div>
           </div>
+
+          {/* Family image */}
+          <div className="relative min-h-[300px] lg:min-h-[430px]">
+
+            <Image
+              src="/lifestyle/family.png"
+              alt="Three generations of a family sharing a warm meal together"
+              fill
+              className="object-cover"
+            />
+
+            {/* Soft blend between text and image */}
+            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-primary/40 to-transparent lg:w-32" />
+
+          </div>
+
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 md:px-8">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {VALUES.map((v) => (
-            <div key={v.title} className="flex items-start gap-3">
-
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-peach text-terracotta">
-                <v.icon className="h-5 w-5" />
-              </span>
-
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-wide text-primary">
-                  {v.title}
-                </h3>
-
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  {v.desc}
-                </p>
-              </div>
-
-            </div>
-          ))}
-        </div>
-      </div>
+     
 
     </section>
   )

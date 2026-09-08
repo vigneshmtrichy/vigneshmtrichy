@@ -37,9 +37,21 @@ export default async function ProductPage({
       ? 'For Little Ones & Families'
       : 'For Adults & Wellness'
 
-  const galleryImages = Array.from({ length: 10 }, (_, index) => {
-    return `/products/${product.slug}/${index + 1}.jpg`
-  })
+const GALLERY_FOLDERS: Record<string, string> = {
+  'millet-abc': 'Meltiva-Nutrimix',
+  'pink-abc': 'Rubyblend-Nutrimix',
+  'cotton-milk-mix': 'Paruthipaal-mix',
+  'pirandai-rice-mix': 'Pirandai-rice-mix',
+  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
+  'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+}
+
+
+const galleryFolder = GALLERY_FOLDERS[product.slug]
+
+const galleryImages = Array.from({ length: 10 }, (_, index) => {
+  return `/products/${galleryFolder}/${index + 1}.png`
+})
 
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug

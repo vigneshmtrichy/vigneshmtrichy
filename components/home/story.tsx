@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react'
 
 export function Story() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-5 md:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-14">
       <div className="grid items-stretch overflow-hidden rounded-3xl bg-beige/70 lg:grid-cols-2">
 
         <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">

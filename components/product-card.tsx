@@ -3,6 +3,18 @@ import Link from 'next/link'
 import type { Product } from '@/lib/site'
 
 export function ProductCard({ product }: { product: Product }) {
+const GALLERY_FOLDERS: Record<string, string> = {
+  'millet-abc': 'Meltiva-Nutrimix',
+  'pink-abc': 'Rubyblend-Nutrimix',
+  'cotton-milk-mix': 'Paruthipaal-mix',
+  'pirandai-rice-mix': 'Pirandai-rice-mix',
+  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
+  'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+}
+
+const cardImage = GALLERY_FOLDERS[product.slug]
+  ? `/products/${GALLERY_FOLDERS[product.slug]}/1.png`
+  : product.image || '/placeholder.svg'
   return (
     <Link
       href={`/products/${product.slug}`}
@@ -10,7 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-card/60">
         <Image
-          src={product.image || '/placeholder.svg'}
+          src={cardImage}
           alt={`${product.name} product pack`}
           fill
           sizes="(max-width: 768px) 45vw, 22vw"
