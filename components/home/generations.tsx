@@ -2,10 +2,8 @@ import Link from 'next/link'
 import { ArrowRight, Heart, Leaf, Sun, User, Users } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
 import { ADULT_PRODUCTS, KIDS_PRODUCTS } from '@/lib/site'
+const FEATURED_KIDS_PRODUCTS = KIDS_PRODUCTS.slice(0, 3)
 
-const VISIBLE_KIDS_PRODUCTS = KIDS_PRODUCTS.filter(
-  (product) => product.slug !== 'black-rice-milk-mix',
-)
 
 function ViewAll({
   variant,
@@ -97,7 +95,7 @@ export function Generations() {
               max-md:gap-3
             "
           >
-            {VISIBLE_KIDS_PRODUCTS.map((product) => (
+            {FEATURED_KIDS_PRODUCTS.map((product) => (
               <div
                 key={product.slug}
                 className="

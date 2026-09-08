@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
+
 export function Story() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-14">
