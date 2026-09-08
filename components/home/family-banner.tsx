@@ -1,35 +1,29 @@
 import Image from 'next/image'
-import { Utensils, HeartHandshake, Leaf, Clock } from 'lucide-react'
-
-
 
 export function FamilyBanner() {
   return (
     <section aria-labelledby="family-heading" className="px-4 md:px-8">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-primary shadow-sm">
 
-      {/* Premium Family Banner */}
-      <div className="relative isolate mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-primary shadow-sm">
+        {/* =====================================================
+            DESKTOP
+            ===================================================== */}
+        <div className="relative hidden min-h-[430px] lg:grid lg:grid-cols-[42%_58%]">
 
-        {/* Background image */}
-        <Image
-          src="/lifestyle/family.png"
-          alt=""
-          fill
-          aria-hidden="true"
-          className="scale-105 object-cover opacity-10 blur-xl"
-        />
+          {/* Background glow */}
+          <Image
+            src="/lifestyle/family.png"
+            alt=""
+            fill
+            aria-hidden="true"
+            className="scale-105 object-cover opacity-10 blur-xl"
+          />
 
-        {/* Main layout */}
-        <div className="relative grid min-h-[430px] lg:grid-cols-[42%_58%]">
-
-          {/* Text panel */}
-          <div className="relative z-10 flex items-center px-8 py-14 sm:px-12 lg:px-14 xl:px-16">
-
-            {/* Subtle vertical accent */}
-            <div className="absolute left-0 top-1/2 hidden h-28 w-px -translate-y-1/2 bg-lime-400/50 lg:block" />
+          {/* Text */}
+          <div className="relative z-10 flex items-center px-14 py-14 xl:px-16">
+            <div className="absolute left-0 top-1/2 h-28 w-px -translate-y-1/2 bg-lime-400/50" />
 
             <div className="max-w-lg text-primary-foreground">
-
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-lime-400">
                 Made for Every Generation
               </p>
@@ -49,13 +43,11 @@ export function FamilyBanner() {
                 Wholesome ingredients, time-honoured recipes and nutritious
                 blends for every stage of life.
               </p>
-
             </div>
           </div>
 
           {/* Family image */}
-          <div className="relative min-h-[300px] lg:min-h-[430px]">
-
+          <div className="relative">
             <Image
               src="/lifestyle/family.png"
               alt="Three generations of a family sharing a warm meal together"
@@ -63,16 +55,55 @@ export function FamilyBanner() {
               className="object-cover"
             />
 
-            {/* Soft blend between text and image */}
-            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-primary/40 to-transparent lg:w-32" />
+            <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-primary/40 to-transparent" />
+          </div>
+        </div>
 
+
+        {/* =====================================================
+            MOBILE
+            ===================================================== */}
+        <div className="relative lg:hidden">
+
+          {/* Family photo */}
+          <div className="relative h-[500px] w-full">
+            <Image
+              src="/lifestyle/family.png"
+              alt="Three generations of a family sharing a warm meal together"
+              fill
+              className="object-cover"
+            />
+
+            {/* Dark bottom gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/55 to-transparent" />
+          </div>
+
+          {/* Text over image */}
+          <div className="absolute inset-x-0 bottom-0 z-10 px-6 pb-7">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-lime-400">
+              Made for Every Generation
+            </p>
+
+            <h2
+              id="family-heading-mobile"
+              className="font-serif text-[25px] font-bold leading-[1.12] text-white"
+            >
+              Good food brings
+              <br />
+              generations together.
+            </h2>
+
+            <div className="my-4 h-px w-10 bg-white/30" />
+
+            <p className="max-w-[300px] text-xs leading-5 text-white/75">
+              Wholesome ingredients, time-honoured recipes and nutritious
+              blends for every stage of life.
+            </p>
           </div>
 
         </div>
+
       </div>
-
-     
-
     </section>
   )
 }
