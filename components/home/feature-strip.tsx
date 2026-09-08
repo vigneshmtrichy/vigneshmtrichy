@@ -34,21 +34,55 @@ const FEATURES = [
 export function FeatureStrip() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-4 md:px-8">
-      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-border/70 bg-card px-4 py-4 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border/70">
+      <div
+        className="
+          grid grid-cols-2 gap-y-5 gap-x-3
+          rounded-2xl border border-border/70 bg-card
+          px-3 py-4
+
+          sm:grid-cols-2
+          lg:grid-cols-4
+          lg:divide-x lg:divide-border/70
+          lg:gap-y-0
+          lg:px-4
+        "
+      >
         {FEATURES.map((f) => (
-          <div key={f.title} className="flex items-center gap-3 px-2 lg:px-5">
+          <div
+            key={f.title}
+            className="
+              flex items-start gap-2.5 px-1
+              sm:gap-3 sm:px-2
+              lg:items-center lg:px-5
+            "
+          >
             <span
-              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${f.bg} ${f.fg}`}
+              className={`
+                inline-flex h-9 w-9 shrink-0 items-center justify-center
+                rounded-full
+                sm:h-10 sm:w-10
+                ${f.bg} ${f.fg}
+              `}
             >
-              <f.icon className="h-5 w-5" />
+              <f.icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
             </span>
 
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wide text-primary">
+            <div className="min-w-0">
+              <h3
+                className="
+                  text-[11px] font-bold uppercase tracking-wide text-primary
+                  sm:text-sm
+                "
+              >
                 {f.title}
               </h3>
 
-              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              <p
+                className="
+                  mt-0.5 text-[10px] leading-4 text-muted-foreground
+                  sm:text-sm sm:leading-normal
+                "
+              >
                 {f.desc}
               </p>
             </div>

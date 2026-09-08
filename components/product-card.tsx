@@ -2,7 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Product } from '@/lib/site'
 
-export function ProductCard({ product }: { product: Product }) {
 const GALLERY_FOLDERS: Record<string, string> = {
   'millet-abc': 'Meltiva-Nutrimix',
   'pink-abc': 'Rubyblend-Nutrimix',
@@ -12,9 +11,11 @@ const GALLERY_FOLDERS: Record<string, string> = {
   'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
 }
 
-const cardImage = GALLERY_FOLDERS[product.slug]
-  ? `/products/${GALLERY_FOLDERS[product.slug]}/1.png`
-  : product.image || '/placeholder.svg'
+export function ProductCard({ product }: { product: Product }) {
+  const cardImage = GALLERY_FOLDERS[product.slug]
+    ? `/products/${GALLERY_FOLDERS[product.slug]}/1.png`
+    : product.image || '/placeholder.svg'
+
   return (
     <Link
       href={`/products/${product.slug}`}

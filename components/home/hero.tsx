@@ -16,7 +16,7 @@ export function Hero() {
 
         <Link
           href="/products"
-          className="absolute left-1/2 bottom-[5%] -translate-x-1/2 rounded-full bg-orange-500 px-7 py-3 text-sm font-bold text-white shadow-lg transition-transform duration-200 hover:scale-105"
+         className="absolute left-1/2 bottom-[5%] hidden -translate-x-1/2 rounded-full bg-orange-500 px-7 py-3 text-sm font-bold text-white shadow-lg transition-transform duration-200 hover:scale-105 md:inline-flex"
         >
           EXPLORE OUR PRODUCTS
         </Link>

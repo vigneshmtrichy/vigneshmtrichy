@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const pathname = usePathname()
 
@@ -19,20 +20,28 @@ export function SiteHeader() {
       ? ALL_PRODUCTS.filter((product) =>
           `${product.name} ${product.tagline ?? ''}`
             .toLowerCase()
-            .includes(search.trim().toLowerCase())
+            .includes(search.trim().toLowerCase()),
         ).slice(0, 5)
       : []
 
-  return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
+  const closeMobileMenu = () => {
+    setOpen(false)
+    setSearchOpen(false)
+    setSearch('')
+  }
 
-      {/* TOP ROW */}
+  return (
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-md">
+
+      {/* =========================================================
+          DESKTOP / TABLET TOP ROW
+          ========================================================= */}
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-1 md:px-8 md:py-2">
 
         <BrandLogo />
 
-        {/* Search */}
-        <div className="relative ml-auto flex-1 max-w-2xl">
+        {/* Desktop Search */}
+        <div className="relative ml-auto hidden max-w-2xl flex-1 lg:block">
           <div className="flex h-11 items-center overflow-hidden rounded-full border border-border bg-background">
             <Search className="ml-4 h-4 w-4 shrink-0 text-muted-foreground" />
 
@@ -46,7 +55,6 @@ export function SiteHeader() {
             />
           </div>
 
-          {/* Search Results */}
           {search.trim() && (
             <div className="absolute left-0 right-0 top-13 overflow-hidden rounded-2xl border border-border bg-background shadow-xl">
               {searchResults.length > 0 ? (
@@ -77,22 +85,47 @@ export function SiteHeader() {
           )}
         </div>
 
-        {/* WhatsApp */}
+        {/* Desktop WhatsApp */}
         <a
           href={WHATSAPP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] sm:inline-flex"
+          className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] sm:inline-flex lg:inline-flex"
         >
           <WhatsAppIcon className="h-4 w-4" />
           WhatsApp Us
         </a>
 
-        {/* Mobile menu */}
+        {/* =========================================================
+            MOBILE CONTROLS
+            ========================================================= */}
+
+        {/* Mobile Search Button */}
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary lg:hidden"
+          onClick={() => {
+            setSearchOpen((value) => !value)
+            setOpen(false)
+          }}
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-secondary lg:hidden"
+          aria-label={searchOpen ? 'Close search' : 'Search products'}
+          aria-expanded={searchOpen}
+        >
+          {searchOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Search className="h-5 w-5" />
+          )}
+        </button>
+
+        {/* Mobile Menu Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setOpen((value) => !value)
+            setSearchOpen(false)
+          }}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-secondary lg:hidden"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
         >
@@ -104,7 +137,64 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {/* SECOND ROW — NAVIGATION */}
+      {/* =========================================================
+          MOBILE SEARCH
+          ========================================================= */}
+      {searchOpen && (
+        <div className="border-t border-border/50 px-4 pb-4 pt-3 lg:hidden">
+          <div className="relative">
+            <div className="flex h-12 items-center overflow-hidden rounded-full border border-border bg-background">
+              <Search className="ml-4 h-4 w-4 shrink-0 text-muted-foreground" />
+
+              <input
+                type="search"
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products..."
+                className="h-full min-w-0 flex-1 bg-transparent px-3 text-base text-foreground outline-none placeholder:text-muted-foreground"
+                aria-label="Search products"
+              />
+            </div>
+
+            {search.trim() && (
+              <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
+                {searchResults.length > 0 ? (
+                  <div className="py-2">
+                    {searchResults.map((product) => (
+                      <Link
+                        key={product.slug}
+                        href={`/products/${product.slug}`}
+                        onClick={() => {
+                          setSearch('')
+                          setSearchOpen(false)
+                        }}
+                        className="block px-4 py-3.5 transition-colors hover:bg-secondary"
+                      >
+                        <p className="text-sm font-semibold text-primary">
+                          {product.name}
+                        </p>
+
+                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                          {product.tagline}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-4 py-4 text-sm text-muted-foreground">
+                    No products found.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          DESKTOP NAVIGATION
+          ========================================================= */}
       <div className="hidden border-t border-border/50 lg:block">
         <nav
           className="mx-auto flex max-w-7xl items-center justify-center gap-10 px-8 py-1"
@@ -133,59 +223,14 @@ export function SiteHeader() {
         </nav>
       </div>
 
-      {/* MOBILE MENU */}
-      {open ? (
+      {/* =========================================================
+          MOBILE MENU
+          ========================================================= */}
+      {open && (
         <nav
-          className="border-t border-border/60 bg-background px-4 py-4 lg:hidden"
+          className="border-t border-border/60 bg-background px-4 pb-5 pt-3 lg:hidden"
           aria-label="Mobile navigation"
         >
-          <div className="relative mb-3">
-            <div className="flex h-11 items-center overflow-hidden rounded-full border border-border bg-background">
-              <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
-
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
-                className="h-full min-w-0 flex-1 bg-transparent px-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                aria-label="Search products"
-              />
-            </div>
-
-            {search.trim() && (
-              <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
-                {searchResults.length > 0 ? (
-                  <div className="py-2">
-                    {searchResults.map((product) => (
-                      <Link
-                        key={product.slug}
-                        href={`/products/${product.slug}`}
-                        onClick={() => {
-                          setSearch('')
-                          setOpen(false)
-                        }}
-                        className="block px-4 py-3 hover:bg-secondary"
-                      >
-                        <p className="text-sm font-semibold text-primary">
-                          {product.name}
-                        </p>
-
-                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                          {product.tagline}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="px-4 py-4 text-sm text-muted-foreground">
-                    No products found.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
           <ul className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => {
               const isProductsActive =
@@ -198,10 +243,11 @@ export function SiteHeader() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    onClick={() => setOpen(false)}
+                    onClick={closeMobileMenu}
                     className={cn(
-                      'block rounded-lg px-3 py-2.5 text-base font-semibold text-foreground/80 hover:bg-secondary hover:text-primary',
-                      isProductsActive && 'text-[#8fbd24]',
+                      'flex min-h-11 items-center rounded-xl px-4 py-2.5 text-[15px] font-semibold text-foreground/80 transition-colors hover:bg-secondary hover:text-primary',
+                      isProductsActive &&
+                        'bg-[#edf3dc] text-[#7fb51b]',
                     )}
                   >
                     {link.label}
@@ -210,12 +256,12 @@ export function SiteHeader() {
               )
             })}
 
-            <li className="mt-2">
+            <li className="mt-3 border-t border-border/50 pt-4">
               <a
                 href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm"
               >
                 <WhatsAppIcon className="h-4 w-4" />
                 WhatsApp Us
@@ -223,7 +269,7 @@ export function SiteHeader() {
             </li>
           </ul>
         </nav>
-      ) : null}
+      )}
     </header>
   )
 }
