@@ -9,6 +9,7 @@ const GALLERY_FOLDERS: Record<string, string> = {
   'pirandai-rice-mix': 'Pirandai-rice-mix',
   'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
   'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+  'black-rice-milk-mix': 'blacko-cocoa-mix',
 }
 
 export function ProductCard({ product }: { product: Product }) {

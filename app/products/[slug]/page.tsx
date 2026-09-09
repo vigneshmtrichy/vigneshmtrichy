@@ -12,6 +12,8 @@ import {
   ALL_PRODUCTS,
   getProductBySlug,
 } from '@/lib/site'
+import { readdir } from 'fs/promises'
+import path from 'path'
 
 export function generateStaticParams() {
   return ALL_PRODUCTS.map((product) => ({
@@ -43,14 +45,27 @@ const GALLERY_FOLDERS: Record<string, string> = {
   'pirandai-rice-mix': 'Pirandai-rice-mix',
   'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
   'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+  'black-rice-milk-mix': 'blacko-cocoa-mix',
 }
 
 
 const galleryFolder = GALLERY_FOLDERS[product.slug]
 
-const galleryImages = Array.from({ length: 10 }, (_, index) => {
-  return `/products/${galleryFolder}/${index + 1}.png`
-})
+const galleryImages = galleryFolder
+  ? (
+      await readdir(
+        path.join(process.cwd(), 'public', 'products', galleryFolder),
+      )
+    )
+      .filter((file) => /\.png$/i.test(file))
+      .sort((a, b) => {
+        const aNum = parseInt(a.replace('.png', ''), 10)
+        const bNum = parseInt(b.replace('.png', ''), 10)
+
+        return aNum - bNum
+      })
+      .map((file) => `/products/${galleryFolder}/${file}`)
+  : []
 
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug

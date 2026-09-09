@@ -7,6 +7,16 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { useCart } from '@/components/cart/cart-context'
 
+const GALLERY_FOLDERS: Record<string, string> = {
+  'millet-abc': 'Meltiva-Nutrimix',
+  'pink-abc': 'Rubyblend-Nutrimix',
+  'black-rice-milk-mix': 'blacko-cocoa-mix',
+  'cotton-milk-mix': 'Paruthipaal-mix',
+  'pirandai-rice-mix': 'Pirandai-rice-mix',
+  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
+  'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+}
+
 export default function CartPage() {
   const {
     items,
@@ -56,77 +66,83 @@ export default function CartPage() {
 
               {/* CART ITEMS */}
               <div className="space-y-4">
-                {items.map((item) => (
-                  <div
-                    key={item.product.slug}
-                    className="flex gap-4 rounded-2xl border border-border bg-card p-4"
-                  >
-                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-background">
-                      <img
-                        src={item.product.image || '/placeholder.svg'}
-                        alt={item.product.name}
-                        className="h-full w-full object-contain p-2"
-                      />
-                    </div>
+                {items.map((item) => {
+                  const cartImage = GALLERY_FOLDERS[item.product.slug]
+                    ? `/products/${GALLERY_FOLDERS[item.product.slug]}/1.png`
+                    : item.product.image || '/placeholder.svg'
 
-                    <div className="min-w-0 flex-1">
-                      <h2 className="font-serif text-lg font-bold text-primary">
-                        {item.product.name}
-                      </h2>
+                  return (
+                    <div
+                      key={item.product.slug}
+                      className="flex gap-4 rounded-2xl border border-border bg-card p-4"
+                    >
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-background">
+                        <img
+                          src={cartImage}
+                          alt={item.product.name}
+                          className="h-full w-full object-contain p-2"
+                        />
+                      </div>
 
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {item.product.packSize}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <h2 className="font-serif text-lg font-bold text-primary">
+                          {item.product.name}
+                        </h2>
 
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <div className="flex items-center rounded-full border border-border">
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {item.product.packSize}
+                        </p>
+
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <div className="flex items-center rounded-full border border-border">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateQuantity(
+                                  item.product.slug,
+                                  item.quantity - 1,
+                                )
+                              }
+                              className="flex h-9 w-9 items-center justify-center text-primary"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+
+                            <span className="w-8 text-center text-sm font-semibold">
+                              {item.quantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateQuantity(
+                                  item.product.slug,
+                                  item.quantity + 1,
+                                )
+                              }
+                              className="flex h-9 w-9 items-center justify-center text-primary"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+
                           <button
                             type="button"
                             onClick={() =>
-                              updateQuantity(
-                                item.product.slug,
-                                item.quantity - 1,
-                              )
+                              removeFromCart(item.product.slug)
                             }
-                            className="flex h-9 w-9 items-center justify-center text-primary"
-                            aria-label="Decrease quantity"
+                            className="text-muted-foreground transition-colors hover:text-red-600"
+                            aria-label={`Remove ${item.product.name}`}
                           >
-                            <Minus className="h-4 w-4" />
-                          </button>
-
-                          <span className="w-8 text-center text-sm font-semibold">
-                            {item.quantity}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateQuantity(
-                                item.product.slug,
-                                item.quantity + 1,
-                              )
-                            }
-                            className="flex h-9 w-9 items-center justify-center text-primary"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeFromCart(item.product.slug)
-                          }
-                          className="text-muted-foreground transition-colors hover:text-red-600"
-                          aria-label={`Remove ${item.product.name}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* ORDER SUMMARY */}
@@ -159,32 +175,32 @@ export default function CartPage() {
                 </div>
 
                 <button
-  type="button"
-  onClick={() => {
-    const message = [
-      'Hello TENOO, I would like to order:',
-      '',
-      ...items.map(
-        (item) =>
-          `${item.product.name} × ${item.quantity}`,
-      ),
-      '',
-      `Total Items: ${items.reduce(
-        (total, item) => total + item.quantity,
-        0,
-      )}`,
-      `Total: ₹${cartTotal}`,
-    ].join('\n')
+                  type="button"
+                  onClick={() => {
+                    const message = [
+                      'Hello TENOO, I would like to order:',
+                      '',
+                      ...items.map(
+                        (item) =>
+                          `${item.product.name} × ${item.quantity}`,
+                      ),
+                      '',
+                      `Total Items: ${items.reduce(
+                        (total, item) => total + item.quantity,
+                        0,
+                      )}`,
+                      `Total: ₹${cartTotal}`,
+                    ].join('\n')
 
-    window.open(
-      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
-      '_blank',
-    )
-  }}
-  className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
->
-  BUY ON WHATSAPP
-</button>
+                    window.open(
+                      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
+                      '_blank',
+                    )
+                  }}
+                  className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  BUY ON WHATSAPP
+                </button>
 
                 <Link
                   href="/products"

@@ -114,48 +114,54 @@ manufacturedBy:
       'Tiny Dot Foods Private Limited, 51, Kavarai Street, Athipet, Chennai - 600058.',
   },
   {
-    slug: 'black-rice-milk-mix',
-    name: 'Karuppu Kavuni Cocoa Mix',
-    tagline: 'Natural & Creamy For Everyday Energy',
-    descLines: ['Natural & Creamy', 'For Everyday Energy'],
-    image: '/products/black-rice-milk-mix.png',
-    category: 'kids',
-    badges: [...PRODUCT_BADGES],
+  slug: 'black-rice-milk-mix',
 
-    description:
-      'A wholesome cocoa mix made with black rice flakes, cocoa solids, milk solids and barley malt.',
+  name: 'Blacko Cocoa Mix',
 
-    ingredients:
-      'Brown sugar, Black rice flake, Cocoa solids, Milk solids, Barley malt.',
+  tagline: 'Natural & Creamy For Everyday Energy',
 
-    nutrition: [
-      'Energy: 389 kcal',
-      'Carbohydrates: 83.50 g',
-      'Sugars: 38.0 g',
-      'Protein: 10.4 g',
-      'Total Fat: 1.48 g',
-      'Sodium: 182 mg',
-      'Calcium: 218 mg',
-      'Iron: 10.78 mg',
-    ],
+  descLines: ['Natural & Creamy', 'For Everyday Energy'],
 
-    preparation:
-      'Add 1 tablespoon of Karuppu Kavuni Cocoa Mix to 90 ml of milk, cook for 3 minutes and enjoy.',
+  image: '/products/black-rice-milk-mix.png',
 
-    packSize: '250g',
+  category: 'kids',
 
-    price: '',
+  badges: [...PRODUCT_BADGES],
 
-    allergen: 'Contains Milk and Barley.',
+  description:
+    'A wholesome blacko cocoa mix made with black rice flakes, cocoa solids, milk solids and barley malt.',
 
-    storage:
-      'Store in a dry place, away from direct sunlight. Keep in an airtight container.',
+  ingredients:
+    'Brown sugar, Black rice flake, Cocoa solids, Milk solids, Barley malt.',
 
-    countryOfOrigin: 'India',
+  nutrition: [
+    'Energy: 389 kcal',
+    'Carbohydrates: 83.50 g',
+    'Sugars: 38.0 g',
+    'Protein: 10.4 g',
+    'Total Fat: 1.48 g',
+    'Sodium: 182 mg',
+    'Calcium: 218 mg',
+    'Iron: 10.78 mg',
+  ],
 
-    manufacturedBy:
-      'Tiny Dot Foods Private Limited, 51, Kavarai Street, Athipet, Chennai - 600058.',
-  },
+  preparation:
+    'Add 1 tablespoon of Blacko Cocoa Mix to 90 ml of milk, cook for 3 minutes and enjoy.',
+
+  packSize: '250g',
+
+  price: '',
+
+  allergen: 'Contains Milk and Barley.',
+
+  storage:
+    'Store in a dry place, away from direct sunlight. Keep in an airtight container.',
+
+  countryOfOrigin: 'India',
+
+  manufacturedBy:
+    'Tiny Dot Foods Private Limited, 51, Kavarai Street, Athipet, Chennai - 600058.',
+},
   {
     slug: 'cotton-milk-mix',
     name: 'Cotton Seed Milk Mix',
@@ -245,7 +251,7 @@ export const ADULT_PRODUCTS: Product[] = [
 },
 {
   slug: 'mudavattu-kilangu-rice-mix',
-  name: 'Mudavattu Kilangu Rice Mix',
+  name: 'Mudavaatukaal Rice Mix',
   tagline: 'Traditional Taste. Simple & Convenient.',
   descLines: ['Traditional Taste', 'Simple & Convenient'],
   image: '/products/mudavatu-rice-mix.png',
@@ -253,10 +259,10 @@ export const ADULT_PRODUCTS: Product[] = [
   badges: [...PRODUCT_BADGES],
 
   description:
-    'A traditional Mudavattu Kizhanghu rice mix blended with toor dal, green gram, urad dal, coriander, cumin seeds, pepper, chilli, tamarind, asafoetida and salt.',
+    'A traditional Mudavaatukaal rice mix blended with toor dal, green gram, urad dal, coriander, cumin seeds, pepper, chilli, tamarind, asafoetida and salt.',
 
   ingredients:
-    'Mudavaattu Kizhanghu, Toor dal, Green gram, Urad dal, Coriander, Cumin seeds, Pepper, Chilli, Tamarind, Asafoetida, Salt.',
+    'Mudavaatukaal, Toor dal, Green gram, Urad dal, Coriander, Cumin seeds, Pepper, Chilli, Tamarind, Asafoetida, Salt.',
 
   nutrition: [
     'Energy: 353.75 Kcals',
@@ -268,7 +274,7 @@ export const ADULT_PRODUCTS: Product[] = [
   ],
 
   preparation:
-    'Add enough quantity of Mudavattu Kizhanghu Rice Mix to cooked rice, add edible oil, mix and eat.',
+    'Add enough quantity of Mudavaatukaal Rice Mix to cooked rice, add edible oil, mix and eat.',
 
   packSize: '200g',
 
@@ -287,7 +293,7 @@ export const ADULT_PRODUCTS: Product[] = [
 },
    {
      slug: 'mudavaattu-kizhangu-soup-mix',
-     name: 'Mudavaattu Kizhangu Soup Mix',
+     name: 'Mudavaatukaal Soup Mix',
      tagline: 'Traditional & Wholesome Soup For Everyday Wellness',
      descLines: ['Traditional & Wholesome Soup', 'For Everyday Wellness'],
      image: '/products/mudavatu-soup-mix.png',
@@ -295,10 +301,10 @@ export const ADULT_PRODUCTS: Product[] = [
      badges: [...PRODUCT_BADGES],
 
      description:
-       'A traditional soup mix made with Mudavaattu Kizhangu, lentils, seeds, herbs and warming spices for a wholesome everyday soup.',
+       'A traditional soup mix made with Mudavaatukaal, lentils, seeds, herbs and warming spices for a wholesome everyday soup.',
 
      ingredients:
-       'Mudavaattu Kizhangu, Pepper, Fennel Seeds, Black Urad Dal, Toor Dal, Chana Dal, Cumin Seeds, Coriander, Dried Ginger, Garlic, Cinnamon, Curry Leaves, Salt, Clove, Turmeric & Bay Leaf.',
+       'Mudavaatukaal, Pepper, Fennel Seeds, Black Urad Dal, Toor Dal, Chana Dal, Cumin Seeds, Coriander, Dried Ginger, Garlic, Cinnamon, Curry Leaves, Salt, Clove, Turmeric & Bay Leaf.',
 
      nutrition: [
        'Energy: 394.43 kcal',
@@ -312,7 +318,7 @@ export const ADULT_PRODUCTS: Product[] = [
      ],
 
      preparation:
-       'Mix 1 teaspoon of Mudavaattu Kizhangu Soup Mix in 2 glasses of water. Boil for 5–7 minutes and consume warm.',
+       'Mix 1 teaspoon of Mudavaatukaal Soup Mix in 2 glasses of water. Boil for 5–7 minutes and consume warm.',
 
      packSize: '150g',
 
