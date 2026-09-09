@@ -8,6 +8,7 @@ import { BrandLogo } from '@/components/brand-logo'
 import { WhatsAppIcon } from '@/components/whatsapp-icon'
 import { NAV_LINKS, WHATSAPP_URL, ALL_PRODUCTS } from '@/lib/site'
 import { cn } from '@/lib/utils'
+import { CartButton } from '@/components/cart/cart-button'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
@@ -84,7 +85,10 @@ export function SiteHeader() {
             </div>
           )}
         </div>
-
+        {/* Desktop Cart */}
+          <div className="hidden lg:inline-flex">
+                <CartButton />
+          </div>
         {/* Desktop WhatsApp */}
         <a
           href={WHATSAPP_URL}
@@ -99,7 +103,10 @@ export function SiteHeader() {
         {/* =========================================================
             MOBILE CONTROLS
             ========================================================= */}
-
+{/* Mobile Cart */}
+<div className="lg:hidden">
+  <CartButton />
+</div>
         {/* Mobile Search Button */}
         <button
           type="button"

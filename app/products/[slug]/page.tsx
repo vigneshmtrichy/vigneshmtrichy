@@ -7,11 +7,10 @@ import { SiteFooter } from '@/components/site-footer'
 import { ProductGallery } from '@/components/product-gallery'
 import { RelatedProductsCarousel } from '@/components/related-products-carousel'
 import { ScrollReveal } from '@/components/scroll-reveal'
-
+import { AddToCartButton } from '@/components/cart/add-to-cart-button'
 import {
   ALL_PRODUCTS,
   getProductBySlug,
-  whatsAppOrderUrl,
 } from '@/lib/site'
 
 export function generateStaticParams() {
@@ -152,17 +151,10 @@ const galleryImages = Array.from({ length: 10 }, (_, index) => {
                   </div>
                 )}
 
-                {/* WhatsApp Order */}
-                <div className="mt-7">
-                  <a
-                    href={whatsAppOrderUrl(product.name)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                  >
-                    ORDER ON WHATSAPP
-                  </a>
-                </div>
+                {/* Add to Cart Button */}
+             <div className="mt-7">
+  <AddToCartButton product={product} />
+</div>
 
               </div>
             </div>
@@ -197,16 +189,9 @@ const galleryImages = Array.from({ length: 10 }, (_, index) => {
                 </div>
               )}
 
-              <div className="mt-5">
-                <a
-                  href={whatsAppOrderUrl(product.name)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                >
-                  ORDER ON WHATSAPP
-                </a>
-              </div>
+             <div className="mt-7">
+  <AddToCartButton product={product} />
+</div>
 
             </div>
 
@@ -407,7 +392,7 @@ const galleryImages = Array.from({ length: 10 }, (_, index) => {
                 </p>
 
                 <a
-                  href={whatsAppOrderUrl(product.name)}
+                  href="https://wa.me/919585808590"
                   target="_blank"
                   rel="noreferrer"
                   className="mt-7 inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"

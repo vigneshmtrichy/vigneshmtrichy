@@ -5,7 +5,14 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import type { Product } from '@/lib/site'
-
+const GALLERY_FOLDERS: Record<string, string> = {
+  'millet-abc': 'Meltiva-Nutrimix',
+  'pink-abc': 'Rubyblend-Nutrimix',
+  'cotton-milk-mix': 'Paruthipaal-mix',
+  'pirandai-rice-mix': 'Pirandai-rice-mix',
+  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
+  'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+}
 type RelatedProductsCarouselProps = {
   products: Product[]
 }
@@ -61,7 +68,11 @@ export function RelatedProductsCarousel({
             >
               <div className="relative aspect-square overflow-hidden bg-background">
                 <Image
-                  src={item.image || '/placeholder.svg'}
+                  src={
+  GALLERY_FOLDERS[item.slug]
+    ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
+    : item.image || '/placeholder.svg'
+}
                   alt={`${item.name} product`}
                   fill
                   sizes="50vw"
@@ -127,7 +138,11 @@ export function RelatedProductsCarousel({
                         >
                           <div className="relative aspect-square overflow-hidden bg-background">
                             <Image
-                              src={item.image || '/placeholder.svg'}
+                              src={
+  GALLERY_FOLDERS[item.slug]
+    ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
+    : item.image || '/placeholder.svg'
+}
                               alt={`${item.name} product`}
                               fill
                               sizes="25vw"

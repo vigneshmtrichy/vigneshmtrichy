@@ -2,7 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Mulish } from 'next/font/google'
 import './globals.css'
-
+import { CartProvider } from '@/components/cart/cart-context'
 const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-display',
@@ -110,7 +110,9 @@ export default function RootLayout({
           }}
         />
 
-        {children}
+        <CartProvider>
+         {children}
+        </CartProvider>
 
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
