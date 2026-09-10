@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -15,6 +16,44 @@ import {
 import { readdir } from 'fs/promises'
 import path from 'path'
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const product = getProductBySlug(slug)
+
+  if (!product) {
+    return {
+      title: 'Product Not Found | Tenoo',
+    }
+  }
+
+  return {
+    title: `${product.name} | Tenoo`,
+    description:
+      product.description ||
+      `${product.name} by Tenoo — thoughtfully crafted food made for everyday goodness.`,
+    alternates: {
+      canonical: `https://www.tenoo.in/products/${product.slug}`,
+    },
+    openGraph: {
+      title: `${product.name} | Tenoo`,
+      description:
+        product.description ||
+        `${product.name} by Tenoo — thoughtfully crafted food made for everyday goodness.`,
+      url: `https://www.tenoo.in/products/${product.slug}`,
+      type: 'website',
+      images: [
+        {
+          url: product.image,
+          alt: product.name,
+        },
+      ],
+    },
+  }
+}
 export function generateStaticParams() {
   return ALL_PRODUCTS.map((product) => ({
     slug: product.slug,
@@ -70,6 +109,28 @@ const galleryImages = galleryFolder
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
   )
+  const productSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.description || product.tagline,
+  image: galleryImages.length > 0 ? galleryImages : [product.image],
+  brand: {
+    '@type': 'Brand',
+    name: 'Tenoo',
+  },
+  url: `https://www.tenoo.in/products/${product.slug}`,
+  ...(product.price
+    ? {
+        offers: {
+          '@type': 'Offer',
+          price: product.price,
+          priceCurrency: 'INR',
+          url: `https://www.tenoo.in/products/${product.slug}`,
+        },
+      }
+    : {}),
+}
 
   return (
     <div className="flex min-h-screen flex-col">

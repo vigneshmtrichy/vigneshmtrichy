@@ -3,7 +3,16 @@ import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { ScrollReveal } from '@/components/scroll-reveal'
 import { KIDS_PRODUCTS, ADULT_PRODUCTS } from '@/lib/site'
+import type { Metadata } from 'next'
 
+export const metadata: Metadata = {
+  title: 'Our Products | Tenoo',
+  description:
+    'Explore Tenoo food and nutrition products made with thoughtfully selected Indian ingredients for children, families and everyday wellness.',
+  alternates: {
+    canonical: 'https://www.tenoo.in/products',
+  },
+}
 
 export default function ProductsPage() {
   return (

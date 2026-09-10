@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ScrollReveal } from '@/components/scroll-reveal'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | Tenoo',
+  description:
+    'Read Tenoo Privacy Policy to understand how we collect, use, protect and handle information when you interact with our website.',
+  alternates: {
+    canonical: 'https://www.tenoo.in/privacy',
+  },
+}
 
 const SECTIONS = [
   {

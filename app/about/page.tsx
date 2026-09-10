@@ -1,8 +1,16 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
-
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ScrollReveal } from '@/components/scroll-reveal'
+export const metadata: Metadata = {
+  title: 'About Tenoo | Our Story & Purpose',
+  description:
+    'Learn about Tenoo, our story, our inspiration from Indian food traditions, and our purpose of creating thoughtful food products for every generation.',
+  alternates: {
+    canonical: 'https://www.tenoo.in/about',
+  },
+}
 
 export default function AboutPage() {
   return (

@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ScrollReveal } from '@/components/scroll-reveal'
+
+export const metadata: Metadata = {
+  title: 'Terms & Conditions | Tenoo',
+  description:
+    'Read Tenoo Terms & Conditions covering products, orders, payments, cancellation, refunds, shipping, website use and more.',
+  alternates: {
+    canonical: 'https://www.tenoo.in/terms',
+  },
+}
 
 const SECTIONS = [
   {
