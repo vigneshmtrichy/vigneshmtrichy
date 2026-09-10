@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
 
@@ -24,6 +25,83 @@ export default function CartPage() {
     updateQuantity,
     cartTotal,
   } = useCart()
+
+  const [customerName, setCustomerName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [pincode, setPincode] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+
+  const [error, setError] = useState('')
+
+  const totalItems = items.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  )
+
+  const handleWhatsAppOrder = () => {
+    const cleanPhone = phone.replace(/\D/g, '')
+    const cleanPincode = pincode.replace(/\D/g, '')
+
+    if (!customerName.trim()) {
+      setError('Please enter your name.')
+      return
+    }
+
+    if (cleanPhone.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number.')
+      return
+    }
+
+    if (!address.trim()) {
+      setError('Please enter your delivery address.')
+      return
+    }
+
+    if (cleanPincode.length !== 6) {
+      setError('Please enter a valid 6-digit pincode.')
+      return
+    }
+
+    if (!city.trim()) {
+      setError('Please enter your city.')
+      return
+    }
+
+    if (!state.trim()) {
+      setError('Please enter your state.')
+      return
+    }
+
+    setError('')
+
+    const message = [
+      'Hello TENOO, I would like to place an order.',
+      '',
+      'CUSTOMER DETAILS',
+      `Name: ${customerName.trim()}`,
+      `Phone: ${cleanPhone}`,
+      `Address: ${address.trim()}`,
+      `Pincode: ${cleanPincode}`,
+      `City: ${city.trim()}`,
+      `State: ${state.trim()}`,
+      '',
+      'ORDER DETAILS',
+      ...items.map(
+        (item) =>
+          `${item.product.name} × ${item.quantity}`,
+      ),
+      '',
+      `Total Items: ${totalItems}`,
+      `Total: ₹${cartTotal}`,
+    ].join('\n')
+
+    window.open(
+      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
+      '_blank',
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -145,69 +223,255 @@ export default function CartPage() {
                 })}
               </div>
 
-              {/* ORDER SUMMARY */}
+              {/* CUSTOMER DETAILS + ORDER SUMMARY */}
               <div className="h-fit rounded-3xl border border-border bg-card p-6">
+
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-                  ORDER SUMMARY
+                  DELIVERY DETAILS
                 </p>
 
-                <div className="mt-5 flex items-center justify-between border-b border-border pb-4">
-                  <span className="text-sm text-muted-foreground">
-                    Items
-                  </span>
+                <div className="mt-5 space-y-3">
 
-                  <span className="text-sm font-semibold text-primary">
-                    {items.reduce(
-                      (total, item) => total + item.quantity,
-                      0,
-                    )}
-                  </span>
+                  {/* NAME */}
+                  <div>
+                    <label
+                      htmlFor="customer-name"
+                      className="mb-1.5 block text-xs font-semibold text-primary"
+                    >
+                      Full Name *
+                    </label>
+
+                     <input
+                          id="customer-name"
+                          type="text"
+                          value={customerName}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                            setCustomerName(value)
+                            setError('')
+                          }}
+                          placeholder="Enter your name"
+                          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
+                        />
+                  </div>
+
+                  {/* PHONE */}
+                  <div>
+                    <label
+                      htmlFor="customer-phone"
+                      className="mb-1.5 block text-xs font-semibold text-primary"
+                    >
+                      Mobile Number *
+                    </label>
+
+                    <input
+                      id="customer-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={phone}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, 10)
+
+                        setPhone(value)
+                        setError('')
+                      }}
+                      placeholder="10-digit mobile number"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
+                    />
+                  </div>
+
+                  {/* ADDRESS */}
+                  <div>
+                    <label
+                      htmlFor="customer-address"
+                      className="mb-1.5 block text-xs font-semibold text-primary"
+                    >
+                      Delivery Address *
+                    </label>
+
+                    <textarea
+                      id="customer-address"
+                      rows={3}
+                      value={address}
+                      onChange={(e) => {
+                        setAddress(e.target.value)
+                        setError('')
+                      }}
+                      placeholder="House no, street, area"
+                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
+                    />
+                  </div>
+
+                  {/* PINCODE */}
+                  <div>
+                    <label
+                      htmlFor="customer-pincode"
+                      className="mb-1.5 block text-xs font-semibold text-primary"
+                    >
+                      Pincode *
+                    </label>
+
+                    <input
+                      id="customer-pincode"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={pincode}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, 6)
+
+                        setPincode(value)
+                        setError('')
+                      }}
+                      placeholder="6-digit pincode"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
+                    />
+                  </div>
+
+                  {/* CITY + STATE */}
+                  <div className="grid grid-cols-2 gap-3">
+
+                    <div>
+                      <label
+                        htmlFor="customer-city"
+                        className="mb-1.5 block text-xs font-semibold text-primary"
+                      >
+                        City *
+                      </label>
+
+                      <input
+                        id="customer-city"
+                        type="text"
+                        value={city}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                          setCity(value)
+                          setError('')
+                        }}
+                        placeholder="City"
+                        className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-primary outline-none transition focus:border-accent"
+                      />
+                    </div>
+
+                    <div>
+                        <label
+                          htmlFor="customer-state"
+                          className="mb-1.5 block text-xs font-semibold text-primary"
+                        >
+                          State *
+                        </label>
+
+                        <select
+                          id="customer-state"
+                          value={state}
+                          onChange={(e) => {
+                            setState(e.target.value)
+                            setError('')
+                          }}
+                          className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-primary outline-none transition focus:border-accent"
+                        >
+                          <option value="">Select State</option>
+                          <option value="Andhra Pradesh">Andhra Pradesh</option>
+                          <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                          <option value="Assam">Assam</option>
+                          <option value="Bihar">Bihar</option>
+                          <option value="Chhattisgarh">Chhattisgarh</option>
+                          <option value="Goa">Goa</option>
+                          <option value="Gujarat">Gujarat</option>
+                          <option value="Haryana">Haryana</option>
+                          <option value="Himachal Pradesh">Himachal Pradesh</option>
+                          <option value="Jharkhand">Jharkhand</option>
+                          <option value="Karnataka">Karnataka</option>
+                          <option value="Kerala">Kerala</option>
+                          <option value="Madhya Pradesh">Madhya Pradesh</option>
+                          <option value="Maharashtra">Maharashtra</option>
+                          <option value="Manipur">Manipur</option>
+                          <option value="Meghalaya">Meghalaya</option>
+                          <option value="Mizoram">Mizoram</option>
+                          <option value="Nagaland">Nagaland</option>
+                          <option value="Odisha">Odisha</option>
+                          <option value="Punjab">Punjab</option>
+                          <option value="Rajasthan">Rajasthan</option>
+                          <option value="Sikkim">Sikkim</option>
+                          <option value="Tamil Nadu">Tamil Nadu</option>
+                          <option value="Telangana">Telangana</option>
+                          <option value="Tripura">Tripura</option>
+                          <option value="Uttar Pradesh">Uttar Pradesh</option>
+                          <option value="Uttarakhand">Uttarakhand</option>
+                          <option value="West Bengal">West Bengal</option>
+                          <option value="Andaman and Nicobar Islands">
+                            Andaman and Nicobar Islands
+                          </option>
+                          <option value="Chandigarh">Chandigarh</option>
+                          <option value="Dadra and Nagar Haveli and Daman and Diu">
+                            Dadra and Nagar Haveli and Daman and Diu
+                          </option>
+                          <option value="Delhi">Delhi</option>
+                          <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                          <option value="Ladakh">Ladakh</option>
+                          <option value="Lakshadweep">Lakshadweep</option>
+                          <option value="Puducherry">Puducherry</option>
+                        </select>
+                      </div>
+
+                  </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="font-semibold text-primary">
-                    Total
-                  </span>
+                {/* ERROR */}
+                {error && (
+                  <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
+                    {error}
+                  </p>
+                )}
 
-                  <span className="font-serif text-2xl font-bold text-primary">
-                    ₹{cartTotal}
-                  </span>
+                {/* ORDER SUMMARY */}
+                <div className="mt-7 border-t border-border pt-6">
+
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                    ORDER SUMMARY
+                  </p>
+
+                  <div className="mt-5 flex items-center justify-between border-b border-border pb-4">
+                    <span className="text-sm text-muted-foreground">
+                      Items
+                    </span>
+
+                    <span className="text-sm font-semibold text-primary">
+                      {totalItems}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="font-semibold text-primary">
+                      Total
+                    </span>
+
+                    <span className="font-serif text-2xl font-bold text-primary">
+                      ₹{cartTotal}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleWhatsAppOrder}
+                    className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  >
+                    BUY ON WHATSAPP
+                  </button>
+
+                  <Link
+                    href="/products"
+                    className="mt-3 block text-center text-sm font-semibold text-accent"
+                  >
+                    Continue Shopping
+                  </Link>
+
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const message = [
-                      'Hello TENOO, I would like to order:',
-                      '',
-                      ...items.map(
-                        (item) =>
-                          `${item.product.name} × ${item.quantity}`,
-                      ),
-                      '',
-                      `Total Items: ${items.reduce(
-                        (total, item) => total + item.quantity,
-                        0,
-                      )}`,
-                      `Total: ₹${cartTotal}`,
-                    ].join('\n')
-
-                    window.open(
-                      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
-                      '_blank',
-                    )
-                  }}
-                  className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                >
-                  BUY ON WHATSAPP
-                </button>
-
-                <Link
-                  href="/products"
-                  className="mt-3 block text-center text-sm font-semibold text-accent"
-                >
-                  Continue Shopping
-                </Link>
               </div>
 
             </div>
