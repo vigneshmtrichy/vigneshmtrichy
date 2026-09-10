@@ -132,9 +132,16 @@ const galleryImages = galleryFolder
     : {}),
 }
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+return (
+  <div className="flex min-h-screen flex-col">
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(productSchema).replace(/</g, '\\u003c'),
+      }}
+    />
+
+    <SiteHeader />
 
       <main className="flex-1">
 
