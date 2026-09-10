@@ -85,7 +85,6 @@ const FOOTER_LINKS = [
   { label: 'Our Products', href: '/products' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact Us', href: '/contact' },
-  { label: 'Blog', href: '#' },
   { label: 'FAQs', href: '/faq' },
   { label: 'Terms & Conditions', href: '/terms' },
   { label: 'Privacy Policy', href: '/privacy' },

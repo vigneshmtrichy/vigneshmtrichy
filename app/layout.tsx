@@ -24,12 +24,12 @@ export const metadata: Metadata = {
   },
 
   description:
-    'TENOO brings thoughtfully crafted food products inspired by Indian ingredients, made for little ones, families and everyday living.',
+    'Tenoo brings thoughtfully crafted food products inspired by Indian ingredients, made for little ones, families and everyday living.',
 
   keywords: [
-    'TENOO',
-    'TENOO Foods',
-    'TENOO Nutrition',
+    'Tenoo',
+    'Tenoo Foods',
+    'Tenoo Nutrition',
     'Indian food products',
     'millet food products',
     'Millet ABC',
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     'Mudavattu Kilangu',
   ],
 
-  authors: [{ name: 'TENOO' }],
-  creator: 'TENOO',
-  publisher: 'TENOO',
+  authors: [{ name: 'Tenoo' }],
+  creator: 'Tenoo',
+  publisher: 'Tenoo',
 
   alternates: {
     canonical: 'https://www.tenoo.in',
@@ -56,8 +56,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.tenoo.in',
-    siteName: 'TENOO',
-    title: 'TENOO | Good Food. Made for Every Generation.',
+    siteName: 'Tenoo',
+    title: 'Tenoo | Good Food. Made for Every Generation.',
     description:
       'Thoughtfully crafted food products inspired by Indian ingredients, made for little ones, families and everyday living.',
     images: [
@@ -65,14 +65,14 @@ export const metadata: Metadata = {
         url: '/tenoo-logo.png',
         width: 1200,
         height: 630,
-        alt: 'TENOO — Good Food. Made for Every Generation.',
+        alt: 'Tenoo — Good Food. Made for Every Generation.',
       },
     ],
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'TENOO | Good Food. Made for Every Generation.',
+    title: 'Tenoo | Good Food. Made for Every Generation.',
     description:
       'Thoughtfully crafted food products inspired by Indian ingredients, made for little ones, families and everyday living.',
     images: ['/tenoo-logo.png'],
@@ -87,9 +87,17 @@ export const viewport: Viewport = {
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'TENOO',
+  name: 'Tenoo',
   url: 'https://www.tenoo.in',
   logo: 'https://www.tenoo.in/tenoo-logo.png',
+}
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Tenoo.in',
+  alternateName: 'Tenoo',
+  url: 'https://www.tenoo.in/',
 }
 
 export default function RootLayout({
@@ -109,7 +117,12 @@ export default function RootLayout({
             __html: JSON.stringify(organizationSchema),
           }}
         />
-
+        <script
+          type="application/ld+json"
+           dangerouslySetInnerHTML={{
+             __html: JSON.stringify(websiteSchema),
+           }}
+/>
         <CartProvider>
          {children}
         </CartProvider>
