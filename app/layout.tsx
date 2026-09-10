@@ -86,10 +86,20 @@ export const viewport: Viewport = {
 
 const organizationSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
+  '@type': 'OnlineStore',
   name: 'Tenoo',
-  url: 'https://www.tenoo.in',
+  alternateName: 'Tenoo.in',
+  url: 'https://www.tenoo.in/',
   logo: 'https://www.tenoo.in/tenoo-logo.png',
+  description:
+    'Tenoo brings thoughtfully crafted food products inspired by Indian ingredients, made for little ones, families and everyday living.',
+  telephone: '+919585808590',
+  email: 'info@tenoo.in',
+  sameAs: [
+    'https://www.instagram.com/tenoo.ventures/',
+    'https://www.facebook.com/profile.php?id=61594267881063',
+    'https://www.youtube.com/@Tenoo.ventures',
+  ],
 }
 
 const websiteSchema = {
