@@ -131,7 +131,30 @@ const galleryImages = galleryFolder
       }
     : {}),
 }
-
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Home',
+      item: 'https://www.tenoo.in/',
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Our Products',
+      item: 'https://www.tenoo.in/products',
+    },
+    {
+      '@type': 'ListItem',
+      position: 3,
+      name: product.name,
+      item: `https://www.tenoo.in/products/${product.slug}`,
+    },
+  ],
+}
 return (
   <div className="flex min-h-screen flex-col">
     <script
@@ -141,6 +164,12 @@ return (
       }}
     />
 
+  <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(breadcrumbSchema).replace(/</g, '\\u003c'),
+      }}
+    />
     <SiteHeader />
 
       <main className="flex-1">
