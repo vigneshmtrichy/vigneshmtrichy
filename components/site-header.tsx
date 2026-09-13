@@ -32,8 +32,17 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-md">
+    <header
+      onClickCapture={(event) => {
+        const target = event.target as HTMLElement
+        const link = target.closest('a')
 
+        if (link?.getAttribute('href') === '/') {
+          sessionStorage.setItem('tenoo-internal-home', '1')
+        }
+      }}
+      className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-md"
+    >
       {/* =========================================================
           DESKTOP / TABLET TOP ROW
           ========================================================= */}
@@ -85,10 +94,12 @@ export function SiteHeader() {
             </div>
           )}
         </div>
+
         {/* Desktop Cart */}
-          <div className="hidden lg:inline-flex">
-                <CartButton />
-          </div>
+        <div className="hidden lg:inline-flex">
+          <CartButton />
+        </div>
+
         {/* Desktop WhatsApp */}
         <a
           href={WHATSAPP_URL}
@@ -103,10 +114,11 @@ export function SiteHeader() {
         {/* =========================================================
             MOBILE CONTROLS
             ========================================================= */}
-{/* Mobile Cart */}
-<div className="lg:hidden">
-  <CartButton />
-</div>
+        {/* Mobile Cart */}
+        <div className="lg:hidden">
+          <CartButton />
+        </div>
+
         {/* Mobile Search Button */}
         <button
           type="button"
@@ -250,7 +262,6 @@ export function SiteHeader() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    onClick={closeMobileMenu}
                     className={cn(
                       'flex min-h-11 items-center rounded-xl px-4 py-2.5 text-[15px] font-semibold text-foreground/80 transition-colors hover:bg-secondary hover:text-primary',
                       isProductsActive &&

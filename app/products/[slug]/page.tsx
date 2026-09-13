@@ -254,15 +254,39 @@ return (
                   ))}
                 </div>
 
-                {/* Pack Size */}
-                {product.packSize && (
-                  <div className="mt-6">
-                    <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
-                      Net Weight: {product.packSize}
-                    </span>
-                  </div>
-                )}
+             {/* Pack Size */}
+{product.packSize && (
+  <div className="mt-6">
+    <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
+      Net Weight: {product.packSize}
+    </span>
+  </div>
+)}
+{/* PRICE */}
+{product.price && (
+  <div className="mt-5 flex items-center gap-3">
+    {product.mrp && (
+      <span className="text-base text-muted-foreground line-through">
+        ₹{product.mrp}
+      </span>
+    )}
 
+    <span className="text-2xl font-bold text-primary">
+      ₹{product.price}
+    </span>
+
+    {product.mrp && Number(product.mrp) > Number(product.price) && (
+      <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-600">
+        {Math.round(
+          ((Number(product.mrp) - Number(product.price)) /
+            Number(product.mrp)) *
+            100
+        )}
+        % OFF
+      </span>
+    )}
+  </div>
+)}
                 {/* Add to Cart Button */}
              <div className="mt-7">
   <AddToCartButton product={product} />

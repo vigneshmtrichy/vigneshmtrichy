@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import type { Product } from '@/lib/site'
+
 const GALLERY_FOLDERS: Record<string, string> = {
   'millet-abc': 'Meltiva-Nutrimix',
   'pink-abc': 'Rubyblend-Nutrimix',
@@ -14,6 +15,7 @@ const GALLERY_FOLDERS: Record<string, string> = {
   'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
   'black-rice-milk-mix': 'blacko-cocoa-mix',
 }
+
 type RelatedProductsCarouselProps = {
   products: Product[]
 }
@@ -70,10 +72,10 @@ export function RelatedProductsCarousel({
               <div className="relative aspect-square overflow-hidden bg-background">
                 <Image
                   src={
-  GALLERY_FOLDERS[item.slug]
-    ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
-    : item.image || '/placeholder.svg'
-}
+                    GALLERY_FOLDERS[item.slug]
+                      ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
+                      : item.image || '/placeholder.svg'
+                  }
                   alt={`${item.name} product`}
                   fill
                   sizes="50vw"
@@ -85,6 +87,33 @@ export function RelatedProductsCarousel({
                 <h3 className="font-serif text-sm font-bold leading-tight text-primary">
                   {item.name}
                 </h3>
+
+                {/* PRICE */}
+                {item.price && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {item.mrp && (
+                      <span className="text-xs text-muted-foreground line-through">
+                        ₹{item.mrp}
+                      </span>
+                    )}
+
+                    <span className="text-sm font-bold text-primary">
+                      ₹{item.price}
+                    </span>
+
+                    {item.mrp &&
+                      Number(item.mrp) > Number(item.price) && (
+                        <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
+                          {Math.round(
+                            ((Number(item.mrp) - Number(item.price)) /
+                              Number(item.mrp)) *
+                              100
+                          )}
+                          % OFF
+                        </span>
+                      )}
+                  </div>
+                )}
 
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   View product →
@@ -140,10 +169,10 @@ export function RelatedProductsCarousel({
                           <div className="relative aspect-square overflow-hidden bg-background">
                             <Image
                               src={
-  GALLERY_FOLDERS[item.slug]
-    ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
-    : item.image || '/placeholder.svg'
-}
+                                GALLERY_FOLDERS[item.slug]
+                                  ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
+                                  : item.image || '/placeholder.svg'
+                              }
                               alt={`${item.name} product`}
                               fill
                               sizes="25vw"
@@ -155,6 +184,35 @@ export function RelatedProductsCarousel({
                             <h3 className="font-serif text-base font-bold text-primary lg:text-lg">
                               {item.name}
                             </h3>
+
+                            {/* PRICE */}
+                            {item.price && (
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                {item.mrp && (
+                                  <span className="text-sm text-muted-foreground line-through">
+                                    ₹{item.mrp}
+                                  </span>
+                                )}
+
+                                <span className="text-base font-bold text-primary">
+                                  ₹{item.price}
+                                </span>
+
+                                {item.mrp &&
+                                  Number(item.mrp) >
+                                    Number(item.price) && (
+                                    <span className="rounded-full bg-orange-100 px-2 py-1 text-[11px] font-bold text-orange-600">
+                                      {Math.round(
+                                        ((Number(item.mrp) -
+                                          Number(item.price)) /
+                                          Number(item.mrp)) *
+                                          100
+                                      )}
+                                      % OFF
+                                    </span>
+                                  )}
+                              </div>
+                            )}
 
                             <p className="mt-1 text-xs text-muted-foreground">
                               View product →

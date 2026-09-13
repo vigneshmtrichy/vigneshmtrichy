@@ -166,3 +166,42 @@
     transition-duration: 0.01ms !important;
   }
 }
+/* TENOO INTRO ANIMATION */
+
+@keyframes tenooLogoReveal {
+  0% {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(20px) scale(0.88);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tenooTaglineReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tenooLineReveal {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}

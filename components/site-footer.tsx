@@ -107,51 +107,26 @@ export function SiteFooter() {
     <footer className="bg-primary text-primary-foreground">
       <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {/* MAIN FOOTER */}
+        <div className="grid gap-10 md:grid-cols-3 lg:gap-14">
 
           {/* BRAND */}
           <div>
             <BrandLogo tone="light" />
 
-            <div className="mt-5 flex items-center gap-3">
-              {SOCIALS.map(({ label, href, icon: Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20"
-                  aria-label={label}
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
-
-            <div className="mt-8">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-primary-foreground/70">
-                Get in Touch
-              </h3>
-
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 text-sm text-primary-foreground/85 transition-colors hover:text-primary-foreground"
-              >
-                <WhatsAppIcon className="h-5 w-5 text-leaf" />
-                Chat with us on WhatsApp
-              </a>
+            <div className="mt-2 space-y-0.5 text-[10px] leading-4 text-primary-foreground/60">
+             
+              <p>FSSAI No.: 22426590000330</p>
             </div>
           </div>
 
           {/* FOOTER LINKS */}
-          <div className="lg:col-span-2">
+          <div className="md:pl-2 lg:pl-4">
             <h3 className="text-sm font-bold uppercase tracking-wide text-primary-foreground/70">
               Explore
             </h3>
 
-            <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+            <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
               {FOOTER_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
@@ -168,12 +143,52 @@ export function SiteFooter() {
             </ul>
           </div>
 
+          {/* SOCIAL + CONTACT */}
+          <div className="md:pl-4 lg:pl-8">
+
+            <h3 className="text-sm font-bold uppercase tracking-wide text-primary-foreground/70">
+              Follow Us
+            </h3>
+
+            <div className="mt-4 flex items-center gap-3">
+              {SOCIALS.map(({ label, href, icon: Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20"
+                  aria-label={label}
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-7">
+              <h3 className="text-sm font-bold uppercase tracking-wide text-primary-foreground/70">
+                Get in Touch
+              </h3>
+
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 text-sm text-primary-foreground/85 transition-colors hover:text-primary-foreground"
+              >
+                <WhatsAppIcon className="h-5 w-5 text-leaf" />
+                Chat with us on WhatsApp
+              </a>
+            </div>
+
+          </div>
+
         </div>
 
         {/* BOTTOM */}
-        <div className="mt-8 flex flex-col items-start justify-between gap-3 border-t border-primary-foreground/15 pt-5 text-xs text-primary-foreground/70 md:flex-row md:items-center">
-          <p>© 2025 Tenoo. All Rights Reserved.</p>
-        </div>
+        <div className="mt-8 border-t border-primary-foreground/15 pt-5 text-center text-xs text-primary-foreground/70">
+  <p>© 2026 Tenoo Ventures. All Rights Reserved.</p>
+</div>
 
       </div>
     </footer>

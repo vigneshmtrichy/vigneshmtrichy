@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { ArrowRight, Heart, Leaf, Sun, User, Users } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
 import { ADULT_PRODUCTS, KIDS_PRODUCTS } from '@/lib/site'
-const FEATURED_KIDS_PRODUCTS = KIDS_PRODUCTS.slice(0, 3)
 
+const FEATURED_KIDS_PRODUCTS = KIDS_PRODUCTS.slice(0, 3)
 
 function ViewAll({
   variant,
@@ -102,7 +102,6 @@ export function Generations() {
                   min-w-[58%]
                   shrink-0
                   snap-start
-
                   sm:min-w-0
                   sm:shrink
                 "
@@ -122,13 +121,21 @@ export function Generations() {
             ===================================================== */}
         <div className="relative overflow-hidden rounded-3xl bg-[#E8F5EC] p-5 sm:p-6 max-md:rounded-[26px] max-md:p-4">
 
-          <Leaf className="pointer-events-none absolute -left-1 top-5 h-20 w-20 -rotate-45 text-emerald-200/70 max-md:h-16 max-md:w-16" />
+          <Leaf
+            className="pointer-events-none absolute -left-1 top-5 h-20 w-20 -rotate-45 text-emerald-200/70 max-md:h-16 max-md:w-16"
+          />
 
-          <Leaf className="pointer-events-none absolute -right-2 top-2 h-16 w-16 rotate-45 text-emerald-200/70 max-md:h-14 max-md:w-14" />
+          <Leaf
+            className="pointer-events-none absolute -right-2 top-2 h-16 w-16 rotate-45 text-emerald-200/70 max-md:h-14 max-md:w-14"
+          />
 
-          <Leaf className="pointer-events-none absolute -bottom-4 -left-1 h-20 w-20 -rotate-12 text-emerald-200/60 max-md:h-16 max-md:w-16" />
+          <Leaf
+            className="pointer-events-none absolute -bottom-4 -left-1 h-20 w-20 -rotate-12 text-emerald-200/60 max-md:h-16 max-md:w-16"
+          />
 
-          <Leaf className="pointer-events-none absolute -bottom-3 right-3 h-16 w-16 rotate-45 text-emerald-200/60 max-md:h-14 max-md:w-14" />
+          <Leaf
+            className="pointer-events-none absolute -bottom-3 right-3 h-16 w-16 rotate-45 text-emerald-200/60 max-md:h-14 max-md:w-14"
+          />
 
           <div className="relative z-10 text-center">
             <h3 className="inline-flex items-center gap-2 font-serif text-2xl font-bold text-emerald-900 max-md:text-[22px]">
@@ -159,21 +166,20 @@ export function Generations() {
             "
           >
             {ADULT_PRODUCTS.map((product) => (
-  <div
-    key={product.slug}
-    className="
-      w-[58%]
-      shrink-0
-      snap-start
-
-      sm:w-auto
-      sm:min-w-0
-      sm:shrink
-    "
-  >
-    <ProductCard product={product} />
-  </div>
-))}
+              <div
+                key={product.slug}
+                className="
+                  w-[58%]
+                  shrink-0
+                  snap-start
+                  sm:w-auto
+                  sm:min-w-0
+                  sm:shrink
+                "
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
           </div>
 
           <div className="relative z-10">

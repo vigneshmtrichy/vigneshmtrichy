@@ -39,6 +39,18 @@ export default function CartPage() {
     (total, item) => total + item.quantity,
     0,
   )
+  const mrpTotal = items.reduce(
+  (total, item) =>
+    total + (Number(item.product.mrp) || 0) * item.quantity,
+  0,
+)
+
+const totalSavings = mrpTotal - cartTotal
+
+const savingsPercentage =
+  mrpTotal > 0
+    ? Math.round((totalSavings / mrpTotal) * 100)
+    : 0
 
   const handleWhatsAppOrder = () => {
     const cleanPhone = phone.replace(/\D/g, '')
@@ -429,49 +441,92 @@ export default function CartPage() {
                   </p>
                 )}
 
-                {/* ORDER SUMMARY */}
-                <div className="mt-7 border-t border-border pt-6">
+               {/* ORDER SUMMARY */}
+<div className="mt-7 border-t border-border pt-6">
 
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-                    ORDER SUMMARY
-                  </p>
+  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+    ORDER SUMMARY
+  </p>
 
-                  <div className="mt-5 flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-sm text-muted-foreground">
-                      Items
-                    </span>
+  {/* ITEMS */}
+  <div className="mt-5 flex items-center justify-between border-b border-border pb-4">
+    <span className="text-sm text-muted-foreground">
+      Items
+    </span>
 
-                    <span className="text-sm font-semibold text-primary">
-                      {totalItems}
-                    </span>
-                  </div>
+    <span className="text-sm font-semibold text-primary">
+      {totalItems}
+    </span>
+  </div>
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="font-semibold text-primary">
-                      Total
-                    </span>
+  {/* MRP TOTAL */}
+  <div className="mt-4 flex items-center justify-between">
+    <span className="text-sm text-muted-foreground">
+      MRP Total
+    </span>
 
-                    <span className="font-serif text-2xl font-bold text-primary">
-                      ₹{cartTotal}
-                    </span>
-                  </div>
+    <span className="text-sm text-muted-foreground line-through">
+      ₹{mrpTotal.toLocaleString('en-IN')}
+    </span>
+  </div>
 
-                  <button
-                    type="button"
-                    onClick={handleWhatsAppOrder}
-                    className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                  >
-                    BUY ON WHATSAPP
-                  </button>
+  {/* SAVINGS */}
+  {totalSavings > 0 && (
+    <div className="mt-3 flex items-center justify-between rounded-xl bg-green-50 px-3 py-2.5">
+      <span className="text-sm font-semibold text-green-700">
+        You Save
+      </span>
 
-                  <Link
-                    href="/products"
-                    className="mt-3 block text-center text-sm font-semibold text-accent"
-                  >
-                    Continue Shopping
-                  </Link>
+      <span className="text-sm font-bold text-green-700">
+        ₹{totalSavings.toLocaleString('en-IN')}
+        {savingsPercentage > 0 && (
+          <span className="ml-1">
+            ({savingsPercentage}% OFF)
+          </span>
+        )}
+      </span>
+    </div>
+  )}
 
-                </div>
+  {/* TOTAL */}
+  <div className="mt-5 flex items-center justify-between">
+    <span className="font-semibold text-primary">
+      Total
+    </span>
+
+    <span className="font-serif text-2xl font-bold text-primary">
+      ₹{cartTotal.toLocaleString('en-IN')}
+    </span>
+  </div>
+
+  {/* SAVINGS MESSAGE */}
+  {totalSavings > 0 && (
+    <p className="mt-2 text-center text-xs font-medium text-green-700">
+      🎉 You’re saving ₹{totalSavings.toLocaleString('en-IN')} on this order!
+    </p>
+  )}
+
+  <button
+    type="button"
+    onClick={handleWhatsAppOrder}
+    className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+  >
+    BUY ON WHATSAPP
+  </button>
+
+  <p className="mt-3 text-center text-[11px] leading-4 text-muted-foreground">
+    Delivery charges & payment details will be confirmed directly on WhatsApp.
+  </p>
+
+  <Link
+    href="/products"
+    className="mt-3 block text-center text-sm font-semibold text-accent"
+  >
+    Continue Shopping
+  </Link>
+
+</div>
+               
               </div>
 
             </div>

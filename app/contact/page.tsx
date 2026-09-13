@@ -5,6 +5,7 @@ import {
   Mail,
   MessageCircle,
   ArrowUpRight,
+  MapPin,
 } from "lucide-react"
 
 import { SiteHeader } from "@/components/site-header"
@@ -130,6 +131,31 @@ ${message}`
                     info@tenoo.in
                   </p>
                 </a>
+                   <div className="group rounded-2xl border border-border bg-white p-7 transition-transform hover:-translate-y-1 md:p-8">
+          <div className="flex items-start justify-between">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-primary">
+              <MapPin className="h-6 w-6" />
+            </div>
+          </div>
+
+          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+            Visit Us
+          </p>
+
+          <h2 className="mt-2 font-serif text-3xl font-bold text-primary">
+            Our Address
+          </h2>
+
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Tenoo Ventures
+            <br />
+            7/2, East Street,
+            <br />
+            Nithyanandapuram, Varaganeri,
+            <br />
+            Trichy – 620008
+          </p>
+        </div>
 
               </div>
             </div>

@@ -1,3 +1,5 @@
+import { IntroAnimation } from '@/components/home/intro-animation'
+import { FallingLeaves } from '@/components/home/falling-leaves'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ScrollReveal } from '@/components/scroll-reveal'
@@ -11,47 +13,52 @@ import { TrustBar } from '@/components/home/trust-bar'
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+    <>
+      <IntroAnimation />
+      <FallingLeaves />
 
-      <main>
-        {/* Hero */}
-        <ScrollReveal duration={700} distance={20}>
-          <Hero />
-        </ScrollReveal>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
 
-        {/* Brand Features */}
-        <ScrollReveal delay={50}>
-          <FeatureStrip />
-        </ScrollReveal>
+        <main>
+          {/* Hero */}
+          <ScrollReveal duration={700} distance={20}>
+            <Hero />
+          </ScrollReveal>
 
-        {/* Products for Every Generation */}
-        <ScrollReveal delay={50}>
-          <Generations />
-        </ScrollReveal>
+          {/* Brand Features */}
+          <ScrollReveal delay={50}>
+            <FeatureStrip />
+          </ScrollReveal>
 
-        {/* Family Banner */}
-        <ScrollReveal duration={750} distance={28}>
-          <FamilyBanner />
-        </ScrollReveal>
+          {/* Products for Every Generation */}
+          <ScrollReveal delay={50}>
+            <Generations />
+          </ScrollReveal>
 
-        {/* Our Story */}
-        <ScrollReveal>
-          <Story />
-        </ScrollReveal>
+          {/* Family Banner */}
+          <ScrollReveal duration={750} distance={28}>
+            <FamilyBanner />
+          </ScrollReveal>
 
-        {/* WhatsApp CTA */}
-        <ScrollReveal delay={50} distance={20}>
-          <CtaBanner />
-        </ScrollReveal>
+          {/* Our Story */}
+          <ScrollReveal>
+            <Story />
+          </ScrollReveal>
 
-        {/* Trust / Closing Section */}
-        <ScrollReveal delay={50}>
-          <TrustBar />
-        </ScrollReveal>
-      </main>
+          {/* WhatsApp CTA */}
+          <ScrollReveal delay={50} distance={20}>
+            <CtaBanner />
+          </ScrollReveal>
 
-      <SiteFooter />
-    </div>
+          {/* Trust / Closing Section */}
+          <ScrollReveal delay={50}>
+            <TrustBar />
+          </ScrollReveal>
+        </main>
+
+        <SiteFooter />
+      </div>
+    </>
   )
 }

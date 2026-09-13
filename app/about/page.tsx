@@ -30,7 +30,7 @@ export default function AboutPage() {
                 width={2048}
                 height={768}
                 priority
-                className="mx-auto h-auto w-full object-contain scale-[1.4] lg:scale-100"
+                className="mx-auto h-auto w-full object-contain scale-[1.4] translate-y-4 lg:scale-100 lg:translate-y-0"
               />
             </div>
           </section>

@@ -23,6 +23,7 @@ export type Product = {
   nutrition?: string[]
   preparation?: string
   packSize?: string
+  mrp?: string
   price?: string
   allergen?: string
 storage?: string
@@ -62,7 +63,8 @@ export const KIDS_PRODUCTS: Product[] = [
   preparation:
     'Add 1 tablespoon of Meltiva Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
   packSize: '200g',
-  price: '',
+  mrp: '405',
+price: '365',
   allergen: 'Contains Milk, Nuts and Barley.',
 
 storage:
@@ -99,9 +101,10 @@ manufacturedBy:
     preparation:
       'Add 1 tablespoon of Rubyblend Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
 
-    packSize: '250g',
+    packSize: '200g',
 
-    price: '',
+    mrp: '419',
+price: '379',
 
     allergen: 'Contains Milk, Nuts and Barley.',
 
@@ -148,9 +151,10 @@ manufacturedBy:
   preparation:
     'Add 1 tablespoon of Blacko Cocoa Mix to 90 ml of milk, cook for 3 minutes and enjoy.',
 
-  packSize: '250g',
+  packSize: '200g',
 
-  price: '',
+  mrp: '449',
+price: '398',
 
   allergen: 'Contains Milk and Barley.',
 
@@ -191,7 +195,8 @@ manufacturedBy:
 
     packSize: '200g',
 
-    price: '',
+    mrp: '408',
+price: '367',
 
     allergen: 'Contains Nuts and Barley.',
 
@@ -237,7 +242,8 @@ export const ADULT_PRODUCTS: Product[] = [
 
   packSize: '200g',
 
-  price: '',
+ mrp: '319',
+price: '269',
 
   allergen: 'Please check the ingredient list for possible allergens.',
 
@@ -278,7 +284,8 @@ export const ADULT_PRODUCTS: Product[] = [
 
   packSize: '200g',
 
-  price: '',
+  mrp: '469',
+price: '418',
 
   allergen:
     'Please check the ingredient list for possible allergens.',
@@ -322,7 +329,8 @@ export const ADULT_PRODUCTS: Product[] = [
 
      packSize: '150g',
 
-     price: '',
+     mrp: '429',
+price: '389',
 
      allergen:
        'May contain nuts, wheat/gluten or sesame. Check the ingredient list before use if you have any food allergies.',
