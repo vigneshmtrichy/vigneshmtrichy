@@ -22,9 +22,11 @@ export default function HomePage() {
 
         <main>
           {/* Hero */}
-          <ScrollReveal duration={700} distance={20}>
-            <Hero />
-          </ScrollReveal>
+<ScrollReveal duration={700} distance={20}>
+  <div className="mx-auto w-full max-w-7xl overflow-hidden">
+    <Hero />
+  </div>
+</ScrollReveal>
 
           {/* Brand Features */}
           <ScrollReveal delay={50}>

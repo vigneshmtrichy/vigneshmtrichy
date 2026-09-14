@@ -115,7 +115,7 @@ export function AddToCartButton({ product }: { product: Product }) {
       <button
         type="button"
         onClick={handleAddToCart}
-        className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        className="inline-flex h-14 w-[260px] items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
       >
         <ShoppingCart className="h-5 w-5" />
         ADD TO CART

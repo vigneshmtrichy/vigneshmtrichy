@@ -105,10 +105,10 @@ export function SiteFooter() {
 
   return (
     <footer className="bg-primary text-primary-foreground">
-      <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-7">
 
         {/* MAIN FOOTER */}
-        <div className="grid gap-10 md:grid-cols-3 lg:gap-14">
+        <div className="grid gap-6 md:grid-cols-3 lg:gap-10">
 
           {/* BRAND */}
           <div>
@@ -165,7 +165,7 @@ export function SiteFooter() {
               ))}
             </div>
 
-            <div className="mt-7">
+            <div className="mt-5">
               <h3 className="text-sm font-bold uppercase tracking-wide text-primary-foreground/70">
                 Get in Touch
               </h3>
@@ -186,7 +186,7 @@ export function SiteFooter() {
         </div>
 
         {/* BOTTOM */}
-        <div className="mt-8 border-t border-primary-foreground/15 pt-5 text-center text-xs text-primary-foreground/70">
+        <div className="mt-5 border-t border-primary-foreground/15 pt-3 text-center text-xs text-primary-foreground/70">
   <p>© 2026 Tenoo Ventures. All Rights Reserved.</p>
 </div>
 

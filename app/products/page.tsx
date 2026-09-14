@@ -8,11 +8,21 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Our Products | Tenoo',
   description:
-    'Explore Tenoo food and nutrition products made with thoughtfully selected Indian ingredients for children, families and everyday wellness.',
+    'Explore Tenoo food and nutrition products made with thoughtfully selected Indian ingredients for every generation and everyday goodness.',
   alternates: {
     canonical: 'https://www.tenoo.in/products',
   },
 }
+
+/* Combine all products without duplicates */
+const ALL_PRODUCTS = Array.from(
+  new Map(
+    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS].map((product) => [
+      product.slug,
+      product,
+    ])
+  ).values()
+)
 
 export default function ProductsPage() {
   return (
@@ -25,7 +35,7 @@ export default function ProductsPage() {
             PAGE HERO
         ========================== */}
         <ScrollReveal>
-          <section className="px-6 pb-6 pt-7 md:px-10 md:pb-10 md:pt-8">
+          <section className="px-6 pb-8 pt-7 md:px-10 md:pb-12 md:pt-8">
             <div className="mx-auto max-w-5xl text-center">
 
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.35em] text-orange-600 md:mb-4 md:text-sm">
@@ -36,13 +46,13 @@ export default function ProductsPage() {
                 Good Food.
                 <br />
                 <span className="text-orange-600">
-                  Made for You.
+                  Made for Every Generation.
                 </span>
               </h1>
 
               <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:mt-6 md:text-lg md:leading-8">
-                Thoughtfully crafted food products inspired by Indian ingredients,
-                made for growing families and everyday wellness.
+                Thoughtfully crafted food products inspired by Indian
+                ingredients, made to bring wholesome goodness to every home.
               </p>
 
             </div>
@@ -51,91 +61,46 @@ export default function ProductsPage() {
 
 
         {/* =========================
-            KIDS COLLECTION
+            ALL PRODUCTS
         ========================== */}
         <section className="px-6 pb-14 md:px-10 md:pb-16">
           <div className="mx-auto max-w-7xl">
 
             {/* Section heading */}
             <ScrollReveal>
-              <div className="mb-6 flex flex-col gap-2 md:mb-8 md:flex-row md:items-end md:justify-between">
+              <div className="mb-7 flex flex-col gap-2 md:mb-9 md:flex-row md:items-end md:justify-between">
 
                 <div>
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-orange-600 md:text-sm">
-                    For Little Ones
+                    Explore Tenoo
                   </p>
 
                   <h2 className="font-serif text-3xl font-bold leading-tight text-primary md:text-5xl">
-                    Growing with Goodness
+                    Goodness for Every Generation
                   </h2>
                 </div>
 
                 <p className="max-w-md text-sm leading-6 text-muted-foreground md:text-right md:text-base">
-                  Wholesome blends created for growing children and everyday
-                  nourishment.
+                  From nourishing blends to traditional favourites, discover
+                  wholesome food made for everyday life.
                 </p>
 
               </div>
             </ScrollReveal>
 
-            {/* Kids Products */}
+
+            {/* All Products */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-7 md:gap-y-12">
-              {KIDS_PRODUCTS.map((product, index) => (
+
+              {ALL_PRODUCTS.map((product, index) => (
                 <ScrollReveal
                   key={product.slug}
                   delay={index * 100}
                 >
-                  <ProductCard
-                    product={product}
-                  />
+                  <ProductCard product={product} />
                 </ScrollReveal>
               ))}
-            </div>
 
-          </div>
-        </section>
-
-
-        {/* =========================
-            ADULTS COLLECTION
-        ========================== */}
-        <section className="border-y border-border/50 bg-card/40 px-6 py-14 md:px-10 md:py-16">
-          <div className="mx-auto max-w-7xl">
-
-            {/* Section heading */}
-            <ScrollReveal>
-              <div className="mb-6 flex flex-col gap-2 md:mb-8 md:flex-row md:items-end md:justify-between">
-
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-orange-600 md:text-sm">
-                    For Everyday Wellness
-                  </p>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight text-primary md:text-5xl">
-                    Traditional Goodness
-                  </h2>
-                </div>
-
-                <p className="max-w-md text-sm leading-6 text-muted-foreground md:text-right md:text-base">
-                  Familiar Indian ingredients thoughtfully crafted into
-                  convenient everyday food.
-                </p>
-
-              </div>
-            </ScrollReveal>
-
-            {/* Adult Products */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-7 md:gap-y-12">
-              {ADULT_PRODUCTS.map((product, index) => (
-                <ScrollReveal
-                  key={product.slug}
-                  delay={index * 100}
-                >
-                  <ProductCard
-                    product={product}
-                  />
-                </ScrollReveal>
-              ))}
             </div>
 
           </div>
@@ -146,7 +111,7 @@ export default function ProductsPage() {
             BRAND STATEMENT
         ========================== */}
         <ScrollReveal>
-          <section className="px-6 py-12 text-center md:px-10 md:py-14">
+          <section className="border-t border-border/50 bg-card/40 px-6 py-14 text-center md:px-10 md:py-16">
             <div className="mx-auto max-w-3xl">
 
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-600">

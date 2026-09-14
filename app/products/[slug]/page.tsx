@@ -8,7 +8,8 @@ import { SiteFooter } from '@/components/site-footer'
 import { ProductGallery } from '@/components/product-gallery'
 import { RelatedProductsCarousel } from '@/components/related-products-carousel'
 import { ScrollReveal } from '@/components/scroll-reveal'
-import { AddToCartButton } from '@/components/cart/add-to-cart-button'
+import { ProductPurchasePanel } from '@/components/product/product-purchase-panel'
+import { ProductReviews } from '@/components/product/product-reviews'
 import {
   ALL_PRODUCTS,
   getProductBySlug,
@@ -287,10 +288,11 @@ return (
     )}
   </div>
 )}
-                {/* Add to Cart Button */}
-             <div className="mt-7">
-  <AddToCartButton product={product} />
-</div>
+         {/* PURCHASE ACTIONS */}
+<ProductPurchasePanel
+  product={product}
+  inStock={true}
+/>
 
               </div>
             </div>
@@ -325,9 +327,10 @@ return (
                 </div>
               )}
 
-             <div className="mt-7">
-  <AddToCartButton product={product} />
-</div>
+     <ProductPurchasePanel
+  product={product}
+  inStock={true}
+/>
 
             </div>
 
@@ -499,6 +502,14 @@ return (
             </div>
           </section>
         </ScrollReveal>
+{/* =========================================================
+    CUSTOMER REVIEWS
+    ========================================================= */}
+<ScrollReveal>
+  <ProductReviews
+    productSlug={product.slug}
+  />
+</ScrollReveal>
 
         {/* =========================================================
             RELATED PRODUCTS

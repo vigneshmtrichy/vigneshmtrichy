@@ -63,7 +63,7 @@ export const KIDS_PRODUCTS: Product[] = [
   preparation:
     'Add 1 tablespoon of Meltiva Nutrimix to 90 ml of warm milk. Just mix and enjoy.',
   packSize: '200g',
-  mrp: '405',
+  mrp: '429',
 price: '365',
   allergen: 'Contains Milk, Nuts and Barley.',
 
@@ -103,8 +103,8 @@ manufacturedBy:
 
     packSize: '200g',
 
-    mrp: '419',
-price: '379',
+    mrp: '449',
+price: '375',
 
     allergen: 'Contains Milk, Nuts and Barley.',
 
@@ -153,8 +153,8 @@ price: '379',
 
   packSize: '200g',
 
-  mrp: '449',
-price: '398',
+  mrp: '455',
+price: '379',
 
   allergen: 'Contains Milk and Barley.',
 
@@ -195,8 +195,8 @@ price: '398',
 
     packSize: '200g',
 
-    mrp: '408',
-price: '367',
+    mrp: '399',
+price: '349',
 
     allergen: 'Contains Nuts and Barley.',
 
@@ -242,8 +242,8 @@ export const ADULT_PRODUCTS: Product[] = [
 
   packSize: '200g',
 
- mrp: '319',
-price: '269',
+ mrp: '339',
+price: '289',
 
   allergen: 'Please check the ingredient list for possible allergens.',
 
@@ -284,8 +284,8 @@ price: '269',
 
   packSize: '200g',
 
-  mrp: '469',
-price: '418',
+  mrp: '459',
+price: '399',
 
   allergen:
     'Please check the ingredient list for possible allergens.',
@@ -330,7 +330,7 @@ price: '418',
      packSize: '150g',
 
      mrp: '429',
-price: '389',
+price: '379',
 
      allergen:
        'May contain nuts, wheat/gluten or sesame. Check the ingredient list before use if you have any food allergies.',

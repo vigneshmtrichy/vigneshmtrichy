@@ -257,10 +257,10 @@ export function ProductGallery({
           ========================================================= */}
 
       {isOpen && (
-        <div
-          className="fixed inset-0 z-[9999]"
-          onClick={closeViewer}
-        >
+  <div
+    className="fixed inset-0 z-[9999]"
+    onClick={closeViewer}
+  >
 
           {/* =====================================================
               DESKTOP VIEWER

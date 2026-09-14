@@ -40,7 +40,7 @@ export default function AboutPage() {
             OUR STORY
             ===================================================== */}
         <ScrollReveal delay={80}>
-          <section className="bg-primary px-5 py-12 text-primary-foreground md:px-10 md:py-18">
+         <section className="mx-auto max-w-7xl rounded-3xl bg-primary px-5 py-12 text-primary-foreground md:px-10 md:py-18">
             <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 md:items-center md:gap-16">
 
               <div>

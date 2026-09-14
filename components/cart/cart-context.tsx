@@ -18,7 +18,7 @@ type CartItem = {
 
 type CartContextType = {
   items: CartItem[]
-  addToCart: (product: Product) => void
+  addToCart: (product: Product, quantity?: number) => void
   removeFromCart: (slug: string) => void
   updateQuantity: (slug: string, quantity: number) => void
   clearCart: () => void
@@ -47,7 +47,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('tenoo-cart', JSON.stringify(items))
   }, [items])
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity = 1) => {
+    const safeQuantity = Math.max(1, quantity)
+
     setItems((current) => {
       const existing = current.find(
         (item) => item.product.slug === product.slug,
@@ -56,12 +58,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) {
         return current.map((item) =>
           item.product.slug === product.slug
-            ? { ...item, quantity: item.quantity + 1 }
+            ? {
+                ...item,
+                quantity: item.quantity + safeQuantity,
+              }
             : item,
         )
       }
 
-      return [...current, { product, quantity: 1 }]
+      return [
+        ...current,
+        {
+          product,
+          quantity: safeQuantity,
+        },
+      ]
     })
   }
 
@@ -80,7 +91,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((current) =>
       current.map((item) =>
         item.product.slug === slug
-          ? { ...item, quantity }
+          ? {
+              ...item,
+              quantity,
+            }
           : item,
       ),
     )
@@ -91,7 +105,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const cartCount = useMemo(
-    () => items.reduce((total, item) => total + item.quantity, 0),
+    () =>
+      items.reduce(
+        (total, item) => total + item.quantity,
+        0,
+      ),
     [items],
   )
 
@@ -99,7 +117,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () =>
       items.reduce(
         (total, item) =>
-          total + (item.product.price ?? 0) * item.quantity,
+          total +
+          (Number(item.product.price) || 0) * item.quantity,
         0,
       ),
     [items],
@@ -126,7 +145,9 @@ export function useCart() {
   const context = useContext(CartContext)
 
   if (!context) {
-    throw new Error('useCart must be used inside CartProvider')
+    throw new Error(
+      'useCart must be used inside CartProvider',
+    )
   }
 
   return context
