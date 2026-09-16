@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
 
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { useCart } from '@/components/cart/cart-context'
+import { useRouter } from 'next/navigation'
 
 const GALLERY_FOLDERS: Record<string, string> = {
   'millet-abc': 'Meltiva-Nutrimix',
@@ -19,21 +20,16 @@ const GALLERY_FOLDERS: Record<string, string> = {
 }
 
 export default function CartPage() {
+  const router = useRouter()
+  const [showFreeDeliveryPopup, setShowFreeDeliveryPopup] = useState(false)
   const {
     items,
     removeFromCart,
     updateQuantity,
     cartTotal,
   } = useCart()
-
-  const [customerName, setCustomerName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
-  const [pincode, setPincode] = useState('')
-  const [city, setCity] = useState('')
-  const [state, setState] = useState('')
-
-  const [error, setError] = useState('')
+  const freeDeliveryShownRef = useRef(false)
+ 
 
   const totalItems = items.reduce(
     (total, item) => total + item.quantity,
@@ -46,80 +42,163 @@ export default function CartPage() {
 )
 
 const totalSavings = mrpTotal - cartTotal
+  const FREE_SHIPPING_THRESHOLD = 699
+
+  const remainingForFreeShipping = Math.max(
+    0,
+    FREE_SHIPPING_THRESHOLD - cartTotal,
+  )
+
+const shippingCharge =
+  cartTotal >= FREE_SHIPPING_THRESHOLD
+    ? 0
+    : null
+
+const finalTotal = cartTotal + (shippingCharge ?? 0)
+const shippingProgress = Math.min(
+  100,
+  (cartTotal / FREE_SHIPPING_THRESHOLD) * 100,
+)
+
+
+const previousTotalRef = useRef(finalTotal)
+
+useEffect(() => {
+  const previousTotal = previousTotalRef.current
+
+  // Reset when cart goes below free-delivery threshold
+  if (finalTotal < FREE_SHIPPING_THRESHOLD) {
+    freeDeliveryShownRef.current = false
+  }
+
+  // Show popup only when crossing ₹699 from below
+  if (
+    !freeDeliveryShownRef.current &&
+    previousTotal < FREE_SHIPPING_THRESHOLD &&
+    finalTotal >= FREE_SHIPPING_THRESHOLD
+  ) {
+    freeDeliveryShownRef.current = true
+    setShowFreeDeliveryPopup(true)
+
+    const timer = setTimeout(() => {
+      setShowFreeDeliveryPopup(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }
+
+  previousTotalRef.current = finalTotal
+}, [finalTotal])
+
 
 const savingsPercentage =
   mrpTotal > 0
     ? Math.round((totalSavings / mrpTotal) * 100)
     : 0
 
-  const handleWhatsAppOrder = () => {
-    const cleanPhone = phone.replace(/\D/g, '')
-    const cleanPincode = pincode.replace(/\D/g, '')
+return (
+     <>
+    {showFreeDeliveryPopup && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="free-delivery-popup relative mx-5 w-full max-w-md overflow-hidden rounded-3xl bg-background px-8 py-10 text-center shadow-2xl">
 
-    if (!customerName.trim()) {
-      setError('Please enter your name.')
-      return
-    }
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <span className="confetti confetti-1">🎉</span>
+            <span className="confetti confetti-2">✨</span>
+            <span className="confetti confetti-3">🎊</span>
+            <span className="confetti confetti-4">🌿</span>
+            <span className="confetti confetti-5">✨</span>
+            <span className="confetti confetti-6">🎉</span>
+          </div>
 
-    if (cleanPhone.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number.')
-      return
-    }
+          <div className="free-delivery-icon relative z-10 mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-lime-100 text-4xl">
+            🚚
+          </div>
 
-    if (!address.trim()) {
-      setError('Please enter your delivery address.')
-      return
-    }
+          <p className="relative z-10 text-xs font-bold uppercase tracking-[0.25em] text-primary">
+            Tenoo Delivery
+          </p>
 
-    if (cleanPincode.length !== 6) {
-      setError('Please enter a valid 6-digit pincode.')
-      return
-    }
+          <h2 className="relative z-10 mt-2 font-serif text-3xl font-bold text-primary md:text-4xl">
+            FREE DELIVERY
+          </h2>
 
-    if (!city.trim()) {
-      setError('Please enter your city.')
-      return
-    }
+          <p className="relative z-10 mt-3 text-base text-muted-foreground">
+            You've unlocked free delivery on your order!
+          </p>
 
-    if (!state.trim()) {
-      setError('Please enter your state.')
-      return
-    }
+          <div className="relative z-10 mx-auto mt-5 inline-flex rounded-full bg-green-50 px-5 py-2 text-sm font-bold text-green-700">
+            🎉 Order above ₹699
+          </div>
+        </div>
 
-    setError('')
+        <style>{`
+          .free-delivery-popup {
+            animation: freeDeliveryPopup 450ms cubic-bezier(.2,.8,.2,1);
+          }
 
-    const message = [
-      'Hello TENOO, I would like to place an order.',
-      '',
-      'CUSTOMER DETAILS',
-      `Name: ${customerName.trim()}`,
-      `Phone: ${cleanPhone}`,
-      `Address: ${address.trim()}`,
-      `Pincode: ${cleanPincode}`,
-      `City: ${city.trim()}`,
-      `State: ${state.trim()}`,
-      '',
-      'ORDER DETAILS',
-      ...items.map(
-        (item) =>
-          `${item.product.name} × ${item.quantity}`,
-      ),
-      '',
-      `Total Items: ${totalItems}`,
-      `Total: ₹${cartTotal}`,
-    ].join('\n')
+          .free-delivery-icon {
+            animation: freeDeliveryIcon 700ms ease-out;
+          }
 
-    window.open(
-      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
-      '_blank',
-    )
-  }
+          .confetti {
+            position: absolute;
+            font-size: 24px;
+            animation: confettiFall 1800ms ease-out forwards;
+          }
 
-  return (
+          .confetti-1 { left: 10%; top: -10%; animation-delay: 100ms; }
+          .confetti-2 { left: 28%; top: -15%; animation-delay: 250ms; }
+          .confetti-3 { left: 50%; top: -10%; animation-delay: 50ms; }
+          .confetti-4 { left: 68%; top: -15%; animation-delay: 300ms; }
+          .confetti-5 { left: 82%; top: -10%; animation-delay: 180ms; }
+          .confetti-6 { left: 42%; top: -20%; animation-delay: 400ms; }
+
+          @keyframes freeDeliveryPopup {
+            0% {
+              opacity: 0;
+              transform: scale(0.8) translateY(20px);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+
+          @keyframes freeDeliveryIcon {
+            0% {
+              transform: scale(0.5) rotate(-15deg);
+              opacity: 0;
+            }
+            60% {
+              transform: scale(1.15) rotate(5deg);
+            }
+            100% {
+              transform: scale(1) rotate(0);
+              opacity: 1;
+            }
+          }
+
+          @keyframes confettiFall {
+            0% {
+              opacity: 0;
+              transform: translateY(-20px) rotate(0deg);
+            }
+            20% {
+              opacity: 1;
+            }
+            100% {
+              opacity: 0;
+              transform: translateY(420px) rotate(360deg);
+            }
+          }
+        `}</style>
+      </div>
+    )}
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
 
-      <main className="flex-1 px-5 py-10 md:px-10 md:py-16">
+      <main className="flex-1 px-5 pb-24 pt-10 md:px-10 md:py-16">
         <div className="mx-auto max-w-5xl">
 
           <div className="mb-8">
@@ -155,7 +234,7 @@ const savingsPercentage =
             <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
 
               {/* CART ITEMS */}
-              <div className="space-y-4">
+              <div className="space-y-4 lg:sticky lg:top-40 lg:self-start">
                 {items.map((item) => {
                   const cartImage = GALLERY_FOLDERS[item.product.slug]
                     ? `/products/${GALLERY_FOLDERS[item.product.slug]}/1.png`
@@ -237,209 +316,45 @@ const savingsPercentage =
 
               {/* CUSTOMER DETAILS + ORDER SUMMARY */}
               <div className="h-fit rounded-3xl border border-border bg-card p-6">
+                
+           
+                                {/* FREE SHIPPING PROGRESS */}
+                <div className="mt-6 rounded-2xl border border-border bg-background p-4">
+                  {cartTotal >= FREE_SHIPPING_THRESHOLD ? (
+                    <>
+                      <p className="free-delivery-unlocked text-sm font-semibold text-green-700">
+  🎉 FREE DELIVERY UNLOCKED!
+</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Your order qualifies for free delivery.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-primary">
+                          Add ₹{remainingForFreeShipping.toLocaleString('en-IN')} more
+                        </p>
 
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-                  DELIVERY DETAILS
-                </p>
-
-                <div className="mt-5 space-y-3">
-
-                  {/* NAME */}
-                  <div>
-                    <label
-                      htmlFor="customer-name"
-                      className="mb-1.5 block text-xs font-semibold text-primary"
-                    >
-                      Full Name *
-                    </label>
-
-                     <input
-                          id="customer-name"
-                          type="text"
-                          value={customerName}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
-                            setCustomerName(value)
-                            setError('')
-                          }}
-                          placeholder="Enter your name"
-                          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
-                        />
-                  </div>
-
-                  {/* PHONE */}
-                  <div>
-                    <label
-                      htmlFor="customer-phone"
-                      className="mb-1.5 block text-xs font-semibold text-primary"
-                    >
-                      Mobile Number *
-                    </label>
-
-                    <input
-                      id="customer-phone"
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => {
-                        const value = e.target.value
-                          .replace(/\D/g, '')
-                          .slice(0, 10)
-
-                        setPhone(value)
-                        setError('')
-                      }}
-                      placeholder="10-digit mobile number"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
-                    />
-                  </div>
-
-                  {/* ADDRESS */}
-                  <div>
-                    <label
-                      htmlFor="customer-address"
-                      className="mb-1.5 block text-xs font-semibold text-primary"
-                    >
-                      Delivery Address *
-                    </label>
-
-                    <textarea
-                      id="customer-address"
-                      rows={3}
-                      value={address}
-                      onChange={(e) => {
-                        setAddress(e.target.value)
-                        setError('')
-                      }}
-                      placeholder="House no, street, area"
-                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
-                    />
-                  </div>
-
-                  {/* PINCODE */}
-                  <div>
-                    <label
-                      htmlFor="customer-pincode"
-                      className="mb-1.5 block text-xs font-semibold text-primary"
-                    >
-                      Pincode *
-                    </label>
-
-                    <input
-                      id="customer-pincode"
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={pincode}
-                      onChange={(e) => {
-                        const value = e.target.value
-                          .replace(/\D/g, '')
-                          .slice(0, 6)
-
-                        setPincode(value)
-                        setError('')
-                      }}
-                      placeholder="6-digit pincode"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-primary outline-none transition focus:border-accent"
-                    />
-                  </div>
-
-                  {/* CITY + STATE */}
-                  <div className="grid grid-cols-2 gap-3">
-
-                    <div>
-                      <label
-                        htmlFor="customer-city"
-                        className="mb-1.5 block text-xs font-semibold text-primary"
-                      >
-                        City *
-                      </label>
-
-                      <input
-                        id="customer-city"
-                        type="text"
-                        value={city}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
-                          setCity(value)
-                          setError('')
-                        }}
-                        placeholder="City"
-                        className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-primary outline-none transition focus:border-accent"
-                      />
-                    </div>
-
-                    <div>
-                        <label
-                          htmlFor="customer-state"
-                          className="mb-1.5 block text-xs font-semibold text-primary"
-                        >
-                          State *
-                        </label>
-
-                        <select
-                          id="customer-state"
-                          value={state}
-                          onChange={(e) => {
-                            setState(e.target.value)
-                            setError('')
-                          }}
-                          className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-primary outline-none transition focus:border-accent"
-                        >
-                          <option value="">Select State</option>
-                          <option value="Andhra Pradesh">Andhra Pradesh</option>
-                          <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                          <option value="Assam">Assam</option>
-                          <option value="Bihar">Bihar</option>
-                          <option value="Chhattisgarh">Chhattisgarh</option>
-                          <option value="Goa">Goa</option>
-                          <option value="Gujarat">Gujarat</option>
-                          <option value="Haryana">Haryana</option>
-                          <option value="Himachal Pradesh">Himachal Pradesh</option>
-                          <option value="Jharkhand">Jharkhand</option>
-                          <option value="Karnataka">Karnataka</option>
-                          <option value="Kerala">Kerala</option>
-                          <option value="Madhya Pradesh">Madhya Pradesh</option>
-                          <option value="Maharashtra">Maharashtra</option>
-                          <option value="Manipur">Manipur</option>
-                          <option value="Meghalaya">Meghalaya</option>
-                          <option value="Mizoram">Mizoram</option>
-                          <option value="Nagaland">Nagaland</option>
-                          <option value="Odisha">Odisha</option>
-                          <option value="Punjab">Punjab</option>
-                          <option value="Rajasthan">Rajasthan</option>
-                          <option value="Sikkim">Sikkim</option>
-                          <option value="Tamil Nadu">Tamil Nadu</option>
-                          <option value="Telangana">Telangana</option>
-                          <option value="Tripura">Tripura</option>
-                          <option value="Uttar Pradesh">Uttar Pradesh</option>
-                          <option value="Uttarakhand">Uttarakhand</option>
-                          <option value="West Bengal">West Bengal</option>
-                          <option value="Andaman and Nicobar Islands">
-                            Andaman and Nicobar Islands
-                          </option>
-                          <option value="Chandigarh">Chandigarh</option>
-                          <option value="Dadra and Nagar Haveli and Daman and Diu">
-                            Dadra and Nagar Haveli and Daman and Diu
-                          </option>
-                          <option value="Delhi">Delhi</option>
-                          <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                          <option value="Ladakh">Ladakh</option>
-                          <option value="Lakshadweep">Lakshadweep</option>
-                          <option value="Puducherry">Puducherry</option>
-                        </select>
+                        <span className="text-xs font-semibold text-accent">
+                          FREE DELIVERY
+                        </span>
                       </div>
 
-                  </div>
-                </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-accent transition-all duration-500"
+                          style={{ width: `${shippingProgress}%` }}
+                        />
+                      </div>
 
-                {/* ERROR */}
-                {error && (
-                  <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
-                    {error}
-                  </p>
-                )}
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Free delivery on orders above ₹699
+                      </p>
+      
+                    </>
+                  )}
+                </div>
 
                {/* ORDER SUMMARY */}
 <div className="mt-7 border-t border-border pt-6">
@@ -469,7 +384,7 @@ const savingsPercentage =
       ₹{mrpTotal.toLocaleString('en-IN')}
     </span>
   </div>
-
+   
   {/* SAVINGS */}
   {totalSavings > 0 && (
     <div className="mt-3 flex items-center justify-between rounded-xl bg-green-50 px-3 py-2.5">
@@ -477,14 +392,17 @@ const savingsPercentage =
         You Save
       </span>
 
-      <span className="text-sm font-bold text-green-700">
-        ₹{totalSavings.toLocaleString('en-IN')}
-        {savingsPercentage > 0 && (
-          <span className="ml-1">
-            ({savingsPercentage}% OFF)
-          </span>
-        )}
-      </span>
+     <span
+  key={`${totalSavings}-${savingsPercentage}`}
+  className="discount-pop text-sm font-bold text-green-700"
+>
+  ₹{totalSavings.toLocaleString('en-IN')}
+  {savingsPercentage > 0 && (
+    <span className="ml-1">
+      ({savingsPercentage}% OFF)
+    </span>
+  )}
+</span>
     </div>
   )}
 
@@ -494,29 +412,26 @@ const savingsPercentage =
       Total
     </span>
 
-    <span className="font-serif text-2xl font-bold text-primary">
-      ₹{cartTotal.toLocaleString('en-IN')}
-    </span>
+  <span className="font-serif text-2xl font-bold text-primary">
+  ₹{finalTotal.toLocaleString('en-IN')}
+</span>
   </div>
 
   {/* SAVINGS MESSAGE */}
-  {totalSavings > 0 && (
-    <p className="mt-2 text-center text-xs font-medium text-green-700">
-      🎉 You’re saving ₹{totalSavings.toLocaleString('en-IN')} on this order!
-    </p>
-  )}
+{totalSavings > 0 && (
+  <p className="mt-2 text-center text-xs font-medium text-green-700">
+    🎉 You’re saving ₹{totalSavings.toLocaleString('en-IN')} on this order!
+  </p>
+)}
 
   <button
     type="button"
-    onClick={handleWhatsAppOrder}
-    className="mt-6 w-full rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+   onClick={() => router.push('/checkout')}
+    className="flex h-11 w-full items-center justify-center rounded-full bg-primary px-4 text-xs font-bold uppercase text-primary-foreground shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.96] active:shadow-inner"
   >
-    BUY ON WHATSAPP
+ PROCEED TO CHECKOUT
   </button>
 
-  <p className="mt-3 text-center text-[11px] leading-4 text-muted-foreground">
-    Delivery charges & payment details will be confirmed directly on WhatsApp.
-  </p>
 
   <Link
     href="/products"
@@ -534,7 +449,48 @@ const savingsPercentage =
         </div>
       </main>
 
+      <style>{`
+        .discount-pop {
+          animation: discountPop 700ms ease-out;
+        }
+
+        .free-delivery-unlocked {
+          animation: freeDeliveryPop 700ms ease-out;
+        }
+
+        @keyframes discountPop {
+          0% {
+            transform: scale(0.8);
+            opacity: 0;
+          }
+          60% {
+            transform: scale(1.08);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes freeDeliveryPop {
+          0% {
+            transform: scale(0.85);
+            opacity: 0;
+          }
+          60% {
+            transform: scale(1.05);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
+
       <SiteFooter />
     </div>
+    </>
   )
 }

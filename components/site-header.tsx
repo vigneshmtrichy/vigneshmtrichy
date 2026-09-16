@@ -9,6 +9,7 @@ import { WhatsAppIcon } from '@/components/whatsapp-icon'
 import { NAV_LINKS, WHATSAPP_URL, ALL_PRODUCTS } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { CartButton } from '@/components/cart/cart-button'
+import { AnnouncementBar } from '@/components/announcement-bar'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
@@ -32,6 +33,8 @@ export function SiteHeader() {
   }
 
   return (
+      <>
+    <AnnouncementBar />
     <header
       onClickCapture={(event) => {
         const target = event.target as HTMLElement
@@ -289,5 +292,6 @@ export function SiteHeader() {
         </nav>
       )}
     </header>
+    </>
   )
 }

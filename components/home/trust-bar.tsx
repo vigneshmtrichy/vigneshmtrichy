@@ -5,7 +5,7 @@ const ITEMS = [
   {
     icon: Truck,
     title: 'Free Shipping',
-    desc: 'On orders above ₹999',
+    desc: 'On orders above ₹699',
   },
   {
     icon: WhatsAppIcon,

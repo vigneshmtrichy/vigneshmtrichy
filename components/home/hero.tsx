@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export function Hero() {
   return (
-    <section id="tenoo-hero" className="relative w-full overflow-hidden">
+    <section id="tenoo-hero" className="relative mt-3 = 12px w-full overflow-hidden">
       <div className="relative">
         <Image
           src="/home-banner.png"

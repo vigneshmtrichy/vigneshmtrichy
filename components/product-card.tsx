@@ -172,19 +172,7 @@ const handleBuyNow = () => {
       <div className="mt-3 flex w-full flex-col items-center gap-2">
 
         {/* QUANTITY */}
-        <div
-          className="
-            flex
-            h-9
-            w-[68px]
-            items-center
-            justify-between
-            rounded-full
-            border
-            border-border
-            bg-background
-          "
-        >
+        <div className="flex h-11 w-[96px] shrink-0 items-center justify-between rounded-full border border-border bg-background">
           <button
             type="button"
             onClick={(e) => {
