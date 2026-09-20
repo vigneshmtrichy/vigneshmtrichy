@@ -2,7 +2,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { ScrollReveal } from '@/components/scroll-reveal'
-import { KIDS_PRODUCTS, ADULT_PRODUCTS } from '@/lib/site'
+import { KIDS_PRODUCTS, ADULT_PRODUCTS, PRODUCT_STATUS } from '@/lib/site'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -15,12 +15,16 @@ export const metadata: Metadata = {
 }
 
 /* Combine all products without duplicates */
+
+
 const ALL_PRODUCTS = Array.from(
   new Map(
-    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS].map((product) => [
-      product.slug,
-      product,
-    ])
+    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
+      .filter((product) => PRODUCT_STATUS[product.slug] !== 'hidden')
+      .map((product) => [
+        product.slug,
+        product,
+      ])
   ).values()
 )
 

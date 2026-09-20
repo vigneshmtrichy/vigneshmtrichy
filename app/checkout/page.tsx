@@ -64,7 +64,33 @@ export default function CheckoutPage() {
   const [pincode, setPincode] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
+  const [pincodeState, setPincodeState] = useState('')
+  const handlePincodeChange = async (value: string) => {
+  const cleanPincode = value.replace(/\D/g, '').slice(0, 6)
 
+  setPincode(cleanPincode)
+
+  if (cleanPincode.length !== 6) return
+
+  try {
+    const response = await fetch(
+      `https://api.postalpincode.in/pincode/${cleanPincode}`,
+    )
+
+    const data = await response.json()
+    console.log('Pincode API:', data)
+
+    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.length) {
+      const postOffice = data[0].PostOffice[0]
+
+     setCity(postOffice.District)
+setState(postOffice.State)
+setPincodeState(postOffice.State)
+    }
+  } catch (error) {
+    console.error('Pincode lookup failed:', error)
+  }
+}
   const [error, setError] = useState('')
 
  const shippingCharge =
@@ -80,7 +106,27 @@ export default function CheckoutPage() {
     0,
   )
 
-  const savings = mrpTotal - cartTotal
+ const savings = mrpTotal - cartTotal
+
+// GST calculation - product-wise
+const taxableValue = items.reduce((total, item) => {
+  const price = Number(item.product.price || 0)
+  const gstRate = Number(item.product.gstRate || 0) / 100
+
+  const itemTaxableValue = price / (1 + gstRate)
+
+  return total + itemTaxableValue * item.quantity
+}, 0)
+
+const totalGST = cartTotal - taxableValue
+
+const isTamilNadu = state === 'Tamil Nadu'
+
+const cgst = isTamilNadu ? totalGST / 2 : 0
+const sgst = isTamilNadu ? totalGST / 2 : 0
+const igst = isTamilNadu ? 0 : totalGST
+
+  
 
   const handleWhatsAppOrder = () => {
     if (!customerName.trim()) {
@@ -108,10 +154,10 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!state) {
-      setError('Please select your state.')
-      return
-    }
+   if (pincodeState && state !== pincodeState) {
+  setError('State does not match the pincode.')
+  return
+}
 
     setError('')
 
@@ -132,10 +178,22 @@ export default function CheckoutPage() {
           `${item.product.name} × ${item.quantity} — ₹${Number(item.product.price || 0) * item.quantity}`,
       ),
       '',
-      `MRP Total: ₹${mrpTotal}`,
-      `You Save: ₹${savings}`,
-      `Delivery: ${shippingCharge === 0 ? 'FREE' : `₹${shippingCharge}`}`,
-      `Total: ₹${finalTotal}`,
+     `MRP Total: ₹${mrpTotal}`,
+`Product Price (Incl. GST): ₹${cartTotal.toFixed(2)}`,
+`Taxable Value / Price Excl. GST: ₹${taxableValue.toFixed(2)}`,
+
+...(state === 'Tamil Nadu'
+  ? [
+      `CGST: ₹${cgst.toFixed(2)}`,
+      `SGST: ₹${sgst.toFixed(2)}`,
+    ]
+  : [
+      `IGST: ₹${igst.toFixed(2)}`,
+    ]),
+
+`You Save: ₹${savings}`,
+`Delivery: ${shippingCharge === 0 ? 'FREE' : `₹${shippingCharge}`}`,
+`Total: ₹${finalTotal}`,
     ].join('\n')
 
     window.open(
@@ -205,7 +263,9 @@ export default function CheckoutPage() {
               <input
                 type="text"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+               onChange={(e) =>
+  setCustomerName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))
+}
                 placeholder="Enter your name"
                 className="mt-2 h-12 w-full rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary"
               />
@@ -253,9 +313,7 @@ export default function CheckoutPage() {
                 inputMode="numeric"
                 maxLength={6}
                 value={pincode}
-                onChange={(e) =>
-                  setPincode(e.target.value.replace(/\D/g, ''))
-                }
+               onChange={(e) => handlePincodeChange(e.target.value)}
                 placeholder="6-digit pincode"
                 className="mt-2 h-12 w-full rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary"
               />
@@ -270,7 +328,9 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) =>
+                  setCity(e.target.value.replace(/[^a-zA-Z\s]/g, ''))
+                  }
                   placeholder="City"
                   className="mt-2 h-12 w-full rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary"
                 />
@@ -284,6 +344,7 @@ export default function CheckoutPage() {
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
+                  disabled={!!pincodeState}
                   className="mt-2 h-12 w-full rounded-full border border-border bg-background px-3 text-sm outline-none focus:border-primary"
                 >
                   <option value="">Select State</option>
@@ -342,9 +403,37 @@ export default function CheckoutPage() {
 </div>
 
 <div className="flex justify-between">
-  <span>Product Price</span>
-  <span>₹{cartTotal}</span>
+  <span>Product Price (Incl. GST)</span>
+  <span>₹{cartTotal.toFixed(2)}</span>
 </div>
+
+{state && (
+  <>
+<div className="flex justify-between">
+  <span>Taxable Value / Price Excl. GST</span>
+  <span>₹{taxableValue.toFixed(2)}</span>
+</div>
+
+{isTamilNadu ? (
+  <>
+    <div className="flex justify-between">
+      <span>CGST</span>
+      <span>₹{cgst.toFixed(2)}</span>
+    </div>
+
+    <div className="flex justify-between">
+      <span>SGST</span>
+      <span>₹{sgst.toFixed(2)}</span>
+    </div>
+  </>
+) : (
+  <div className="flex justify-between">
+    <span>IGST</span>
+    <span>₹{igst.toFixed(2)}</span>
+  </div>
+)}
+  </>
+)}
 
 <div className="flex justify-between">
   <span>Delivery</span>

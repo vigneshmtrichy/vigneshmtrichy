@@ -1,14 +1,20 @@
 import Link from 'next/link'
 import { ArrowRight, Leaf } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
-import { ADULT_PRODUCTS, KIDS_PRODUCTS } from '@/lib/site'
+import {
+  ADULT_PRODUCTS,
+  KIDS_PRODUCTS,
+  PRODUCT_STATUS,
+} from '@/lib/site'
 
 const ALL_PRODUCTS = Array.from(
   new Map(
-    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS].map((product) => [
-      product.slug,
-      product,
-    ])
+    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
+      .filter((product) => PRODUCT_STATUS[product.slug] !== 'hidden')
+      .map((product) => [
+        product.slug,
+        product,
+      ])
   ).values()
 )
 const FEATURED_PRODUCTS = ALL_PRODUCTS.slice(0, 6)

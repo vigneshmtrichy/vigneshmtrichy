@@ -6,7 +6,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart } from 'lucide-react'
 
-import type { Product } from '@/lib/site'
+import {
+  PRODUCT_STATUS,
+  type Product,
+} from '@/lib/site'
 import { useCart } from '@/components/cart/cart-context'
 
 const GALLERY_FOLDERS: Record<string, string> = {
@@ -29,6 +32,8 @@ export function ProductCard({
   const router = useRouter()
 
   const [quantity, setQuantity] = useState(1)
+  const status = PRODUCT_STATUS[product.slug] ?? 'active'
+const isActive = status === 'active'
 
   const cardImage = GALLERY_FOLDERS[product.slug]
     ? `/products/${GALLERY_FOLDERS[product.slug]}/1.png`
@@ -54,11 +59,13 @@ export function ProductCard({
     )
   }
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity)
-  }
+ const handleAddToCart = () => {
+  if (!isActive) return
+  addToCart(product, quantity)
+}
 
 const handleBuyNow = () => {
+  if (!isActive) return
   addToCart(product, quantity)
   router.push('/cart')
 }
@@ -172,7 +179,8 @@ const handleBuyNow = () => {
       <div className="mt-3 flex w-full flex-col items-center gap-2">
 
         {/* QUANTITY */}
-        <div className="flex h-11 w-[96px] shrink-0 items-center justify-between rounded-full border border-border bg-background">
+{isActive && (
+  <div className="flex h-11 w-[96px] shrink-0 items-center justify-between rounded-full border border-border bg-background">
           <button
             type="button"
             onClick={(e) => {
@@ -225,10 +233,11 @@ const handleBuyNow = () => {
             +
           </button>
         </div>
+        )}
 
         {/* ADD TO CART */}
         <button
-          type="button"
+          type="button" disabled={!isActive}
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -250,18 +259,24 @@ const handleBuyNow = () => {
             text-primary-foreground
             transition-all
             hover:opacity-90
+            disabled:cursor-not-allowed
+disabled:opacity-50
           "
         >
           <ShoppingCart className="h-3 w-3 shrink-0" />
 
-          <span className="whitespace-nowrap">
-            ADD TO CART
-          </span>
+         <span className="whitespace-nowrap">
+  {status === 'active'
+    ? 'ADD TO CART'
+    : status === 'coming-soon'
+      ? 'COMING SOON'
+      : 'OUT OF STOCK'}
+</span>
         </button>
 
         {/* BUY IT NOW */}
         <button
-          type="button"
+          type="button" disabled={!isActive}
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -285,9 +300,15 @@ const handleBuyNow = () => {
             transition-all
             hover:bg-primary
             hover:text-primary-foreground
+            disabled:cursor-not-allowed
+disabled:opacity-50
           "
         >
-          BUY IT NOW
+          {status === 'active'
+  ? 'BUY IT NOW'
+  : status === 'coming-soon'
+    ? 'COMING SOON'
+    : 'OUT OF STOCK'}
         </button>
 
       </div>

@@ -17,6 +17,7 @@ const GALLERY_FOLDERS: Record<string, string> = {
   'pirandai-rice-mix': 'Pirandai-rice-mix',
   'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
   'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
+  'nutaura': 'Nutaura',
 }
 
 export default function CartPage() {
@@ -384,6 +385,16 @@ return (
       ₹{mrpTotal.toLocaleString('en-IN')}
     </span>
   </div>
+  {/* PRODUCT PRICE */}
+<div className="mt-3 flex items-center justify-between">
+  <span className="text-sm text-muted-foreground">
+    Product Price
+  </span>
+
+  <span className="text-sm font-semibold text-primary">
+    ₹{cartTotal.toLocaleString('en-IN')}
+  </span>
+</div>
    
   {/* SAVINGS */}
   {totalSavings > 0 && (

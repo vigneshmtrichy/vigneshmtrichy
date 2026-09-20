@@ -17,7 +17,6 @@ export type Product = {
   image: string
   category: ProductCategory
   badges: string[]
-  
   description?: string
   ingredients?: string
   nutrition?: string[]
@@ -25,6 +24,8 @@ export type Product = {
   packSize?: string
   mrp?: string
   price?: string
+  gstRate?: number
+
   allergen?: string
 storage?: string
 countryOfOrigin?: string
@@ -65,6 +66,7 @@ export const KIDS_PRODUCTS: Product[] = [
   packSize: '200g',
   mrp: '429',
 price: '365',
+gstRate: 5,
   allergen: 'Contains Milk, Nuts and Barley.',
 
 storage:
@@ -105,7 +107,7 @@ manufacturedBy:
 
     mrp: '449',
 price: '375',
-
+gstRate: 5,
     allergen: 'Contains Milk, Nuts and Barley.',
 
     storage:
@@ -155,7 +157,7 @@ price: '375',
 
   mrp: '455',
 price: '379',
-
+gstRate: 5,
   allergen: 'Contains Milk and Barley.',
 
   storage:
@@ -197,6 +199,7 @@ price: '379',
 
     mrp: '399',
 price: '349',
+    gstRate: 5,
 
     allergen: 'Contains Nuts and Barley.',
 
@@ -211,6 +214,51 @@ price: '349',
 ]
 
 export const ADULT_PRODUCTS: Product[] = [
+  {
+  slug: 'nutaura',
+  name: 'Nutaura',
+  tagline: 'Good Nutrition, Brighter Days..!',
+  descLines: ['Good Nutrition', 'Brighter Days..!'],
+  image: '/products/Nutaura/1.png',
+  category: 'adults',
+  badges: ['Rich in Protein', 'Good Source of Healthy Fats', 'Naturally Nutritious'],
+
+  description:
+    'Nutaura is a wholesome blend of premium nuts and seeds, carefully crafted to add natural nourishment to your everyday diet. Packed with plant protein, fibre, healthy fats and essential minerals, it’s a simple and delicious way to support a healthy and active lifestyle. Enjoy it with milk for a tasty and nutritious serving.',
+
+  ingredients:
+    'Cashew, Almond, Pista, Walnut, Groundnut, Pumpkin Seeds, Sunflower Seeds, Makhana, Cardamom.',
+
+  nutrition: [
+    'Energy: 430.79 kcal',
+    'Carbohydrates: 64.7 g',
+    'Protein: 22.44 g',
+    'Dietary Fibre: 22.14 g',
+    'Fat: 8.63 g',
+    'Calcium: 481.9 mg',
+    'Potassium: 268 mg',
+    'Magnesium: 241 mg',
+    'Zinc: 15.2 mg',
+    'Iron: 9.57 mg',
+    'Biotin (Vitamin B7): 72.8 mcg',
+  ],
+
+  preparation:
+    'Mix 2 teaspoons of Nutaura into a glass of hot or cold milk. Stir well and serve. Add sweetener if preferred.',
+
+  packSize: '200g',
+
+  mrp: '699',
+  price: '599',
+  gstRate: 5,
+
+  allergen: 'Contains nuts and groundnut.',
+
+  storage:
+    'Transfer contents to an airtight container after opening. Store in a cool, dry and hygienic place away from moisture. Use a dry spoon only. As the product contains no added preservatives, consume promptly after opening.',
+
+  countryOfOrigin: 'India',
+},
 {
   slug: 'pirandai-rice-mix',
   name: 'Pirandai Rice Mix',
@@ -244,7 +292,7 @@ export const ADULT_PRODUCTS: Product[] = [
 
  mrp: '339',
 price: '289',
-
+gstRate: 5,
   allergen: 'Please check the ingredient list for possible allergens.',
 
   storage:
@@ -331,7 +379,7 @@ price: '399',
 
      mrp: '429',
 price: '379',
-
+gstRate: 5,
      allergen:
        'May contain nuts, wheat/gluten or sesame. Check the ingredient list before use if you have any food allergies.',
 
@@ -344,7 +392,22 @@ price: '379',
        'Veetoon, No. 68/B2, Erode Main Rd, Muthur Post, Tiruppur Dt - 638105, Tamil Nadu, India.',
    },
 ]
+export type ProductStatus =
+  | 'active'
+  | 'hidden'
+  | 'coming-soon'
+  | 'out-of-stock'
 
+export const PRODUCT_STATUS: Record<string, ProductStatus> = {
+    'millet-abc': 'active',
+  'pink-abc': 'active',
+  'black-rice-milk-mix': 'active',
+  'cotton-milk-mix': 'active',
+  'nutaura': 'active',
+  'pirandai-rice-mix': 'hidden',
+  'mudavattu-kilangu-rice-mix': 'active',
+  'mudavaattu-kizhangu-soup-mix': 'active',
+}
 export const ALL_PRODUCTS: Product[] = [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
 
 export function getProductBySlug(slug: string): Product | undefined {

@@ -13,6 +13,7 @@ import { ProductReviews } from '@/components/product/product-reviews'
 import {
   ALL_PRODUCTS,
   getProductBySlug,
+  PRODUCT_STATUS,
 } from '@/lib/site'
 import { readdir } from 'fs/promises'
 import path from 'path'
@@ -86,6 +87,7 @@ const GALLERY_FOLDERS: Record<string, string> = {
   'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
   'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
   'black-rice-milk-mix': 'blacko-cocoa-mix',
+  'nutaura': 'Nutaura',
 }
 
 
@@ -291,7 +293,7 @@ return (
          {/* PURCHASE ACTIONS */}
 <ProductPurchasePanel
   product={product}
-  inStock={true}
+  status={PRODUCT_STATUS[product.slug]  || 'active'}
 />
 
               </div>
@@ -329,7 +331,7 @@ return (
 
      <ProductPurchasePanel
   product={product}
-  inStock={true}
+  status={PRODUCT_STATUS[product.slug] ?? 'active'}
 />
 
             </div>

@@ -3,8 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
-
+import { PRODUCT_STATUS } from '@/lib/site'
 import type { Product } from '@/lib/site'
+
 
 const GALLERY_FOLDERS: Record<string, string> = {
   'millet-abc': 'Meltiva-Nutrimix',
@@ -25,8 +26,12 @@ export function RelatedProductsCarousel({
 }: RelatedProductsCarouselProps) {
   const [page, setPage] = useState(0)
 
+  const visibleProducts = products.filter(
+  (product) => PRODUCT_STATUS[product.slug] !== 'hidden'
+)
+
   const productsPerPage = 4
-  const totalPages = Math.ceil(products.length / productsPerPage)
+  const totalPages = Math.ceil(visibleProducts.length / productsPerPage)
 
   const goNext = () => {
     setPage((current) =>
@@ -63,7 +68,7 @@ export function RelatedProductsCarousel({
             MOBILE — EXISTING HORIZONTAL SWIPE
             ===================================================== */}
         <div className="flex gap-3 overflow-x-auto pb-2 md:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
-          {products.map((item) => (
+          {visibleProducts.map((item) => (
             <Link
               key={item.slug}
               href={`/products/${item.slug}`}
@@ -143,10 +148,10 @@ export function RelatedProductsCarousel({
               {Array.from({ length: totalPages }).map((_, pageIndex) => {
                 const startIndex = pageIndex * productsPerPage
 
-                const pageProducts = products.slice(
-                  startIndex,
-                  startIndex + productsPerPage
-                )
+                 const pageProducts = visibleProducts.slice(
+                    startIndex,
+                    startIndex + productsPerPage
+                  )
 
                 return (
                   <div

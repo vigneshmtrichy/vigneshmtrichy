@@ -10,10 +10,10 @@ import { AddToCartButton } from '@/components/cart/add-to-cart-button'
 
 export function ProductPurchasePanel({
   product,
-  inStock = true,
+status = 'active',
 }: {
   product: Product
-  inStock?: boolean
+  status?: 'active' | 'hidden' | 'coming-soon' | 'out-of-stock'
 }) {
   const { addToCart } = useCart()
   const router = useRouter()
@@ -22,7 +22,7 @@ export function ProductPurchasePanel({
   const [deliveryMessage, setDeliveryMessage] = useState('')
 
   const handleBuyNow = () => {
-    if (!inStock) return
+    if (status !== 'active') return
 
     addToCart(product, 1)
     router.push('/cart')
@@ -68,7 +68,7 @@ export function ProductPurchasePanel({
   {/* ADD TO CART */}
   <div
     className={
-      !inStock
+      status !== 'active'
         ? 'pointer-events-none opacity-50'
         : ''
     }
@@ -80,7 +80,7 @@ export function ProductPurchasePanel({
   <button
   type="button"
   onClick={handleBuyNow}
-  disabled={!inStock}
+  disabled={status !== 'active'}
   style={{
     width: '260px',
     maxWidth: '100%',
@@ -111,13 +111,17 @@ export function ProductPurchasePanel({
   "
 >
   <ShoppingBag className="h-5 w-5" />
-  {inStock ? 'BUY IT NOW' : 'OUT OF STOCK'}
+ {status === 'active'
+  ? 'BUY IT NOW'
+  : status === 'coming-soon'
+    ? 'COMING SOON'
+    : 'OUT OF STOCK'}
 </button>
 </div>
 
       {/* STOCK STATUS */}
       <div className="mt-4 flex items-center gap-2">
-        {inStock ? (
+        {status === 'active' ? (
           <>
             <span
               className="
@@ -156,8 +160,8 @@ export function ProductPurchasePanel({
             </span>
 
             <span className="text-sm font-semibold text-red-600">
-              OUT OF STOCK
-            </span>
+  {status === 'coming-soon' ? 'COMING SOON' : 'OUT OF STOCK'}
+</span>
           </>
         )}
       </div>
