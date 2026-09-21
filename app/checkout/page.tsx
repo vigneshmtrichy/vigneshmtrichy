@@ -7,7 +7,7 @@ import { useCart } from '@/components/cart/cart-context'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 
-const FLAT_SHIPPING = 59
+const FLAT_SHIPPING = 79
 const FREE_SHIPPING_THRESHOLD = 699
 
 const STATES = [
@@ -367,7 +367,7 @@ const igst = isTamilNadu ? 0 : totalGST
               </div>
             </div>
 <p className="text-xs leading-relaxed text-muted-foreground">
-  🚚 Flat ₹59 delivery across India • Free delivery on orders above ₹699
+  🚚 Flat ₹79 delivery across India • Free delivery on orders above ₹699
 </p>
             {error && (
               <div className="rounded-full bg-red-50 px-4 py-2 text-xs font-medium text-red-600">
@@ -464,11 +464,11 @@ const igst = isTamilNadu ? 0 : totalGST
             onClick={handleWhatsAppOrder}
             className="mt-6 flex h-13 w-full items-center justify-center rounded-full bg-primary px-4 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-all active:scale-[0.97]"
           >
-            BUY ON WHATSAPP
+            CONFIRM ORDER ON WHATSAPP
           </button>
 
          <p className="mt-3 text-center text-[10px] leading-relaxed text-muted-foreground">
-  Delivery charges are calculated automatically. Payment details will be confirmed directly on WhatsApp.
+  Your order details will be sent to WhatsApp. Payment and delivery will be confirmed with you before dispatch.
 </p>
         </div>
       </main>

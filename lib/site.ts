@@ -49,7 +49,7 @@ export const KIDS_PRODUCTS: Product[] = [
   category: 'kids',
   badges: [],
   description:
-    'A thoughtfully crafted blend made with milk solids, barley malt, nuts, millets, fruits, vegetables and cardamom.',
+    'A wholesome blend of nuts, millets, fruits and natural ingredients to support your family’s daily nutrition. Tasty, nutritious, and made for brighter tomorrows.',
   ingredients:
     'Brown sugar, Milk solids, Barley Malt Powder, Almond, Cashew, Ragi, Pearl Millet, Carrot, Apple, Beetroot and Cardamom.',
   nutrition: [
@@ -87,7 +87,7 @@ manufacturedBy:
     badges: [...PRODUCT_BADGES],
 
     description:
-      'A thoughtfully crafted blend made with milk solids, beetroot, barley malt, nuts, apple, carrot and cardamom.',
+      'Rubyblend Nutrimix is a delicious blend of nuts, fruits, beetroot and grains, crafted to make a naturally colourful and tasty drink. Enjoy a wholesome and delicious serving with milk, made for everyday enjoyment.',
 
     ingredients:
       'Milk solids, Beetroot, Brown sugar, Barley Malt Powder, Almond, Cashew, Apple, Carrot and Cardamom.',
@@ -134,7 +134,7 @@ gstRate: 5,
   badges: [...PRODUCT_BADGES],
 
   description:
-    'A wholesome blacko cocoa mix made with black rice flakes, cocoa solids, milk solids and barley malt.',
+    'Tenoo Blacko is a delicious blend of black rice, cocoa and traditional ingredients. Enjoy a rich chocolatey taste with the goodness of carefully selected ingredients, made for everyday enjoyment.',
 
   ingredients:
     'Brown sugar, Black rice flake, Cocoa solids, Milk solids, Barley malt.',
@@ -178,7 +178,7 @@ gstRate: 5,
     badges: [...PRODUCT_BADGES],
 
     description:
-      'A traditional cotton seed milk mix made with cotton seed, rice flour, nuts, barley malt, palm jaggery and warming spices.',
+      'A wholesome blend of traditional ingredients for a nourishing drink that supports your family’s everyday nutrition.',
 
     ingredients:
       'Cotton seed, Raw rice flour, Brown sugar, Peanut flour, Almond powder, Barley malt powder, Crystal palm jaggery, Dry ginger powder, Pepper powder, Cardamom.',
@@ -224,7 +224,7 @@ export const ADULT_PRODUCTS: Product[] = [
   badges: ['Rich in Protein', 'Good Source of Healthy Fats', 'Naturally Nutritious'],
 
   description:
-    'Nutaura is a wholesome blend of premium nuts and seeds, carefully crafted to add natural nourishment to your everyday diet. Packed with plant protein, fibre, healthy fats and essential minerals, it’s a simple and delicious way to support a healthy and active lifestyle. Enjoy it with milk for a tasty and nutritious serving.',
+    'Nutaura is a delicious blend of premium nuts and seeds, carefully selected for everyday enjoyment. Rich in protein, fibre and naturally occurring nutrients, it makes a simple and tasty addition to your daily diet.',
 
   ingredients:
     'Cashew, Almond, Pista, Walnut, Groundnut, Pumpkin Seeds, Sunflower Seeds, Makhana, Cardamom.',
@@ -313,7 +313,7 @@ gstRate: 5,
   badges: [...PRODUCT_BADGES],
 
   description:
-    'A traditional Mudavaatukaal rice mix blended with toor dal, green gram, urad dal, coriander, cumin seeds, pepper, chilli, tamarind, asafoetida and salt.',
+    'Tenoo Mudavaatukaal Rice Mix is a traditional blend of Mudavaatukaal, carefully selected dals, spices and rice. Enjoy the authentic taste of South India in a simple and convenient way',
 
   ingredients:
     'Mudavaatukaal, Toor dal, Green gram, Urad dal, Coriander, Cumin seeds, Pepper, Chilli, Tamarind, Asafoetida, Salt.',
@@ -356,7 +356,7 @@ price: '399',
      badges: [...PRODUCT_BADGES],
 
      description:
-       'A traditional soup mix made with Mudavaatukaal, lentils, seeds, herbs and warming spices for a wholesome everyday soup.',
+       'Tenoo Mudavaatukaal Soup Mix is a traditional blend of Mudavaatukaal, carefully selected spices and dals. Enjoy a rich, comforting South Indian soup in a simple and convenient way.',
 
      ingredients:
        'Mudavaatukaal, Pepper, Fennel Seeds, Black Urad Dal, Toor Dal, Chana Dal, Cumin Seeds, Coriander, Dried Ginger, Garlic, Cinnamon, Curry Leaves, Salt, Clove, Turmeric & Bay Leaf.',
@@ -378,8 +378,8 @@ price: '399',
      packSize: '150g',
 
      mrp: '429',
-price: '379',
-gstRate: 5,
+      price: '379',
+      gstRate: 5,
      allergen:
        'May contain nuts, wheat/gluten or sesame. Check the ingredient list before use if you have any food allergies.',
 
