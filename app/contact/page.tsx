@@ -75,7 +75,7 @@ ${message}`
                   href="https://wa.me/919585808590"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group rounded-2xl bg-primary p-7 text-primary-foreground transition-transform hover:-translate-y-1 md:p-8"
+                  className="group rounded-2xl bg-white p-7 transition-transform hover:-translate-y-1 md:p-8"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-primary">
@@ -89,22 +89,24 @@ ${message}`
                     WhatsApp
                   </p>
 
-                  <h2 className="mt-2 font-serif text-3xl font-bold">
+                  <h2 className="mt-2 font-serif text-3xl font-bold text-primary">
                     Chat with us
                   </h2>
 
-                  <p className="mt-3 text-sm leading-6 text-primary-foreground/70">
-                    For product questions, orders and quick enquiries.
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    For orders, product questions, delivery support and quick enquiries.
                   </p>
 
-                  <p className="mt-5 font-medium">
+                 <p className="mt-5 font-medium text-primary">
                     +91 95858 08590
                   </p>
                 </a>
 
                 {/* Email */}
                 <a
-                  href="mailto:info@tenoo.in"
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=info@tenoo.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="group rounded-2xl bg-white p-7 transition-transform hover:-translate-y-1 md:p-8"
                 >
                   <div className="flex items-start justify-between">
@@ -155,6 +157,11 @@ ${message}`
             <br />
             Trichy – 620008
           </p>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">
+  Business Hours
+  <br />
+  Monday – Saturday · 10:00 AM – 6:00 PM
+</p>
         </div>
 
               </div>
@@ -281,6 +288,16 @@ ${message}`
                       For bulk purchases, retail enquiries, distribution or
                       business opportunities, get in touch with our team.
                     </p>
+                    <p className="mt-5 text-sm text-primary-foreground/70">
+  For complaints or grievance-related concerns, please email us at{' '}
+  <a
+    href="mailto:info@tenoo.in"
+    className="font-medium text-primary-foreground underline underline-offset-4"
+  >
+    info@tenoo.in
+  </a>
+  .
+</p>
                   </div>
 
                   <a
@@ -454,35 +471,7 @@ ${message}`
           </section>
         </ScrollReveal>
 
-        {/* Closing CTA */}
-        <ScrollReveal delay={100}>
-          <section className="px-5 pb-8 md:px-10 md:pb-12">
-            <div className="mx-auto max-w-5xl rounded-3xl bg-primary px-6 py-10 text-center text-primary-foreground md:px-10 md:py-14">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">
-                We&apos;re Listening
-              </p>
-
-              <h2 className="mx-auto mt-3 max-w-2xl font-serif text-3xl font-bold md:text-4xl">
-                Have a question? Let&apos;s talk.
-              </h2>
-
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-primary-foreground/70 md:text-base">
-                Whether you&apos;re discovering TENOO for the first time or already
-                part of our journey, feel free to reach out.
-              </p>
-
-              <a
-                href="https://wa.me/919585808590"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-primary transition-opacity hover:opacity-90"
-              >
-                Chat on WhatsApp
-                <ArrowUpRight className="h-4 w-4" />
-              </a>
-            </div>
-          </section>
-        </ScrollReveal>
+       
       </main>
 
       <SiteFooter />

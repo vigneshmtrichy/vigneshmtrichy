@@ -94,7 +94,7 @@ const FAQ_SECTIONS = [
       {
         question: 'Do you offer shipping across India?',
         answer:
-          'Shipping availability depends on the order and delivery location. Please contact TENOO on WhatsApp to confirm delivery availability for your location.',
+          'We offer delivery across India, subject to serviceability. Delivery is ₹79 on orders below ₹699, and free on orders of ₹699 and above.',
       },
       {
         question: 'How can I contact TENOO regarding my order?',
@@ -223,8 +223,8 @@ export default function FAQPage() {
                 key={section.title}
                 delay={sectionIndex * 80}
               >
-                <div className="mb-12 last:mb-0">
-                  <h2 className="mb-4 font-display text-2xl text-foreground md:text-3xl">
+                <div className="mb-20 last:mb-0">
+                  <h2 className="mt-14 mb-4 font-display text-2xl text-foreground md:text-3xl">
                     {section.title}
                   </h2>
 

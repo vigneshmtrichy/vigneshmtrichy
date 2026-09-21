@@ -27,31 +27,34 @@ const SECTIONS = [
       'We make reasonable efforts to keep product information accurate and up to date. However, packaging information should always be considered the final reference for the product purchased.',
     ],
   },
-  {
-    title: '3. Orders & Payments',
-    content: [
-      'Orders may be placed through the ordering channels provided by TENOO, including WhatsApp.',
-      'An order is considered confirmed only after TENOO confirms the order and applicable payment or order requirements have been completed.',
-      'Product availability and pricing may change from time to time. If there is any change affecting a confirmed order, we will communicate the same to the customer.',
-    ],
-  },
-  {
-    title: '4. Cancellation & Refunds',
-    content: [
-      'Cancellation requests should be made as soon as possible through WhatsApp or the contact details provided on this website.',
-      'Once an order has been processed or dispatched, cancellation may not be possible.',
-      'If a refund is applicable, the request will be reviewed based on the order status and the reason for the request. Any eligible refund will be processed through the applicable payment method or as otherwise communicated by TENOO.',
-      'Nothing in this policy is intended to limit any rights available to consumers under applicable law.',
-    ],
-  },
-  {
-    title: '5. Shipping & Delivery',
-    content: [
-      'Delivery availability and estimated delivery timelines may vary depending on the destination, product availability and other circumstances.',
-      'Customers are responsible for providing accurate delivery information at the time of ordering.',
-      'TENOO will make reasonable efforts to facilitate delivery, but delays caused by circumstances outside our reasonable control may occur.',
-    ],
-  },
+{
+  title: '3. Orders & Payments',
+  content: [
+    'Orders may be placed through the ordering channels provided by TENOO, including WhatsApp.',
+    'An order is considered confirmed only after TENOO confirms the order and applicable payment or order requirements have been completed.',
+    'Product availability and pricing may change from time to time. If there is any change affecting a confirmed order, we will communicate the same to the customer.',
+    'Prices displayed on the website include applicable GST unless otherwise stated. Delivery charges, where applicable, will be shown at checkout before the order is confirmed.',
+  ],
+},
+{
+  title: '4. Cancellation & Refunds',
+  content: [
+    'Cancellation requests should be made as soon as possible through WhatsApp or the contact details provided on this website.',
+    'Once an order has been processed or dispatched, cancellation may not be possible.',
+    'If a cancellation or refund is accepted, the request will be reviewed based on the order status and the reason for the request. Any eligible refund will be processed through the applicable payment method or as otherwise communicated by TENOO.',
+    'Nothing in these Terms & Conditions is intended to limit any rights available to consumers under applicable law.',
+  ],
+},
+{
+  title: '5. Shipping & Delivery',
+  content: [
+    'TENOO offers delivery across India, subject to courier serviceability and other applicable delivery conditions.',
+    'Delivery charges are ₹79 for orders below ₹699 and free for orders of ₹699 and above, unless otherwise stated.',
+    'Delivery availability and estimated delivery timelines may vary depending on the destination, product availability, courier serviceability and other circumstances.',
+    'Customers are responsible for providing accurate delivery information at the time of ordering.',
+    'TENOO will make reasonable efforts to facilitate delivery, but delays caused by circumstances outside our reasonable control may occur.',
+  ],
+},
   {
     title: '6. Product Use, Allergens & Storage',
     content: [
@@ -101,6 +104,16 @@ const SECTIONS = [
       'If you have any questions, concerns or complaints regarding these Terms & Conditions, our products or an order, please contact TENOO.',
     ],
   },
+  {
+  title: '13. Grievance Redressal',
+  content: [
+    'For any complaint, grievance or concern relating to TENOO products, orders, delivery or the website, customers may contact our Grievance Officer using the details below.',
+    'Grievance Officer: Vignesh M',
+    'Email: info@tenoo.in',
+    'Phone: +91 9585808590',
+    'We will make reasonable efforts to acknowledge and address complaints within the timelines applicable under law.',
+  ],
+},
 ]
 
 export default function TermsPage() {

@@ -342,7 +342,7 @@ return (
         {/* =========================================================
             PRODUCT INFORMATION
             ========================================================= */}
-        <section className="bg-card/40 px-5 py-10 md:px-10 md:py-14">
+        <section className="bg-card/40 px-5 pt-10 pb-4 md:px-10 md:pt-14 md:pb-6">
           <div className="mx-auto max-w-6xl">
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -449,7 +449,7 @@ return (
             PRODUCT DETAILS
             ========================================================= */}
         <ScrollReveal>
-          <section className="px-5 py-10 md:px-10 md:py-14">
+          <section className="px-5 pt-0 pb-10 md:px-10 md:pt-0 md:pb-14">
             <div className="mx-auto max-w-6xl">
 
               <div className="rounded-2xl border border-border bg-background p-6 md:p-8">

@@ -21,19 +21,20 @@ const SECTIONS = [
     ],
   },
   {
-    title: '2. Information We May Collect',
-    content: [
-      'When you contact TENOO, place an order or submit an enquiry, we may receive information such as your name, phone number, email address, delivery address and order-related details.',
-      'We may also receive information that you voluntarily provide when communicating with us through WhatsApp, email or other contact channels.',
-    ],
-  },
-  {
-    title: '3. How We Use Your Information',
-    content: [
-      'We may use the information you provide to respond to enquiries, process and manage orders, arrange delivery, provide customer support and communicate with you about your order or request.',
-      'We may also use information to improve our website, products and customer experience.',
-    ],
-  },
+  title: '2. Information We May Collect',
+  content: [
+    'When you contact TENOO, place an order or submit an enquiry, we may receive information such as your name, phone number, email address, delivery address and order-related details.',
+    'We may also receive information that you voluntarily provide when communicating with us through WhatsApp, email or other contact channels.',
+    'Depending on how you use our website, we may also receive technical information such as device, browser, IP address and website usage information through cookies or similar technologies.',
+  ],
+},
+{
+  title: '3. How We Use Your Information',
+  content: [
+    'We may use the information you provide to respond to enquiries, process and manage orders, process payments where applicable, arrange delivery, provide customer support and communicate with you about your order or request.',
+    'We may also use information to improve our website, products and customer experience.',
+  ],
+},
   {
     title: '4. WhatsApp & Third-Party Services',
     content: [
@@ -69,13 +70,14 @@ const SECTIONS = [
       'We retain personal information only for as long as reasonably necessary for the purposes for which it was collected, including order processing, customer support, business records and applicable legal or regulatory requirements.',
     ],
   },
-  {
-    title: '9. Your Choices',
-    content: [
-      'You may contact TENOO if you have questions about the personal information you have provided to us or if you wish to request appropriate updates or corrections, subject to applicable requirements.',
-      'You may also choose not to provide certain information, although this may affect our ability to process an order or respond to a specific request.',
-    ],
-  },
+{
+  title: '9. Your Choices',
+  content: [
+    'You may contact TENOO to request access to, correction or updating of your personal information, or other requests relating to your personal data, subject to applicable law.',
+    'Where processing is based on consent, you may withdraw your consent by contacting us. Withdrawal of consent will not affect the lawfulness of processing carried out before the withdrawal.',
+    'You may also contact us regarding any privacy-related grievance or concern.',
+  ],
+},
   {
     title: '10. Children’s Privacy',
     content: [
