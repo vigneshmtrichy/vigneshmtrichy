@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { WHATSAPP_URL } from '@/lib/site'
+import { WHATSAPP_URL, getProductBySlug } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 
@@ -620,10 +620,14 @@ export default function MyOrdersPage() {
                                             className="shrink-0"
                                           >
                                             <img
-                                              src={item.image}
-                                              alt={getItemName(item)}
-                                              className="h-16 w-16 rounded-xl border bg-white object-contain transition-transform hover:scale-105"
-                                            />
+  src={
+    item.product_slug
+      ? getProductBySlug(item.product_slug)?.image || item.image || ''
+      : item.image || ''
+  }
+  alt={getItemName(item)}
+  className="h-16 w-16 rounded-xl border bg-white object-contain transition-transform hover:scale-105"
+/>
                                           </Link>
                                         ) : (
                                           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border bg-muted text-xl">
