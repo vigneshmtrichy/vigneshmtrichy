@@ -83,7 +83,7 @@ export default function LoginPage() {
     <main className="relative min-h-screen overflow-hidden bg-[#d8c9ad]">
       {/* Warm lifestyle-style background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,#dbe5c9_0%,transparent_28%),radial-gradient(circle_at_82%_20%,#f2e5c9_0%,transparent_30%),linear-gradient(135deg,#6b8467_0%,#b8c2a5_38%,#eadcc0_72%,#b99b6e_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_15%,rgba(35,45,27,.18)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_15%,rgba(35,45,27,.18)_100%)]" />\n      <div className="absolute inset-0 bg-white/10 backdrop-blur-[3px]" />
 
       {/* Decorative blurred food / nature atmosphere */}
       <div className="absolute -left-24 top-16 h-80 w-80 rounded-full bg-[#355d3c]/20 blur-3xl" />
