@@ -169,24 +169,38 @@ useEffect(() => {
         </button>
 
         {adminOpen && (
-          <div className="absolute right-0 top-12 z-50 w-44 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl">
-            <Link
-              href="/admin/orders"
-              onClick={() => setAdminOpen(false)}
-              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              Orders
-            </Link>
+  <div className="absolute right-0 top-12 z-50 w-48 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl">
+    <Link
+      href="/admin/orders"
+      onClick={() => setAdminOpen(false)}
+      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+    >
+      Orders
+    </Link>
 
-            <Link
-              href="/admin/products"
-              onClick={() => setAdminOpen(false)}
-              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              Products
-            </Link>
-          </div>
-        )}
+    <Link
+      href="/admin/products"
+      onClick={() => setAdminOpen(false)}
+      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+    >
+      Products
+    </Link>
+
+    <div className="my-1 border-t border-border/60" />
+
+    <button
+      type="button"
+      onClick={async () => {
+        setAdminOpen(false)
+        await supabase.auth.signOut()
+        window.location.href = '/'
+      }}
+      className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+    >
+      🚪 Logout
+    </button>
+  </div>
+)}
       </div>
     ) : (
       <div className="relative hidden lg:block">
