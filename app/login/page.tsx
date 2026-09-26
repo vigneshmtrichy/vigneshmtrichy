@@ -80,7 +80,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#c9b995]">
+    <main className="relative min-h-screen overflow-hidden bg-[#d8c9ad]">
       {/* Warm lifestyle-style background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,#dbe5c9_0%,transparent_28%),radial-gradient(circle_at_82%_20%,#f2e5c9_0%,transparent_30%),linear-gradient(135deg,#6b8467_0%,#b8c2a5_38%,#eadcc0_72%,#b99b6e_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_15%,rgba(35,45,27,.18)_100%)]" />
@@ -117,7 +117,7 @@ export default function LoginPage() {
           src="/tenoo-mascot-mature.png"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-[8%] left-[8%] z-10 hidden h-[430px] w-auto object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,.22)] xl:block"
+          className="pointer-events-none absolute bottom-[10%] left-[5%] z-10 hidden h-[400px] w-auto object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,.22)] xl:block"
         />
 
         {/* Product atmosphere on the right */}
@@ -125,16 +125,16 @@ export default function LoginPage() {
           src="/products/Nutaura/1.png"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-[5%] right-[4%] z-0 hidden h-[310px] w-auto object-contain opacity-30 blur-[1px] drop-shadow-[0_30px_30px_rgba(0,0,0,.18)] xl:block"
+          className="pointer-events-none absolute bottom-[5%] right-[4%] z-0 hidden h-[310px] w-auto object-contain opacity-25 blur-[2px] drop-shadow-[0_30px_30px_rgba(0,0,0,.18)] xl:block"
         />
 
         <div className="relative z-20 flex min-h-[calc(100vh-2.5rem)] items-center justify-center">
           {/* Frosted glass card */}
-          <section className="relative w-full max-w-[650px] overflow-hidden rounded-[2rem] border border-white/55 bg-white/30 shadow-[0_30px_100px_rgba(25,40,27,.28),inset_0_1px_0_rgba(255,255,255,.85)] backdrop-blur-2xl">
+          <section className="relative w-full max-w-[620px] overflow-hidden rounded-[2.25rem] border border-white/55 bg-white/[0.22] shadow-[0_30px_100px_rgba(25,40,27,.28),inset_0_1px_0_rgba(255,255,255,.85)] backdrop-blur-3xl">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/50 via-white/15 to-white/5" />
             <div className="pointer-events-none absolute left-1/4 top-0 h-px w-1/2 bg-white/90 blur-sm" />
 
-            <div className="relative px-7 py-8 sm:px-12 sm:py-10">
+            <div className="relative px-7 py-8 sm:px-12 sm:py-9">
               <div className="text-center">
                 <img
                   src="/tenoo-logo.png"
@@ -186,7 +186,7 @@ export default function LoginPage() {
                       placeholder="Enter your name"
                       autoComplete="name"
                       required
-                      className="h-14 w-full rounded-full border border-white/75 bg-white/40 px-5 text-sm text-[#24352d] shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_8px_24px_rgba(50,60,45,.06)] outline-none backdrop-blur-xl placeholder:text-[#7a847e] transition focus:bg-white/65 focus:ring-4 focus:ring-[#3c7549]/10"
+                      className="h-14 w-full rounded-full border border-white/75 bg-white/32 px-5 text-sm text-[#24352d] shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_8px_24px_rgba(50,60,45,.06)] outline-none backdrop-blur-xl placeholder:text-[#7a847e] transition focus:bg-white/65 focus:ring-4 focus:ring-[#3c7549]/10"
                     />
                   </div>
                 )}
