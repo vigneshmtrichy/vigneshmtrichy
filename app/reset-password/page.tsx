@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -12,6 +12,27 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setReady(true)
+      }
+    })
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setReady(true)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +84,12 @@ export default function ResetPasswordPage() {
               Enter your new password below.
             </p>
           </div>
+
+          {!ready && (
+            <div className="mb-5 rounded-xl bg-muted px-4 py-3 text-sm text-foreground">
+              Preparing password reset...
+            </div>
+          )}
 
           <form onSubmit={handleResetPassword} className="space-y-5">
             <div>
@@ -147,7 +174,7 @@ export default function ResetPasswordPage() {
 
             <button
               type="submit"
-              disabled={loading || success}
+              disabled={loading || success || !ready}
               className="w-full rounded-xl bg-foreground px-5 py-3 font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'UPDATING...' : 'UPDATE PASSWORD'}
