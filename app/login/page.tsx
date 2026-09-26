@@ -56,9 +56,7 @@ export default function LoginPage() {
           email: email.trim(),
           password,
           options: {
-            data: {
-              full_name: name.trim(),
-            },
+            data: { full_name: name.trim() },
             emailRedirectTo: `${window.location.origin}/login`,
           },
         })
@@ -92,123 +90,102 @@ export default function LoginPage() {
     }
   }
 
-  const switchMode = () => {
-    setIsSignup((current) => !current)
+  const switchMode = (signup: boolean) => {
+    setIsSignup(signup)
     setMessage('')
     setPassword('')
   }
 
   return (
-    <main className="min-h-screen bg-muted/20 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl overflow-hidden rounded-[2rem] border border-border bg-background shadow-xl lg:grid-cols-2">
-        {/* Brand panel */}
-        <div className="relative hidden overflow-hidden bg-[#f7f1e7] lg:flex">
-          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-32 -right-20 h-80 w-80 rounded-full bg-[#d9a441]/10 blur-3xl" />
+    <main className="relative min-h-screen overflow-hidden bg-[#faf8f3] px-4 py-8 sm:px-6">
+      {/* Soft organic background shapes */}
+      <div className="pointer-events-none absolute -left-28 top-24 h-72 w-72 rounded-full bg-primary/5 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 bottom-10 h-96 w-96 rounded-full bg-[#d7a44b]/10 blur-3xl" />
 
-          <div className="relative flex w-full flex-col justify-between p-12 xl:p-16">
-            <div>
+      <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-xl flex-col">
+        <header className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => (window.location.href = '/')}
+            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to store
+          </button>
+
+          <img
+            src="/tenoo-logo.png"
+            alt="Tenoo"
+            className="h-auto w-28 object-contain sm:w-32"
+          />
+        </header>
+
+        <div className="flex flex-1 items-center justify-center py-10">
+          <section className="w-full rounded-[2rem] border border-[#e8e1d5] bg-white p-6 shadow-[0_18px_60px_rgba(55,45,30,0.08)] sm:p-10">
+            <div className="text-center">
+              <div className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
+                <div className="h-3 w-3 rounded-full bg-primary" />
+              </div>
+
+              <h1 className="font-display text-3xl text-foreground sm:text-4xl">
+                {isSignup ? 'Create your account' : 'Welcome back'}
+              </h1>
+
+              <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
+                {isSignup
+                  ? 'Join Tenoo and keep your orders and account details in one place.'
+                  : 'Sign in to continue to your Tenoo account.'}
+              </p>
+            </div>
+
+            {/* Mode switch */}
+            <div className="mt-8 grid grid-cols-2 rounded-2xl bg-muted/70 p-1">
               <button
                 type="button"
-                onClick={() => (window.location.href = '/')}
-                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => switchMode(false)}
+                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                  !isSignup
+                    ? 'bg-white text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
-                <ArrowLeft className="h-4 w-4" />
-                Back to store
+                Sign in
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchMode(true)}
+                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                  isSignup
+                    ? 'bg-white text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Create account
               </button>
             </div>
 
-            <div className="mx-auto w-full max-w-md py-10 text-center">
-              <img
-                src="/tenoo-logo.png"
-                alt="Tenoo"
-                className="mx-auto h-auto w-48 object-contain"
-              />
-
-              <p className="mt-5 text-sm font-medium uppercase tracking-[0.24em] text-primary">
-                Good Food. Made for Every Generation.
-              </p>
-
-              <div className="mt-10 overflow-hidden rounded-3xl border border-[#eadfce] bg-white/70 p-4 shadow-sm">
-                <img
-                  src="/tenoo-mascot-mature.png"
-                  alt="Tenoo mascot"
-                  className="mx-auto max-h-72 w-auto object-contain"
-                />
-              </div>
-
-              <h2 className="mt-8 font-display text-3xl text-foreground">
-                A better way to enjoy Tenoo.
-              </h2>
-              <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-                Sign in to manage your account, view your orders and continue
-                your Tenoo journey.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              Your account information is protected.
-            </div>
-          </div>
-        </div>
-
-        {/* Form panel */}
-        <div className="flex items-center justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
-          <div className="w-full max-w-md">
-            <div className="mb-8 text-center lg:text-left">
-              <div className="mb-6 lg:hidden">
-                <button
-                  type="button"
-                  onClick={() => (window.location.href = '/')}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to store
-                </button>
-              </div>
-
-              <img
-                src="/tenoo-logo.png"
-                alt="Tenoo"
-                className="mx-auto mb-7 h-auto w-36 object-contain lg:hidden"
-              />
-
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                {isSignup ? 'Join Tenoo' : 'Welcome back'}
-              </p>
-
-              <h1 className="mt-3 font-display text-3xl text-foreground sm:text-4xl">
-                {isSignup ? 'Create your account' : 'Sign in to Tenoo'}
-              </h1>
-
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {isSignup
-                  ? 'Create an account to manage your orders and enjoy a smoother shopping experience.'
-                  : 'Access your account, orders and saved details.'}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="mt-7 space-y-5">
               {isSignup && (
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">
-                    Name
+                  <label className="mb-2 block text-sm font-semibold text-foreground">
+                    Full name
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    className="h-13 w-full rounded-2xl border border-border bg-background px-4 py-3.5 text-sm outline-none transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Enter your name"
+                    autoComplete="name"
                     required
+                    className="h-14 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-all placeholder:text-muted-foreground/55 focus:border-primary focus:ring-4 focus:ring-primary/10"
                   />
                 </div>
               )}
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">
-                  Email
+                <label className="mb-2 block text-sm font-semibold text-foreground">
+                  Email address
                 </label>
                 <input
                   type="email"
@@ -216,14 +193,14 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   autoComplete="email"
-                  className="h-13 w-full rounded-2xl border border-border bg-background px-4 py-3.5 text-sm outline-none transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
                   required
+                  className="h-14 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-all placeholder:text-muted-foreground/55 focus:border-primary focus:ring-4 focus:ring-primary/10"
                 />
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label className="text-sm font-semibold text-foreground">
                     Password
                   </label>
 
@@ -232,7 +209,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={handleForgotPassword}
                       disabled={loading}
-                      className="text-xs font-semibold text-primary transition-colors hover:underline disabled:opacity-60"
+                      className="text-xs font-semibold text-primary hover:underline disabled:opacity-60"
                     >
                       Forgot password?
                     </button>
@@ -247,14 +224,14 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     autoComplete={isSignup ? 'new-password' : 'current-password'}
                     minLength={6}
-                    className="h-13 w-full rounded-2xl border border-border bg-background px-4 py-3.5 pr-12 text-sm outline-none transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
                     required
+                    className="h-14 w-full rounded-2xl border border-border bg-white px-4 pr-12 text-sm outline-none transition-all placeholder:text-muted-foreground/55 focus:border-primary focus:ring-4 focus:ring-primary/10"
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -278,7 +255,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="h-13 w-full rounded-2xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-14 w-full rounded-2xl bg-foreground px-5 text-sm font-semibold tracking-wide text-background transition-all hover:opacity-90 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading
                   ? 'Please wait...'
@@ -288,25 +265,20 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-7 text-center text-sm text-muted-foreground">
-              {isSignup
-                ? 'Already have an account?'
-                : "Don't have an account?"}{' '}
-              <button
-                type="button"
-                onClick={switchMode}
-                className="font-semibold text-primary hover:underline"
-              >
-                {isSignup ? 'Sign in' : 'Create account'}
-              </button>
+            <div className="mt-7 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Secure account access
             </div>
 
-            <p className="mt-8 text-center text-xs leading-5 text-muted-foreground">
-              By continuing, you agree to Tenoo&apos;s terms and privacy
-              policy.
+            <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
+              By continuing, you agree to Tenoo&apos;s terms and privacy policy.
             </p>
-          </div>
+          </section>
         </div>
+
+        <footer className="pb-2 text-center text-xs text-muted-foreground">
+          Good Food. Made for Every Generation.
+        </footer>
       </div>
     </main>
   )
