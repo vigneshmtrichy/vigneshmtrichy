@@ -29,7 +29,7 @@ export function BrandLogo({
         className={cn(
           'h-auto w-auto object-contain',
           withTagline ? 'max-w-[135px]' : 'max-w-[125px]',
-          tone === 'light' && 'brightness-110',
+          tone === 'light' && 'brightness-0 invert',
         )}
       />
     </Link>

@@ -233,22 +233,13 @@ useEffect(() => {
               📦 My Orders
             </Link>
 
-            <Link
-              href="/account/profile"
-              onClick={() => setAccountOpen(false)}
-              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              👤 My Profile
-            </Link>
-
-            <Link
-              href="/account/addresses"
-              onClick={() => setAccountOpen(false)}
-              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              📍 My Addresses
-            </Link>
-
+           <Link
+  href="/account/profile"
+  onClick={() => setAccountOpen(false)}
+  className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+>
+  👤 My Account
+</Link>
           <Link
   href="/account/help"
   onClick={() => setAccountOpen(false)}
@@ -546,21 +537,12 @@ useEffect(() => {
             </Link>
 
             <Link
-              href="/account/profile"
-              onClick={() => setOpen(false)}
-              className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
-            >
-              👤 My Profile
-            </Link>
-
-            <Link
-              href="/account/addresses"
-              onClick={() => setOpen(false)}
-              className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
-            >
-              📍 My Addresses
-            </Link>
-
+  href="/account/profile"
+  onClick={() => setOpen(false)}
+  className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+>
+  👤 My Account
+</Link>
             <Link
               href="/account/help"
               onClick={() => setOpen(false)}
