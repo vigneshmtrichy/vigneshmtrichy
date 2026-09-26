@@ -2,10 +2,10 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PRODUCT_STATUS } from '@/lib/site'
-import type { Product } from '@/lib/site'
-
+import type { Product, ProductStatus } from '@/lib/site'
+import { supabase } from '@/lib/supabase'
 
 const GALLERY_FOLDERS: Record<string, string> = {
   'millet-abc': 'Meltiva-Nutrimix',
@@ -26,9 +26,46 @@ export function RelatedProductsCarousel({
 }: RelatedProductsCarouselProps) {
   const [page, setPage] = useState(0)
 
-  const visibleProducts = products.filter(
-  (product) => PRODUCT_STATUS[product.slug] !== 'hidden'
-)
+  const [productStatuses, setProductStatuses] =
+  useState<Record<string, ProductStatus>>({})
+
+useEffect(() => {
+  const loadProductStatuses = async () => {
+   
+
+    const { data, error } = await supabase
+      .from('product_status')
+      .select('product_slug, status')
+
+    if (error) {
+      console.error(
+        'Failed to load related product statuses:',
+        error,
+      )
+      return
+    }
+
+    setProductStatuses(
+      Object.fromEntries(
+        (data || []).map((item) => [
+          item.product_slug,
+          item.status as ProductStatus,
+        ]),
+      ),
+    )
+  }
+
+  loadProductStatuses()
+}, [])
+
+ const visibleProducts = products.filter((product) => {
+  const status =
+    productStatuses[product.slug] ??
+    PRODUCT_STATUS[product.slug] ??
+    'active'
+
+  return status !== 'hidden'
+})
 
   const productsPerPage = 4
   const totalPages = Math.ceil(visibleProducts.length / productsPerPage)
@@ -120,9 +157,30 @@ export function RelatedProductsCarousel({
                   </div>
                 )}
 
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  View product →
-                </p>
+            {(() => {
+  const status =
+    productStatuses[item.slug] ??
+    PRODUCT_STATUS[item.slug] ??
+    'active'
+
+  return (
+    <div
+      className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-[11px] font-bold ${
+        status === 'coming-soon'
+          ? 'bg-orange-100 text-orange-600'
+          : status === 'out-of-stock'
+            ? 'bg-red-100 text-red-600'
+            : 'bg-muted text-muted-foreground'
+      }`}
+    >
+      {status === 'coming-soon'
+        ? 'COMING SOON'
+        : status === 'out-of-stock'
+          ? 'OUT OF STOCK'
+          : 'View product →'}
+    </div>
+  )
+})()}
               </div>
             </Link>
           ))}
@@ -219,9 +277,30 @@ export function RelatedProductsCarousel({
                               </div>
                             )}
 
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              View product →
-                            </p>
+                          {(() => {
+  const status =
+    productStatuses[item.slug] ??
+    PRODUCT_STATUS[item.slug] ??
+    'active'
+
+  return (
+    <div
+      className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-[11px] font-bold ${
+        status === 'coming-soon'
+          ? 'bg-orange-100 text-orange-600'
+          : status === 'out-of-stock'
+            ? 'bg-red-100 text-red-600'
+            : 'bg-muted text-muted-foreground'
+      }`}
+    >
+      {status === 'coming-soon'
+        ? 'COMING SOON'
+        : status === 'out-of-stock'
+          ? 'OUT OF STOCK'
+          : 'View product →'}
+    </div>
+  )
+})()}
                           </div>
                         </Link>
                       ))}

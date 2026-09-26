@@ -2,8 +2,11 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { ScrollReveal } from '@/components/scroll-reveal'
-import { KIDS_PRODUCTS, ADULT_PRODUCTS, PRODUCT_STATUS } from '@/lib/site'
+import { KIDS_PRODUCTS, ADULT_PRODUCTS } from '@/lib/site'
+import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Our Products | Tenoo',
@@ -14,21 +17,46 @@ export const metadata: Metadata = {
   },
 }
 
-/* Combine all products without duplicates */
+async function getProductStatuses() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  )
 
+  const { data, error } = await supabase
+    .from('product_status')
+    .select('product_slug, status')
 
-const ALL_PRODUCTS = Array.from(
-  new Map(
-    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
-      .filter((product) => PRODUCT_STATUS[product.slug] !== 'hidden')
-      .map((product) => [
-        product.slug,
-        product,
-      ])
-  ).values()
-)
+  if (error) {
+    console.error('Failed to load product statuses:', error)
+    return {}
+  }
 
-export default function ProductsPage() {
+  return Object.fromEntries(
+    (data || []).map((item) => [
+      item.product_slug,
+      item.status,
+    ]),
+  )
+}
+
+export default async function ProductsPage() {
+  const productStatuses = await getProductStatuses()
+
+  const ALL_PRODUCTS = Array.from(
+    new Map(
+      [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
+        .filter(
+          (product) =>
+            productStatuses[product.slug] !== 'hidden',
+        )
+        .map((product) => [
+          product.slug,
+          product,
+        ]),
+    ).values(),
+  )
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
@@ -96,14 +124,17 @@ export default function ProductsPage() {
             {/* All Products */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-7 md:gap-y-12">
 
-              {ALL_PRODUCTS.map((product, index) => (
-                <ScrollReveal
-                  key={product.slug}
-                  delay={index * 100}
-                >
-                  <ProductCard product={product} />
-                </ScrollReveal>
-              ))}
+          {ALL_PRODUCTS.map((product, index) => (
+  <ScrollReveal
+    key={product.slug}
+    delay={index * 100}
+  >
+    <ProductCard
+      product={product}
+      status={productStatuses[product.slug]}
+    />
+  </ScrollReveal>
+))}
 
             </div>
 

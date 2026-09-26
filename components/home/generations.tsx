@@ -4,21 +4,54 @@ import { ProductCard } from '@/components/product-card'
 import {
   ADULT_PRODUCTS,
   KIDS_PRODUCTS,
-  PRODUCT_STATUS,
 } from '@/lib/site'
+import { createClient } from '@supabase/supabase-js'
 
-const ALL_PRODUCTS = Array.from(
-  new Map(
-    [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
-      .filter((product) => PRODUCT_STATUS[product.slug] !== 'hidden')
-      .map((product) => [
-        product.slug,
-        product,
-      ])
-  ).values()
-)
-const FEATURED_PRODUCTS = ALL_PRODUCTS.slice(0, 6)
-export function Generations() {
+export const dynamic = 'force-dynamic'
+
+async function getProductStatuses() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  )
+
+  const { data, error } = await supabase
+    .from('product_status')
+    .select('product_slug, status')
+
+  if (error) {
+    console.error('Failed to load product statuses:', error)
+    return {}
+  }
+
+  return Object.fromEntries(
+    (data || []).map((item) => [
+      item.product_slug,
+      item.status,
+    ]),
+  )
+}
+
+export async function Generations() {
+  const productStatuses = await getProductStatuses()
+
+  const ALL_PRODUCTS = Array.from(
+    new Map(
+      [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
+        .filter(
+          (product) =>
+            productStatuses[product.slug] !== 'hidden',
+        )
+        .map((product) => [
+          product.slug,
+          product,
+        ]),
+    ).values(),
+  )
+
+  const FEATURED_PRODUCTS = ALL_PRODUCTS.slice(0, 6)
+
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-10 max-md:py-7">
       {/* SECTION TITLE */}
@@ -98,7 +131,10 @@ export function Generations() {
                 sm:shrink
               "
             >
-              <ProductCard product={product} />
+              <ProductCard
+  product={product}
+  status={productStatuses[product.slug]}
+/>
             </div>
           ))}
         </div>

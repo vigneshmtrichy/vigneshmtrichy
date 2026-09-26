@@ -13,10 +13,32 @@ import { ProductReviews } from '@/components/product/product-reviews'
 import {
   ALL_PRODUCTS,
   getProductBySlug,
-  PRODUCT_STATUS,
 } from '@/lib/site'
+import { createClient } from '@supabase/supabase-js'
 import { readdir } from 'fs/promises'
 import path from 'path'
+
+export const dynamic = 'force-dynamic'
+
+async function getProductStatus(slug: string) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  )
+
+  const { data, error } = await supabase
+    .from('product_status')
+    .select('status')
+    .eq('product_slug', slug)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Failed to load product status:', error)
+    return 'active'
+  }
+
+  return data?.status || 'active'
+}
 
 export async function generateMetadata({
   params,
@@ -68,11 +90,18 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+
   const product = getProductBySlug(slug)
 
-  if (!product) {
-    notFound()
-  }
+if (!product) {
+  notFound()
+}
+
+const productStatus = await getProductStatus(product.slug)
+
+if (productStatus === 'hidden') {
+  notFound()
+}
 
   const categoryLabel =
     product.category === 'kids'
@@ -293,7 +322,7 @@ return (
          {/* PURCHASE ACTIONS */}
 <ProductPurchasePanel
   product={product}
-  status={PRODUCT_STATUS[product.slug]  || 'active'}
+  status={productStatus}
 />
 
               </div>
@@ -331,7 +360,7 @@ return (
 
      <ProductPurchasePanel
   product={product}
-  status={PRODUCT_STATUS[product.slug] ?? 'active'}
+  status={productStatus}
 />
 
             </div>

@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Star } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 type Review = {
   id: number
@@ -15,58 +17,122 @@ export function ProductReviews({
 }: {
   productSlug: string
 }) {
-  const storageKey = `tenoo-reviews-${productSlug}`
-
+  
+const router = useRouter()
   const [reviews, setReviews] = useState<Review[]>([])
   const [showForm, setShowForm] = useState(false)
 
   const [name, setName] = useState('')
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
+const [hasReviewed, setHasReviewed] = useState(false)
+const [reviewError, setReviewError] = useState('')
 
-  useEffect(() => {
-    const saved =
-      localStorage.getItem(storageKey)
+useEffect(() => {
+  const loadReviews = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!saved) return
+    setUserId(user?.id ?? null)
 
-    try {
-      setReviews(JSON.parse(saved))
-    } catch {
-      setReviews([])
-    }
-  }, [storageKey])
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('id, name, rating, comment')
+      .eq('product_slug', productSlug)
+      .order('created_at', { ascending: false })
 
-  const submitReview = () => {
-    if (!name.trim() || !comment.trim()) {
+    if (error) {
+      console.error('Failed to load reviews:', error)
       return
     }
 
-    const newReview: Review = {
-      id: Date.now(),
+    setReviews(data || [])
+
+    if (user) {
+      const { data: existingReview } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('product_slug', productSlug)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      setHasReviewed(!!existingReview)
+
+      const accountName = user.user_metadata?.full_name
+
+      if (accountName) {
+        setName(accountName)
+      }
+    }
+  }
+
+  loadReviews()
+}, [productSlug])
+ const submitReview = async () => {
+  setReviewError('')
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    router.push('/login')
+    return
+  }
+
+  if (hasReviewed) {
+    setReviewError(
+      'You have already reviewed this product.',
+    )
+    return
+  }
+
+  if (!name.trim() || !comment.trim()) {
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({
+      product_slug: productSlug,
+      user_id: user.id,
       name: name.trim(),
       rating,
       comment: comment.trim(),
+    })
+    .select('id, name, rating, comment')
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      setReviewError(
+        'You have already reviewed this product.',
+      )
+    } else {
+      console.error(
+        'Failed to submit review:',
+        error,
+      )
+      setReviewError(
+        'Unable to submit review. Please try again.',
+      )
     }
 
-    const updatedReviews = [
-      newReview,
-      ...reviews,
-    ]
-
-    setReviews(updatedReviews)
-
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify(updatedReviews),
-    )
-
-    setName('')
-    setRating(5)
-    setComment('')
-    setShowForm(false)
+    return
   }
 
+  if (data) {
+    setReviews((current) => [data, ...current])
+    setHasReviewed(true)
+  }
+
+  setName('')
+  setRating(5)
+  setComment('')
+  setShowForm(false)
+}
   const averageRating =
     reviews.length > 0
       ? (
@@ -173,13 +239,26 @@ export function ProductReviews({
             </div>
 
             {/* WRITE REVIEW */}
-            <button
-              type="button"
-              onClick={() =>
-                setShowForm(
-                  (current) => !current,
-                )
-              }
+           <button
+  type="button"
+  onClick={() => {
+    if (!userId) {
+      router.push('/login')
+      return
+    }
+
+    if (hasReviewed) {
+      setReviewError(
+        'You have already reviewed this product.',
+      )
+      return
+    }
+
+    setReviewError('')
+    setShowForm(
+      (current) => !current,
+    )
+  }}
               className="
                 rounded-full
                 bg-primary
@@ -193,9 +272,16 @@ export function ProductReviews({
               "
             >
               {showForm
-                ? 'CANCEL'
-                : 'WRITE A REVIEW'}
+  ? 'CANCEL'
+  : hasReviewed
+    ? 'REVIEW SUBMITTED'
+    : 'WRITE A REVIEW'}
             </button>
+            {reviewError && (
+  <p className="mt-3 text-sm text-destructive">
+    {reviewError}
+  </p>
+)}
           </div>
 
           {/* REVIEW FORM */}
@@ -450,6 +536,7 @@ export function ProductReviews({
                   >
                     {review.comment}
                   </p>
+                  
 
                 </div>
               ))}

@@ -1,21 +1,48 @@
 'use client'
 
-import { useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Menu, X, Search } from 'lucide-react'
+import { Menu, X, Search, User, ChevronDown } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { WhatsAppIcon } from '@/components/whatsapp-icon'
 import { NAV_LINKS, WHATSAPP_URL, ALL_PRODUCTS } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { CartButton } from '@/components/cart/cart-button'
 import { AnnouncementBar } from '@/components/announcement-bar'
+import { supabase } from '@/lib/supabase'
+
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [adminOpen, setAdminOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
+const isAdminPage = pathname.startsWith('/admin')
+
+useEffect(() => {
+  const loadUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    setUser(user)
+  }
+
+  loadUser()
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null)
+  })
+
+  return () => subscription.unsubscribe()
+}, [])
 
   const searchResults =
     search.trim().length > 0
@@ -25,6 +52,7 @@ export function SiteHeader() {
             .includes(search.trim().toLowerCase()),
         ).slice(0, 5)
       : []
+
 
   const closeMobileMenu = () => {
     setOpen(false)
@@ -61,14 +89,32 @@ export function SiteHeader() {
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products..."
+             onChange={(e) => {
+  const value = e.target.value
+  setSearch(value)
+
+  if (isAdminPage) {
+    const query = value.trim()
+
+    router.replace(
+      query
+        ? `/admin/orders?search=${encodeURIComponent(query)}`
+        : '/admin/orders',
+      { scroll: false }
+    )
+  }
+}}
+              placeholder={
+                isAdminPage
+                  ? 'Search order ID, name, phone, email or tracking number...'
+                  : 'Search products...'
+              }
               className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              aria-label="Search products"
+              aria-label={isAdminPage ? 'Search orders' : 'Search products'}
             />
           </div>
 
-          {search.trim() && (
+          {!isAdminPage && search.trim() && (
             <div className="absolute left-0 right-0 top-13 overflow-hidden rounded-2xl border border-border bg-background shadow-xl">
               {searchResults.length > 0 ? (
                 <div className="py-2">
@@ -102,7 +148,128 @@ export function SiteHeader() {
         <div className="hidden lg:inline-flex">
           <CartButton />
         </div>
+          {/* Desktop Account */}
+{user ? (
+  <>
+    {user?.email === 'info@tenoo.in' ? (
+      <div className="relative hidden lg:block">
+        <button
+          type="button"
+          onClick={() => setAdminOpen((value) => !value)}
+          className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+        >
+          Admin
 
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform',
+              adminOpen && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {adminOpen && (
+          <div className="absolute right-0 top-12 z-50 w-44 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl">
+            <Link
+              href="/admin/orders"
+              onClick={() => setAdminOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Orders
+            </Link>
+
+            <Link
+              href="/admin/products"
+              onClick={() => setAdminOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Products
+            </Link>
+          </div>
+        )}
+      </div>
+    ) : (
+      <div className="relative hidden lg:block">
+        <button
+          type="button"
+          onClick={() => setAccountOpen((value) => !value)}
+          className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+        >
+          Hi,{' '}
+          {user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            'Customer'}
+
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform',
+              accountOpen && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {accountOpen && (
+          <div className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl">
+
+            <Link
+              href="/account/orders"
+              onClick={() => setAccountOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              📦 My Orders
+            </Link>
+
+            <Link
+              href="/account/profile"
+              onClick={() => setAccountOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              👤 My Profile
+            </Link>
+
+            <Link
+              href="/account/addresses"
+              onClick={() => setAccountOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              📍 My Addresses
+            </Link>
+
+          <Link
+  href="/account/help"
+  onClick={() => setAccountOpen(false)}
+  className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+>
+  💬 Help & Support
+</Link>
+
+            <div className="my-1 border-t border-border/60" />
+
+            <button
+              type="button"
+              onClick={async () => {
+                setAccountOpen(false)
+                await supabase.auth.signOut()
+                window.location.href = '/'
+              }}
+              className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            >
+              🚪 Logout
+            </button>
+          </div>
+        )}
+      </div>
+    )}
+  </>
+) : (
+  <Link
+    href="/login"
+    className="hidden items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary lg:inline-flex"
+  >
+    <User className="h-4 w-4" />
+    Login
+  </Link>
+)}
         {/* Desktop WhatsApp */}
         <a
           href={WHATSAPP_URL}
@@ -122,6 +289,8 @@ export function SiteHeader() {
           <CartButton />
         </div>
 
+          
+
         {/* Mobile Search Button */}
         <button
           type="button"
@@ -130,7 +299,13 @@ export function SiteHeader() {
             setOpen(false)
           }}
           className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-secondary lg:hidden"
-          aria-label={searchOpen ? 'Close search' : 'Search products'}
+          aria-label={
+            searchOpen
+              ? 'Close search'
+              : isAdminPage
+                ? 'Search orders'
+                : 'Search products'
+          }
           aria-expanded={searchOpen}
         >
           {searchOpen ? (
@@ -173,13 +348,17 @@ export function SiteHeader() {
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
+                placeholder={
+                  isAdminPage
+                    ? 'Search order ID, name, phone...'
+                    : 'Search products...'
+                }
                 className="h-full min-w-0 flex-1 bg-transparent px-3 text-base text-foreground outline-none placeholder:text-muted-foreground"
-                aria-label="Search products"
+                aria-label={isAdminPage ? 'Search orders' : 'Search products'}
               />
             </div>
 
-            {search.trim() && (
+            {!isAdminPage && search.trim() && (
               <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
                 {searchResults.length > 0 ? (
                   <div className="py-2">
@@ -217,33 +396,35 @@ export function SiteHeader() {
       {/* =========================================================
           DESKTOP NAVIGATION
           ========================================================= */}
-      <div className="hidden border-t border-border/50 lg:block">
-        <nav
-          className="mx-auto flex max-w-7xl items-center justify-center gap-10 px-8 py-1"
-          aria-label="Main navigation"
-        >
-          {NAV_LINKS.map((link) => {
-            const isProductsActive =
-              link.href === '/products'
-                ? pathname === '/products' ||
-                  pathname.startsWith('/products/')
-                : pathname === link.href
+     {!isAdminPage && (
+  <div className="hidden border-t border-border/50 lg:block">
+    <nav
+      className="mx-auto flex max-w-7xl items-center justify-center gap-10 px-8 py-1"
+      aria-label="Main navigation"
+    >
+      {NAV_LINKS.map((link) => {
+        const isProductsActive =
+          link.href === '/products'
+            ? pathname === '/products' ||
+              pathname.startsWith('/products/')
+            : pathname === link.href
 
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'group inline-flex items-center gap-1 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary',
-                  isProductsActive && 'text-[#8fbd24]',
-                )}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn(
+              'group inline-flex items-center gap-1 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary',
+              isProductsActive && 'text-[#8fbd24]',
+            )}
+          >
+            {link.label}
+          </Link>
+        )
+      })}
+    </nav>
+  </div>
+)}
 
       {/* =========================================================
           MOBILE MENU
@@ -254,7 +435,7 @@ export function SiteHeader() {
           aria-label="Mobile navigation"
         >
           <ul className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => {
+  {!isAdminPage && NAV_LINKS.map((link) => {
               const isProductsActive =
                 link.href === '/products'
                   ? pathname === '/products' ||
@@ -276,7 +457,134 @@ export function SiteHeader() {
                 </li>
               )
             })}
+            {user ? (
+  <>
+    {user?.email === 'info@tenoo.in' ? (
+      <div>
+        {/* EXISTING ADMIN MOBILE MENU */}
+        <button
+          type="button"
+          onClick={() => setAdminOpen((value) => !value)}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl px-4 py-2.5 text-[15px] font-semibold text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+        >
+          <span>Admin</span>
 
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform',
+              adminOpen && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {adminOpen && (
+          <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-3">
+            <Link
+              href="/admin/orders"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              Orders
+            </Link>
+
+            <Link
+              href="/admin/products"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              Products
+            </Link>
+          </div>
+        )}
+      </div>
+    ) : (
+      <div>
+        {/* CUSTOMER ACCOUNT */}
+        <button
+          type="button"
+          onClick={() => setAccountOpen((value) => !value)}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl px-4 py-2.5 text-[15px] font-semibold text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+        >
+          <span>
+            Hi,{' '}
+            {user?.user_metadata?.full_name ||
+              user?.user_metadata?.name ||
+              'Customer'}
+          </span>
+
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform',
+              accountOpen && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {accountOpen && (
+          <div className="ml-3 mt-1 space-y-1 border-l border-border/60 pl-3">
+
+            <Link
+              href="/account/orders"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              📦 My Orders
+            </Link>
+
+            <Link
+              href="/account/profile"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              👤 My Profile
+            </Link>
+
+            <Link
+              href="/account/addresses"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              📍 My Addresses
+            </Link>
+
+            <Link
+              href="/account/help"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              💬 Help & Support
+            </Link>
+
+            <div className="my-2 border-t border-border/50" />
+
+            <button
+              type="button"
+              onClick={async () => {
+                await supabase.auth.signOut()
+                setAccountOpen(false)
+                setOpen(false)
+                window.location.href = '/'
+              }}
+              className="flex min-h-10 w-full items-center rounded-xl px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            >
+              🚪 Logout
+            </button>
+
+          </div>
+        )}
+      </div>
+    )}
+  </>
+) : (
+  <Link
+    href="/login"
+    onClick={() => setOpen(false)}
+    className="flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-[15px] font-semibold text-foreground/80 transition-colors hover:bg-secondary hover:text-primary"
+  >
+    <User className="h-4 w-4" />
+    Login
+  </Link>
+)}
             <li className="mt-3 border-t border-border/50 pt-4">
               <a
                 href={WHATSAPP_URL}

@@ -1,11 +1,11 @@
 'use client'
-
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/components/cart/cart-context'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { supabase } from '@/lib/supabase'
 
 const FLAT_SHIPPING = 79
 const FREE_SHIPPING_THRESHOLD = 699
@@ -59,6 +59,41 @@ export default function CheckoutPage() {
   } = useCart()
 
   const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  useEffect(() => {
+  const loadCustomerProfile = async () => {
+   const {
+  data: { user },
+} = await supabase.auth.getUser()
+
+if (!user) return
+
+setCustomerEmail(user.email || '')
+
+    const { data, error } = await supabase
+      .from('customer_profiles')
+      .select('name, phone, address, pincode, city, state')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Failed to load customer profile:', error)
+      return
+    }
+
+    if (!data) return
+
+    setCustomerName(data.name || '')
+    setPhone(data.phone || '')
+    setAddress(data.address || '')
+    setPincode(data.pincode || '')
+    setCity(data.city || '')
+    setState(data.state || '')
+    setPincodeState(data.state || '')
+  }
+
+  loadCustomerProfile()
+}, [])
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [pincode, setPincode] = useState('')
@@ -127,8 +162,7 @@ const sgst = isTamilNadu ? totalGST / 2 : 0
 const igst = isTamilNadu ? 0 : totalGST
 
   
-
-  const handleWhatsAppOrder = () => {
+const handleWhatsAppOrder = async () => {
     if (!customerName.trim()) {
       setError('Please enter your name.')
       return
@@ -160,6 +194,82 @@ const igst = isTamilNadu ? 0 : totalGST
 }
 
     setError('')
+
+    const {
+  data: { user },
+} = await supabase.auth.getUser()
+
+if (user) {
+  const { error: profileError } = await supabase
+    .from('customer_profiles')
+    .upsert(
+      {
+        user_id: user.id,
+        name: customerName.trim(),
+        phone,
+        address: address.trim(),
+        pincode,
+        city: city.trim(),
+        state,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id',
+      },
+    )
+
+  if (profileError) {
+    console.error(
+      'Failed to save customer profile:',
+      profileError,
+    )
+  }
+}
+
+const orderItems = items.map((item) => ({
+  product_slug: item.product.slug,
+  product_name: item.product.name,
+  quantity: item.quantity,
+  unit_price: Number(item.product.price || 0),
+  mrp: Number(item.product.mrp || item.product.price || 0),
+  gst_rate: Number(item.product.gstRate || 0),
+  image: item.product.image,
+}))
+
+const { error: orderError } = await supabase
+  .from('orders')
+  .insert({
+    user_id: user?.id ?? null,
+
+    customer_name: customerName.trim(),
+    customer_email: customerEmail.trim(),
+    phone,
+    address: address.trim(),
+    pincode,
+    city: city.trim(),
+    state,
+
+    items: orderItems,
+
+    mrp_total: mrpTotal,
+    product_total: cartTotal,
+    taxable_value: taxableValue,
+    gst_total: totalGST,
+    cgst,
+    sgst,
+    igst,
+    delivery_charge: shippingCharge,
+    total: finalTotal,
+
+    payment_method: 'WhatsApp',
+    order_status: 'pending',
+  })
+
+if (orderError) {
+  console.error('Failed to save order:', orderError)
+  setError('Unable to place your order. Please try again.')
+  return
+}
 
     const message = [
       '🌿 TENOO ORDER',

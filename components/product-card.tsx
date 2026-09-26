@@ -9,6 +9,7 @@ import { ShoppingCart } from 'lucide-react'
 import {
   PRODUCT_STATUS,
   type Product,
+  type ProductStatus,
 } from '@/lib/site'
 import { useCart } from '@/components/cart/cart-context'
 
@@ -25,14 +26,19 @@ const GALLERY_FOLDERS: Record<string, string> = {
 
 export function ProductCard({
   product,
+  status: statusProp,
 }: {
   product: Product
+  status?: ProductStatus
 }) {
   const { addToCart } = useCart()
   const router = useRouter()
 
   const [quantity, setQuantity] = useState(1)
-  const status = PRODUCT_STATUS[product.slug] ?? 'active'
+const status =
+  statusProp ??
+  PRODUCT_STATUS[product.slug] ??
+  'active'
 const isActive = status === 'active'
 
   const cardImage = GALLERY_FOLDERS[product.slug]
