@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -51,7 +50,9 @@ const getStatusStyle = (status?: string) =>
   STATUS_STYLES[status || 'pending'] || STATUS_STYLES.pending
 
 export default function AdminOrdersPage() {
-  const searchParams = useSearchParams()
+  const searchParams = new URLSearchParams(
+  typeof window !== 'undefined' ? window.location.search : ''
+)
 
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
