@@ -46,7 +46,7 @@ export const KIDS_PRODUCTS: Product[] = [
   name: 'Meltiva Nutrimix',
   tagline: 'Nuts, Seeds & Millets For Growing You',
   descLines: ['Nuts, Seeds & Millets', 'For Growing You'],
-  image: '/products/Meltiva-nutrimix/1.png',
+  image: '/products/Meltiva-Nutrimix/1.png',
   category: 'kids',
   badges: [],
   description:
@@ -83,7 +83,7 @@ manufacturedBy:
     name: 'Rubyblend Nutrimix',
     tagline: 'Nuts, Seeds & Beetroot Mix For Stronger You',
     descLines: ['Nuts, Seeds & Beetroot Mix', 'For Stronger You'],
-    image: '/products/Rubyblend-nutrimix/1.png',
+    image: '/products/Rubyblend-Nutrimix/1.png',
     category: 'kids',
     badges: [...PRODUCT_BADGES],
 
