@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, ShieldCheck, ShoppingBag, Truck, Heart } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -80,207 +80,210 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#d8c9ad] px-4 py-6 sm:px-6">
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,#274c32_0%,#5d7b61_38%,#d8c9ad_78%,#b99668_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,.30),transparent_22%),radial-gradient(circle_at_82%_22%,rgba(255,255,255,.20),transparent_24%),radial-gradient(circle_at_55%_85%,rgba(255,255,255,.18),transparent_25%)]" />
-      <div className="absolute -left-28 top-1/4 h-96 w-96 rounded-full bg-emerald-200/10 blur-3xl" />
-      <div className="absolute -right-28 bottom-0 h-[30rem] w-[30rem] rounded-full bg-amber-100/20 blur-3xl" />
+    <main className="relative min-h-screen overflow-hidden bg-[#c9b995]">
+      {/* Warm lifestyle-style background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,#dbe5c9_0%,transparent_28%),radial-gradient(circle_at_82%_20%,#f2e5c9_0%,transparent_30%),linear-gradient(135deg,#6b8467_0%,#b8c2a5_38%,#eadcc0_72%,#b99b6e_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_15%,rgba(35,45,27,.18)_100%)]" />
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl items-center justify-center">
-        <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/35 bg-white/10 shadow-[0_35px_100px_rgba(22,38,25,.28)] backdrop-blur-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/5 to-transparent" />
+      {/* Decorative blurred food / nature atmosphere */}
+      <div className="absolute -left-24 top-16 h-80 w-80 rounded-full bg-[#355d3c]/20 blur-3xl" />
+      <div className="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-[#f4e3bd]/40 blur-3xl" />
 
-          <div className="relative grid lg:grid-cols-[1fr_470px]">
-            <section className="hidden min-h-[720px] p-10 text-white lg:flex lg:flex-col">
-              <button
-                type="button"
-                onClick={() => (window.location.href = '/')}
-                className="flex w-fit items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm backdrop-blur-xl transition hover:bg-white/20"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to store
-              </button>
+      <div className="relative min-h-screen px-4 py-5 sm:px-8">
+        <button
+          type="button"
+          onClick={() => (window.location.href = '/')}
+          className="absolute left-5 top-5 z-30 inline-flex items-center gap-2 rounded-full border border-white/35 bg-black/10 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-black/20 sm:left-8 sm:top-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to store
+        </button>
 
-              <div className="flex flex-1 items-center">
-                <div className="max-w-xl">
-                  <img
-                    src="/tenoo-logo.png"
-                    alt="Tenoo"
-                    className="mb-7 w-44 object-contain brightness-0 invert drop-shadow-md"
-                  />
+        <button
+          type="button"
+          onClick={() => (window.location.href = '/products')}
+          className="absolute right-5 top-5 z-30 hidden items-center gap-2 rounded-full border border-white/35 bg-black/10 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-black/20 sm:right-8 sm:top-8 md:inline-flex"
+        >
+          <ShoppingBag className="h-4 w-4" />
+          Continue Shopping
+        </button>
 
-                  <p className="text-xs font-semibold uppercase tracking-[.30em] text-white/70">
-                    Good Food. Made for Every Generation.
-                  </p>
+        {/* Soft decorative background shapes */}
+        <div className="pointer-events-none absolute bottom-0 left-0 h-1/2 w-1/3 rounded-full bg-[#244b2e]/15 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-1/3 h-1/2 w-1/3 rounded-full bg-white/25 blur-3xl" />
 
-                  <h1 className="mt-5 font-display text-5xl leading-[1.04] xl:text-6xl">
-                    Welcome to your
-                    <span className="block text-white/80">Tenoo world.</span>
-                  </h1>
+        {/* Mascot peeking from behind the glass */}
+        <img
+          src="/tenoo-mascot-mature.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-[8%] left-[8%] z-10 hidden h-[430px] w-auto object-contain drop-shadow-[0_25px_25px_rgba(0,0,0,.22)] xl:block"
+        />
 
-                  <p className="mt-6 max-w-md text-base leading-8 text-white/75">
-                    Sign in to manage your orders and continue your journey with Tenoo.
-                  </p>
+        {/* Product atmosphere on the right */}
+        <img
+          src="/products/Nutaura/1.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-[5%] right-[4%] z-0 hidden h-[310px] w-auto object-contain opacity-30 blur-[1px] drop-shadow-[0_30px_30px_rgba(0,0,0,.18)] xl:block"
+        />
 
-                  <div className="mt-10 flex gap-3">
-                    <div className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 backdrop-blur-xl">
-                      <p className="text-sm font-semibold">Secure</p>
-                      <p className="mt-1 text-xs text-white/60">Account access</p>
-                    </div>
-                    <div className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 backdrop-blur-xl">
-                      <p className="text-sm font-semibold">Simple</p>
-                      <p className="mt-1 text-xs text-white/60">Order tracking</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="relative z-20 flex min-h-[calc(100vh-2.5rem)] items-center justify-center">
+          {/* Frosted glass card */}
+          <section className="relative w-full max-w-[650px] overflow-hidden rounded-[2rem] border border-white/55 bg-white/30 shadow-[0_30px_100px_rgba(25,40,27,.28),inset_0_1px_0_rgba(255,255,255,.85)] backdrop-blur-2xl">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/50 via-white/15 to-white/5" />
+            <div className="pointer-events-none absolute left-1/4 top-0 h-px w-1/2 bg-white/90 blur-sm" />
 
-              <div className="flex items-center gap-2 text-xs text-white/60">
-                <ShieldCheck className="h-4 w-4" />
-                Your account information is protected.
-              </div>
-            </section>
+            <div className="relative px-7 py-8 sm:px-12 sm:py-10">
+              <div className="text-center">
+                <img
+                  src="/tenoo-logo.png"
+                  alt="Tenoo"
+                  className="mx-auto w-40 object-contain drop-shadow-sm sm:w-48"
+                />
 
-            <section className="relative border-white/30 bg-white/[.68] p-6 backdrop-blur-3xl sm:p-10 lg:min-h-[720px] lg:border-l lg:p-12">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/50 via-white/10 to-transparent" />
-              <div className="relative flex h-full flex-col justify-center">
-                <div className="mb-8 text-center">
-                  <div className="mb-5 lg:hidden">
-                    <button
-                      type="button"
-                      onClick={() => (window.location.href = '/')}
-                      className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back to store
-                    </button>
-                    <img src="/tenoo-logo.png" alt="Tenoo" className="mx-auto w-32 object-contain" />
-                  </div>
+                <h1 className="mt-6 font-display text-3xl text-[#263832] sm:text-4xl">
+                  {isSignup ? 'Create Your Account' : 'Welcome Back'}
+                </h1>
 
-                  <p className="text-xs font-semibold uppercase tracking-[.24em] text-primary">
-                    {isSignup ? 'Create account' : 'Welcome back'}
-                  </p>
-                  <h2 className="mt-3 font-display text-3xl sm:text-4xl">
-                    {isSignup ? 'Join Tenoo.' : 'Sign in to Tenoo.'}
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {isSignup
-                      ? 'Create your account and keep your Tenoo orders in one place.'
-                      : 'Enter your details to continue.'}
-                  </p>
-                </div>
-
-                <div className="mb-7 flex justify-center gap-8 border-b border-black/10">
-                  <button
-                    type="button"
-                    onClick={() => switchMode(false)}
-                    className={`relative pb-3 text-sm font-semibold ${!isSignup ? 'text-foreground' : 'text-muted-foreground'}`}
-                  >
-                    Sign in
-                    {!isSignup && <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-primary" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => switchMode(true)}
-                    className={`relative pb-3 text-sm font-semibold ${isSignup ? 'text-foreground' : 'text-muted-foreground'}`}
-                  >
-                    Create account
-                    {isSignup && <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-primary" />}
-                  </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {isSignup && (
-                    <div>
-                      <label className="mb-2 block text-sm font-medium">Full name</label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your name"
-                        autoComplete="name"
-                        required
-                        className="h-14 w-full rounded-2xl border border-white/70 bg-white/45 px-4 text-sm shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_5px_18px_rgba(50,50,30,.04)] outline-none backdrop-blur-xl transition focus:bg-white/70 focus:ring-4 focus:ring-primary/10"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">Email address</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      required
-                      className="h-14 w-full rounded-2xl border border-white/70 bg-white/45 px-4 text-sm shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_5px_18px_rgba(50,50,30,.04)] outline-none backdrop-blur-xl transition focus:bg-white/70 focus:ring-4 focus:ring-primary/10"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <label className="text-sm font-medium">Password</label>
-                      {!isSignup && (
-                        <button
-                          type="button"
-                          onClick={handleForgotPassword}
-                          disabled={loading}
-                          className="text-xs font-semibold text-primary hover:underline disabled:opacity-60"
-                        >
-                          Forgot password?
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter your password"
-                        autoComplete={isSignup ? 'new-password' : 'current-password'}
-                        minLength={6}
-                        required
-                        className="h-14 w-full rounded-2xl border border-white/70 bg-white/45 px-4 pr-12 text-sm shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_5px_18px_rgba(50,50,30,.04)] outline-none backdrop-blur-xl transition focus:bg-white/70 focus:ring-4 focus:ring-primary/10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((current) => !current)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {message && (
-                    <div role="status" className="rounded-2xl border border-white/70 bg-white/50 px-4 py-3 text-sm leading-5 backdrop-blur-xl">
-                      {message}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="h-14 w-full rounded-2xl bg-[#2f5b39] px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(47,91,57,.25)] transition hover:bg-[#284f31] hover:shadow-[0_16px_35px_rgba(47,91,57,.32)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {loading ? 'Please wait...' : isSignup ? 'CREATE ACCOUNT' : 'SIGN IN'}
-                  </button>
-                </form>
-
-                <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
-                  Secure account access
-                </div>
-
-                <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
-                  By continuing, you agree to Tenoo's terms and privacy policy.
+                <p className="mt-2 text-sm text-[#52615a]">
+                  {isSignup
+                    ? 'Create an account to enjoy your Tenoo experience.'
+                    : 'Sign in to your TENOO account.'}
                 </p>
               </div>
-            </section>
-          </div>
+
+              <div className="mx-auto mt-7 flex w-fit items-center gap-8 border-b border-black/10">
+                <button
+                  type="button"
+                  onClick={() => switchMode(false)}
+                  className={`relative pb-3 text-sm font-semibold ${!isSignup ? 'text-[#263832]' : 'text-[#68736e]'}`}
+                >
+                  Sign in
+                  {!isSignup && <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-[#2f6a3d]" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => switchMode(true)}
+                  className={`relative pb-3 text-sm font-semibold ${isSignup ? 'text-[#263832]' : 'text-[#68736e]'}`}
+                >
+                  Create account
+                  {isSignup && <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-[#2f6a3d]" />}
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="mx-auto mt-7 max-w-[490px] space-y-5">
+                {isSignup && (
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[#2d3d36]">
+                      Full name
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      autoComplete="name"
+                      required
+                      className="h-14 w-full rounded-full border border-white/75 bg-white/40 px-5 text-sm text-[#24352d] shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_8px_24px_rgba(50,60,45,.06)] outline-none backdrop-blur-xl placeholder:text-[#7a847e] transition focus:bg-white/65 focus:ring-4 focus:ring-[#3c7549]/10"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[#2d3d36]">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    required
+                    className="h-14 w-full rounded-full border border-white/75 bg-white/40 px-5 text-sm text-[#24352d] shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_8px_24px_rgba(50,60,45,.06)] outline-none backdrop-blur-xl placeholder:text-[#7a847e] transition focus:bg-white/65 focus:ring-4 focus:ring-[#3c7549]/10"
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm font-medium text-[#2d3d36]">Password</label>
+                    {!isSignup && (
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        disabled={loading}
+                        className="text-xs font-semibold text-[#2f6a3d] hover:underline disabled:opacity-60"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      autoComplete={isSignup ? 'new-password' : 'current-password'}
+                      minLength={6}
+                      required
+                      className="h-14 w-full rounded-full border border-white/75 bg-white/40 px-5 pr-14 text-sm text-[#24352d] shadow-[inset_0_1px_1px_rgba(255,255,255,.9),0_8px_24px_rgba(50,60,45,.06)] outline-none backdrop-blur-xl placeholder:text-[#7a847e] transition focus:bg-white/65 focus:ring-4 focus:ring-[#3c7549]/10"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-[#68756e] hover:text-[#263832]"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {message && (
+                  <div
+                    role="status"
+                    className="rounded-2xl border border-white/70 bg-white/45 px-4 py-3 text-sm leading-5 text-[#35463d] backdrop-blur-xl"
+                  >
+                    {message}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="h-14 w-full rounded-full bg-[#2d6339] px-5 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(45,99,57,.28)] transition hover:bg-[#255630] hover:shadow-[0_16px_34px_rgba(45,99,57,.34)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? 'Please wait...' : isSignup ? 'CREATE ACCOUNT' : 'SIGN IN'}
+                </button>
+              </form>
+
+              <div className="mx-auto mt-7 flex max-w-[490px] items-center justify-center gap-5 border-t border-black/10 pt-5 text-[11px] text-[#66736d]">
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-[#397047]" />
+                  Secure & Safe
+                </span>
+                <span className="h-4 w-px bg-black/15" />
+                <span className="inline-flex items-center gap-1.5">
+                  <Truck className="h-4 w-4 text-[#397047]" />
+                  Track Your Orders
+                </span>
+                <span className="h-4 w-px bg-black/15" />
+                <span className="inline-flex items-center gap-1.5">
+                  <Heart className="h-4 w-4 text-[#397047]" />
+                  Tenoo Experience
+                </span>
+              </div>
+
+              <p className="mt-5 text-center text-[11px] leading-5 text-[#707a75]">
+                By continuing, you agree to Tenoo&apos;s terms and privacy policy.
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </main>
