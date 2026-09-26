@@ -265,7 +265,7 @@ export const ADULT_PRODUCTS: Product[] = [
   name: 'Pirandai Rice Mix',
   tagline: 'Traditional Taste. Modern Convenience.',
   descLines: ['Traditional Taste', 'Modern Convenience'],
-  image: '/products/pirandai-rice-mix/1.png',
+  image: '/products/Pirandai-rice-mix/1.png',
   category: 'adults',
   badges: [...PRODUCT_BADGES],
 
