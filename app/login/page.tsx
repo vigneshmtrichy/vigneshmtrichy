@@ -78,7 +78,7 @@ export default function LoginPage() {
           return
         }
 
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -87,7 +87,14 @@ export default function LoginPage() {
           },
         })
 
-        if (error) {
+        const alreadyRegistered =
+          error?.message.toLowerCase().includes('already registered') ||
+          (Array.isArray(data.user?.identities) &&
+            data.user.identities.length === 0)
+
+        if (alreadyRegistered) {
+          setMessage('An account with this email already exists. Please sign in instead.')
+        } else if (error) {
           setMessage(error.message)
         } else {
           setMessage(
