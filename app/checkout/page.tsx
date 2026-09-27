@@ -128,6 +128,7 @@ setPincodeState(postOffice.State)
   }
 }
   const [error, setError] = useState('')
+  const [whatsappOrderUrl, setWhatsappOrderUrl] = useState('')
 
  const shippingCharge =
   cartTotal >= FREE_SHIPPING_THRESHOLD
@@ -308,8 +309,44 @@ const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_to
       `Total: ₹${Number(savedOrder.total).toFixed(2)}`,
     ].join('\n')
 
-    window.location.assign(
+    setWhatsappOrderUrl(
       `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
+    )
+  }
+
+  if (whatsappOrderUrl) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <main className="mx-auto flex max-w-2xl justify-center px-4 py-12 sm:px-5 md:py-20">
+          <section className="w-full rounded-3xl border border-border bg-card p-6 text-center shadow-sm sm:p-10">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-2xl text-primary" aria-hidden="true">
+              ✓
+            </div>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+              ORDER SAVED
+            </p>
+            <h1 className="mt-2 font-serif text-3xl font-bold text-primary">
+              Your order is ready
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+              Your order has been saved. Continue to WhatsApp to confirm it with our team.
+            </p>
+            <a
+              href={whatsappOrderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-all hover:opacity-90 sm:w-auto"
+            >
+              Continue to WhatsApp
+            </a>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Your cart is now clear.
+            </p>
+          </section>
+        </main>
+        <SiteFooter />
+      </div>
     )
   }
 
