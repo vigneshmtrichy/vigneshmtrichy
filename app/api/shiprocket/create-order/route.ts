@@ -8,6 +8,35 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   try {
+    const authorization = request.headers.get('authorization')
+    const accessToken = authorization?.match(/^Bearer\\s+(.+)$/i)?.[1]
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { success: false, message: 'Authentication required' },
+        { status: 401 },
+      )
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(accessToken)
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, message: 'Authentication required' },
+        { status: 401 },
+      )
+    }
+
+    if (user.email !== 'info@tenoo.in') {
+      return NextResponse.json(
+        { success: false, message: 'Admin access required' },
+        { status: 403 },
+      )
+    }
+
     const { orderId } = await request.json()
 
     if (!orderId) {
