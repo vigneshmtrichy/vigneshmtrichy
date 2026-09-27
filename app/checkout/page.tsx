@@ -56,6 +56,7 @@ export default function CheckoutPage() {
   const {
     items,
     cartTotal,
+    clearCart,
   } = useCart()
 
   const [customerName, setCustomerName] = useState('')
@@ -275,6 +276,8 @@ if (!orderResponse.ok || !orderResult?.success || !orderResult?.order) {
   setError(orderResult?.message || 'Unable to place your order. Please try again.')
   return
 }
+
+clearCart()
 
 const savedOrder = orderResult.order
 const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_total)

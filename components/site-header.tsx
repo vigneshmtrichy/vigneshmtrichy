@@ -60,6 +60,12 @@ useEffect(() => {
     setSearch('')
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    localStorage.removeItem('tenoo-cart')
+    window.location.href = '/'
+  }
+
   return (
       <>
     <AnnouncementBar />
@@ -192,8 +198,7 @@ useEffect(() => {
       type="button"
       onClick={async () => {
         setAdminOpen(false)
-        await supabase.auth.signOut()
-        window.location.href = '/'
+        await handleLogout()
       }}
       className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
     >
@@ -254,8 +259,7 @@ useEffect(() => {
               type="button"
               onClick={async () => {
                 setAccountOpen(false)
-                await supabase.auth.signOut()
-                window.location.href = '/'
+                await handleLogout()
               }}
               className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
             >
@@ -556,10 +560,9 @@ useEffect(() => {
             <button
               type="button"
               onClick={async () => {
-                await supabase.auth.signOut()
                 setAccountOpen(false)
                 setOpen(false)
-                window.location.href = '/'
+                await handleLogout()
               }}
               className="flex min-h-10 w-full items-center rounded-xl px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
             >
