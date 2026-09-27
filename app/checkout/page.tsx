@@ -193,6 +193,13 @@ const handleWhatsAppOrder = async () => {
   return
 }
 
+    const whatsappWindow = window.open('about:blank', '_blank')
+
+    if (!whatsappWindow) {
+      setError('Please allow pop-ups to continue to WhatsApp.')
+      return
+    }
+
     setError('')
 
     const {
@@ -256,6 +263,7 @@ try {
     }),
   })
 } catch {
+  whatsappWindow.close()
   setError('Unable to place your order. Please try again.')
   return
 }
@@ -263,6 +271,7 @@ try {
 const orderResult = await orderResponse.json().catch(() => null)
 
 if (!orderResponse.ok || !orderResult?.success || !orderResult?.order) {
+  whatsappWindow.close()
   setError(orderResult?.message || 'Unable to place your order. Please try again.')
   return
 }
@@ -305,10 +314,8 @@ const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_to
       `Total: ₹${Number(savedOrder.total).toFixed(2)}`,
     ].join('\n')
 
-    window.open(
-      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
-      '_blank',
-    )
+    whatsappWindow.location.href =
+      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`
   }
 
   if (items.length === 0) {
