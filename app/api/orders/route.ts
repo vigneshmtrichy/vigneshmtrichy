@@ -125,14 +125,33 @@ export async function POST(request: Request) {
         )
       }
 
+      const unitPrice = Number(product.price)
+      const mrp = Number(product.mrp || product.price)
+      const gstRate = Number(product.gstRate || 0)
+
+      if (
+        !Number.isFinite(unitPrice) ||
+        unitPrice <= 0 ||
+        !Number.isFinite(mrp) ||
+        mrp < unitPrice ||
+        !Number.isFinite(gstRate) ||
+        gstRate < 0 ||
+        gstRate > 100
+      ) {
+        return NextResponse.json(
+          { success: false, message: 'A product in your cart is not available to order right now.' },
+          { status: 409 },
+        )
+      }
+
       seenSlugs.add(slug)
       orderItems.push({
         product_slug: product.slug,
         product_name: product.name,
         quantity,
-        unit_price: Number(product.price || 0),
-        mrp: Number(product.mrp || product.price || 0),
-        gst_rate: Number(product.gstRate || 0),
+        unit_price: unitPrice,
+        mrp,
+        gst_rate: gstRate,
         image: product.image,
       })
     }
