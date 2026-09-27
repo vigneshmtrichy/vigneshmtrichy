@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: Request) {
   try {
     const authorization = request.headers.get('authorization')
-    const accessToken = authorization?.match(/^Bearer\\s+(.+)$/i)?.[1]
+    const accessToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1]
 
     if (!accessToken) {
       return NextResponse.json(
