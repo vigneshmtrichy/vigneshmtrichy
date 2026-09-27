@@ -194,60 +194,6 @@ const handleWhatsAppOrder = async () => {
   return
 }
 
-    const whatsappWindow = window.open('about:blank', '_blank')
-
-    if (!whatsappWindow) {
-      setError('Please allow pop-ups to continue to WhatsApp.')
-      return
-    }
-
-    whatsappWindow.document.write(`<!doctype html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>Preparing your order | Tenoo</title>
-          <style>
-            * { box-sizing: border-box; }
-            body {
-              margin: 0;
-              min-height: 100vh;
-              display: grid;
-              place-items: center;
-              padding: 24px;
-              background: #f7f8f4;
-              color: #26332b;
-              font: 16px/1.6 system-ui, sans-serif;
-              text-align: center;
-            }
-            main { max-width: 420px; }
-            .spinner {
-              width: 38px;
-              height: 38px;
-              margin: 0 auto 22px;
-              border: 3px solid #dce8da;
-              border-top-color: #28643d;
-              border-radius: 50%;
-              animation: spin 0.8s linear infinite;
-            }
-            h1 { margin: 0 0 8px; font-size: 23px; }
-            p { margin: 0; color: #65736a; }
-            @keyframes spin { to { transform: rotate(360deg); } }
-            @media (prefers-reduced-motion: reduce) {
-              .spinner { animation-duration: 2s; }
-            }
-          </style>
-        </head>
-        <body>
-          <main>
-            <div class="spinner" role="status" aria-label="Loading"></div>
-            <h1>Preparing your order</h1>
-            <p>We’re saving your order. This tab will open WhatsApp when it’s ready.</p>
-          </main>
-        </body>
-      </html>`)
-    whatsappWindow.document.close()
-
     setError('')
 
     const {
@@ -311,7 +257,6 @@ try {
     }),
   })
 } catch {
-  whatsappWindow.close()
   setError('Unable to place your order. Please try again.')
   return
 }
@@ -319,7 +264,6 @@ try {
 const orderResult = await orderResponse.json().catch(() => null)
 
 if (!orderResponse.ok || !orderResult?.success || !orderResult?.order) {
-  whatsappWindow.close()
   setError(orderResult?.message || 'Unable to place your order. Please try again.')
   return
 }
@@ -364,8 +308,9 @@ const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_to
       `Total: ₹${Number(savedOrder.total).toFixed(2)}`,
     ].join('\n')
 
-    whatsappWindow.location.href =
-      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`
+    window.location.assign(
+      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
+    )
   }
 
   if (items.length === 0) {
