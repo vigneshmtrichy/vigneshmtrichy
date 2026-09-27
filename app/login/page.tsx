@@ -293,19 +293,21 @@ export default function LoginPage() {
     role="status"
     className="px-1 text-xs font-medium leading-5 text-[#52615a]"
   >
-    {message}
-    {signupConfirmationSent && (
-      <div className="mt-3 space-y-2">
-        <p>Gmail-la Tenoo confirmation email open panni “Confirm email” press pannunga. Mail varalana Spam folder check pannunga.</p>
+    {signupConfirmationSent ? (
+      <>
+        Account created successfully. Please check your{' '}
         <a
           href="https://mail.google.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex rounded-full bg-[#2d6339] px-4 py-2 text-xs font-semibold text-white hover:bg-[#255630]"
+          className="font-semibold text-[#2f6a3d] underline underline-offset-2 hover:text-[#255630]"
         >
-          Open Gmail
-        </a>
-      </div>
+          email
+        </a>{' '}
+        to confirm your account.
+      </>
+    ) : (
+      message
     )}
   </div>
 )}
