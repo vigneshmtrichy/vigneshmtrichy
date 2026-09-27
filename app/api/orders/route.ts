@@ -23,6 +23,22 @@ function getSupabaseAdmin() {
   })
 }
 
+function getSupabasePublic() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+  if (!url || !publicKey) {
+    throw new Error('Supabase public configuration is missing')
+  }
+
+  return createClient(url, publicKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+}
+
 function readText(value: unknown, maxLength: number): string | null {
   if (typeof value !== 'string') return null
   const result = value.trim()
@@ -156,7 +172,8 @@ export async function POST(request: Request) {
       })
     }
 
-    const { data: statuses, error: statusError } = await supabaseAdmin
+    const supabasePublic = getSupabasePublic()
+    const { data: statuses, error: statusError } = await supabasePublic
       .from('product_status')
       .select('product_slug, status')
       .in('product_slug', [...seenSlugs])
