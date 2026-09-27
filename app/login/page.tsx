@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
 
     const normalizedEmail = email.trim()
-    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
     if (!emailPattern.test(normalizedEmail)) {
       setMessage('Please enter a valid email address.')
