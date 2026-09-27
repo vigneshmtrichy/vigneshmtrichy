@@ -303,7 +303,7 @@ const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_to
       `You Save: ₹${savedSavings.toFixed(2)}`,
       `Delivery: ${Number(savedOrder.delivery_charge) === 0 ? 'FREE' : `₹${savedOrder.delivery_charge}`}`,
       `Total: ₹${Number(savedOrder.total).toFixed(2)}`,
-    ].join('\\n')
+    ].join('\n')
 
     window.open(
       `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
