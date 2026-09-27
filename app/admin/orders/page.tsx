@@ -232,12 +232,22 @@ export default function AdminOrdersPage() {
         })
       }
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        alert('Please sign in as admin and try again.')
+        return
+      }
+
       const response = await fetch(
         '/api/shiprocket/create-order',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             orderId: order.id,
