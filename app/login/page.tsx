@@ -21,65 +21,37 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   const handleForgotPassword = async () => {
-  setMessage('')
+    setMessage('')
 
-  if (!email.trim()) {
-  setMessage('Please enter your email address first.')
-  return
-}
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-if (!emailPattern.test(email.trim())) {
-  setMessage('Please enter a valid email address.')
-  return
-}
-
-
-
-  setLoading(true)
-
-  try {
-    const response = await fetch('/api/auth/check-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-      }),
-    })
-
-    const result = await response.json()
-
-    if (!response.ok) {
-      setMessage('Something went wrong. Please try again.')
+    if (!email.trim()) {
+      setMessage('Please enter your email address first.')
       return
     }
 
-    if (!result.exists) {
-      setMessage("You don't have an account with this email. Please create an account.")
+    const normalizedEmail = email.trim()
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!emailPattern.test(normalizedEmail)) {
+      setMessage('Please enter a valid email address.')
       return
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      {
+    setLoading(true)
+
+    try {
+      await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
-      }
-    )
-
-    setMessage(
-      error
-        ? error.message
-        : 'Password reset link has been sent to your email.'
-    )
-  } catch {
-    setMessage('Something went wrong. Please try again.')
-  } finally {
-    setLoading(false)
+      })
+    } catch {
+      // Keep the response the same whether or not the address has an account.
+    } finally {
+      setMessage(
+        'If an account exists for this email, a password reset link has been sent.'
+      )
+      setLoading(false)
+    }
   }
-}
+
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
   setMessage('')
