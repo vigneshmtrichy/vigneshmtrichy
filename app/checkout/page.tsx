@@ -226,50 +226,49 @@ if (user) {
   }
 }
 
-const orderItems = items.map((item) => ({
-  product_slug: item.product.slug,
-  product_name: item.product.name,
-  quantity: item.quantity,
-  unit_price: Number(item.product.price || 0),
-  mrp: Number(item.product.mrp || item.product.price || 0),
-  gst_rate: Number(item.product.gstRate || 0),
-  image: item.product.image,
-}))
+const {
+  data: { session },
+} = await supabase.auth.getSession()
 
-const { error: orderError } = await supabase
-  .from('orders')
-  .insert({
-    user_id: user?.id ?? null,
+let orderResponse: Response
 
-    customer_name: customerName.trim(),
-    customer_email: customerEmail.trim(),
-    phone,
-    address: address.trim(),
-    pincode,
-    city: city.trim(),
-    state,
-
-    items: orderItems,
-
-    mrp_total: mrpTotal,
-    product_total: cartTotal,
-    taxable_value: taxableValue,
-    gst_total: totalGST,
-    cgst,
-    sgst,
-    igst,
-    delivery_charge: shippingCharge,
-    total: finalTotal,
-
-    payment_method: 'WhatsApp',
-    order_status: 'pending',
+try {
+  orderResponse = await fetch('/api/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {}),
+    },
+    body: JSON.stringify({
+      customer_name: customerName.trim(),
+      customer_email: customerEmail.trim(),
+      phone,
+      address: address.trim(),
+      pincode,
+      city: city.trim(),
+      state,
+      items: items.map((item) => ({
+        product_slug: item.product.slug,
+        quantity: item.quantity,
+      })),
+    }),
   })
-
-if (orderError) {
-  console.error('Failed to save order:', orderError)
+} catch {
   setError('Unable to place your order. Please try again.')
   return
 }
+
+const orderResult = await orderResponse.json().catch(() => null)
+
+if (!orderResponse.ok || !orderResult?.success || !orderResult?.order) {
+  setError(orderResult?.message || 'Unable to place your order. Please try again.')
+  return
+}
+
+const savedOrder = orderResult.order
+const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_total)
 
     const message = [
       '🌿 TENOO ORDER',
@@ -283,27 +282,27 @@ if (orderError) {
       `State: ${state}`,
       '',
       'Order Details',
-      ...items.map(
-        (item) =>
-          `${item.product.name} × ${item.quantity} — ₹${Number(item.product.price || 0) * item.quantity}`,
+      ...savedOrder.items.map(
+        (item: {
+          product_name: string
+          quantity: number
+          unit_price: number
+        }) =>
+          `${item.product_name} × ${item.quantity} — ₹${Number(item.unit_price) * item.quantity}`,
       ),
       '',
-     `MRP Total: ₹${mrpTotal}`,
-`Product Price (Incl. GST): ₹${cartTotal.toFixed(2)}`,
-`Taxable Value / Price Excl. GST: ₹${taxableValue.toFixed(2)}`,
-
-...(state === 'Tamil Nadu'
-  ? [
-      `CGST: ₹${cgst.toFixed(2)}`,
-      `SGST: ₹${sgst.toFixed(2)}`,
-    ]
-  : [
-      `IGST: ₹${igst.toFixed(2)}`,
-    ]),
-
-`You Save: ₹${savings}`,
-`Delivery: ${shippingCharge === 0 ? 'FREE' : `₹${shippingCharge}`}`,
-`Total: ₹${finalTotal}`,
+      `MRP Total: ₹${Number(savedOrder.mrp_total).toFixed(2)}`,
+      `Product Price (Incl. GST): ₹${Number(savedOrder.product_total).toFixed(2)}`,
+      `Taxable Value / Price Excl. GST: ₹${Number(savedOrder.taxable_value).toFixed(2)}`,
+      ...(state === 'Tamil Nadu'
+        ? [
+            `CGST: ₹${Number(savedOrder.cgst).toFixed(2)}`,
+            `SGST: ₹${Number(savedOrder.sgst).toFixed(2)}`,
+          ]
+        : [`IGST: ₹${Number(savedOrder.igst).toFixed(2)}`]),
+      `You Save: ₹${savedSavings.toFixed(2)}`,
+      `Delivery: ${Number(savedOrder.delivery_charge) === 0 ? 'FREE' : `₹${savedOrder.delivery_charge}`}`,
+      `Total: ₹${Number(savedOrder.total).toFixed(2)}`,
     ].join('\n')
 
     window.open(
