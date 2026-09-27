@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [message, setMessage] = useState('')
+  const [signupConfirmationSent, setSignupConfirmationSent] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleForgotPassword = async () => {
@@ -55,6 +56,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
   setMessage('')
+  setSignupConfirmationSent(false)
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -93,6 +95,7 @@ export default function LoginPage() {
           setMessage(
             'Account created successfully. Please check your email to confirm your account.'
           )
+          setSignupConfirmationSent(true)
           setName('')
           setEmail('')
           setPassword('')
@@ -119,6 +122,7 @@ export default function LoginPage() {
   const switchMode = (signup: boolean) => {
     setIsSignup(signup)
     setMessage('')
+    setSignupConfirmationSent(false)
     setPassword('')
   }
 
@@ -290,6 +294,19 @@ export default function LoginPage() {
     className="px-1 text-xs font-medium leading-5 text-[#52615a]"
   >
     {message}
+    {signupConfirmationSent && (
+      <div className="mt-3 space-y-2">
+        <p>Gmail-la Tenoo confirmation email open panni “Confirm email” press pannunga. Mail varalana Spam folder check pannunga.</p>
+        <a
+          href="https://mail.google.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex rounded-full bg-[#2d6339] px-4 py-2 text-xs font-semibold text-white hover:bg-[#255630]"
+        >
+          Open Gmail
+        </a>
+      </div>
+    )}
   </div>
 )}
 
