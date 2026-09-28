@@ -4,7 +4,7 @@ import { ProductCard } from '@/components/product-card'
 import {
   ADULT_PRODUCTS,
   KIDS_PRODUCTS,
-  applyProductPricing,
+  applyProductControls,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
 
@@ -18,7 +18,7 @@ async function getProductStatuses() {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('product_slug, status, mrp, price')
+    .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
 
   if (error) {
     console.error('Failed to load product statuses:', error)
@@ -32,6 +32,11 @@ async function getProductStatuses() {
         status: item.status,
         mrp: item.mrp,
         price: item.price,
+        retailer_price: item.retailer_price,
+        offer_enabled: item.offer_enabled,
+        offer_label: item.offer_label,
+        featured: item.featured,
+        shipping_weight_kg: item.shipping_weight_kg,
       },
     ]),
   )
@@ -52,13 +57,17 @@ export async function Generations() {
 
           return [
             product.slug,
-            applyProductPricing(product, pricing),
+            applyProductControls(product, pricing),
           ]
         }),
     ).values(),
   )
 
-  const FEATURED_PRODUCTS = ALL_PRODUCTS.slice(0, 6)
+  const selectedFeaturedProducts = ALL_PRODUCTS.filter((product) => product.featured)
+  const FEATURED_PRODUCTS =
+    selectedFeaturedProducts.length > 0
+      ? selectedFeaturedProducts.slice(0, 6)
+      : ALL_PRODUCTS.slice(0, 6)
 
 
   return (

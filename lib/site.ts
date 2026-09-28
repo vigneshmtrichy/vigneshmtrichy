@@ -25,6 +25,10 @@ export type Product = {
   shippingWeightKg?: number
   mrp?: string
   price?: string
+  retailerPrice?: string
+  offerEnabled?: boolean
+  offerLabel?: string
+  featured?: boolean
   gstRate?: number
 
   allergen?: string
@@ -416,6 +420,14 @@ export type ProductPricing = {
   price?: number | string | null
 }
 
+export type ProductControls = ProductPricing & {
+  retailer_price?: number | string | null
+  offer_enabled?: boolean | null
+  offer_label?: string | null
+  featured?: boolean | null
+  shipping_weight_kg?: number | string | null
+}
+
 export function applyProductPricing(
   product: Product,
   pricing?: ProductPricing,
@@ -434,6 +446,43 @@ export function applyProductPricing(
       Number(pricing.price) > 0
         ? String(pricing.price)
         : product.price,
+  }
+}
+
+export function applyProductControls(
+  product: Product,
+  controls?: ProductControls,
+): Product {
+  const next = applyProductPricing(product, controls)
+
+  return {
+    ...next,
+    retailerPrice:
+      controls?.retailer_price !== null &&
+      controls?.retailer_price !== undefined &&
+      Number(controls.retailer_price) > 0
+        ? String(controls.retailer_price)
+        : product.retailerPrice,
+    offerEnabled:
+      typeof controls?.offer_enabled === 'boolean'
+        ? controls.offer_enabled
+        : product.offerEnabled,
+    offerLabel:
+      controls?.offer_label !== null &&
+      controls?.offer_label !== undefined &&
+      String(controls.offer_label).trim().length > 0
+        ? String(controls.offer_label).trim()
+        : product.offerLabel,
+    featured:
+      typeof controls?.featured === 'boolean'
+        ? controls.featured
+        : product.featured,
+    shippingWeightKg:
+      controls?.shipping_weight_kg !== null &&
+      controls?.shipping_weight_kg !== undefined &&
+      Number(controls.shipping_weight_kg) > 0
+        ? Number(controls.shipping_weight_kg)
+        : product.shippingWeightKg,
   }
 }
 

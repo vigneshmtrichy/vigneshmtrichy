@@ -24,6 +24,16 @@ type StatusFilter = 'all' | ProductStatus
 
 const LOW_STOCK_THRESHOLD = 5
 
+type ProductControlDraft = {
+  mrp: string
+  price: string
+  retailerPrice: string
+  offerEnabled: boolean
+  offerLabel: string
+  featured: boolean
+  shippingWeightKg: string
+}
+
 const STATUS_OPTIONS: {
   value: ProductStatus
   label: string
@@ -81,8 +91,8 @@ export default function AdminProductsPage() {
   const [statuses, setStatuses] = useState<Record<string, ProductStatus>>({})
   const [stockQuantities, setStockQuantities] = useState<Record<string, number | null>>({})
   const [stockDrafts, setStockDrafts] = useState<Record<string, string>>({})
-  const [priceDrafts, setPriceDrafts] = useState<
-    Record<string, { mrp: string; price: string }>
+  const [controlDrafts, setControlDrafts] = useState<
+    Record<string, ProductControlDraft>
   >({})
   const [savingSlug, setSavingSlug] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -108,7 +118,7 @@ export default function AdminProductsPage() {
         setStatuses({})
         setStockQuantities({})
         setStockDrafts({})
-        setPriceDrafts({})
+        setControlDrafts({})
       }
     }
 
@@ -134,7 +144,7 @@ export default function AdminProductsPage() {
     try {
       const { data, error } = await supabase
         .from('product_status')
-        .select('product_slug, status, stock_quantity, mrp, price')
+        .select('product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
 
       if (error) {
         console.error('Failed to load product statuses:', error)
@@ -145,7 +155,7 @@ export default function AdminProductsPage() {
       const statusMap: Record<string, ProductStatus> = {}
       const stockMap: Record<string, number | null> = {}
       const stockDraftMap: Record<string, string> = {}
-      const priceDraftMap: Record<string, { mrp: string; price: string }> = {}
+      const controlDraftMap: Record<string, ProductControlDraft> = {}
 
       data?.forEach((item) => {
         statusMap[item.product_slug] = item.status as ProductStatus
@@ -153,16 +163,27 @@ export default function AdminProductsPage() {
           item.stock_quantity === null ? null : Number(item.stock_quantity)
         stockDraftMap[item.product_slug] =
           item.stock_quantity === null ? '' : String(item.stock_quantity)
-        priceDraftMap[item.product_slug] = {
+        controlDraftMap[item.product_slug] = {
           mrp: item.mrp === null || item.mrp === undefined ? '' : String(item.mrp),
           price: item.price === null || item.price === undefined ? '' : String(item.price),
+          retailerPrice:
+            item.retailer_price === null || item.retailer_price === undefined
+              ? ''
+              : String(item.retailer_price),
+          offerEnabled: item.offer_enabled !== false,
+          offerLabel: item.offer_label || '',
+          featured: Boolean(item.featured),
+          shippingWeightKg:
+            item.shipping_weight_kg === null || item.shipping_weight_kg === undefined
+              ? ''
+              : String(item.shipping_weight_kg),
         }
       })
 
       setStatuses(statusMap)
       setStockQuantities(stockMap)
       setStockDrafts(stockDraftMap)
-      setPriceDrafts(priceDraftMap)
+      setControlDrafts(controlDraftMap)
     } catch (error) {
       console.error('Failed to load product statuses:', error)
       setMessage('Unable to load product statuses.')
@@ -212,16 +233,21 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function savePricing(productSlug: string) {
-    const draft = priceDrafts[productSlug]
+  async function saveProductControls(productSlug: string) {
+    const draft = controlDrafts[productSlug]
 
     if (!draft) {
-      setMessage('Enter MRP and selling price before saving.')
+      setMessage('Enter the product settings before saving.')
       return
     }
 
     const mrp = Number(draft.mrp)
     const price = Number(draft.price)
+    const retailerPrice =
+      draft.retailerPrice.trim() === '' ? null : Number(draft.retailerPrice)
+    const shippingWeightKg =
+      draft.shippingWeightKg.trim() === '' ? null : Number(draft.shippingWeightKg)
+    const offerLabel = draft.offerLabel.trim() || null
 
     if (!Number.isFinite(mrp) || mrp <= 0 || !Number.isFinite(price) || price <= 0) {
       setMessage('Enter valid positive MRP and selling price.')
@@ -230,6 +256,16 @@ export default function AdminProductsPage() {
 
     if (price > mrp) {
       setMessage('Selling price cannot be higher than MRP.')
+      return
+    }
+
+    if (retailerPrice !== null && (!Number.isFinite(retailerPrice) || retailerPrice <= 0)) {
+      setMessage('Enter a valid retailer price or leave it empty.')
+      return
+    }
+
+    if (shippingWeightKg !== null && (!Number.isFinite(shippingWeightKg) || shippingWeightKg <= 0)) {
+      setMessage('Enter a valid shipping weight or leave it empty.')
       return
     }
 
@@ -244,6 +280,15 @@ export default function AdminProductsPage() {
             product_slug: productSlug,
             mrp: Number(mrp.toFixed(2)),
             price: Number(price.toFixed(2)),
+            retailer_price:
+              retailerPrice === null ? null : Number(retailerPrice.toFixed(2)),
+            offer_enabled: draft.offerEnabled,
+            offer_label: offerLabel,
+            featured: draft.featured,
+            shipping_weight_kg:
+              shippingWeightKg === null
+                ? null
+                : Number(shippingWeightKg.toFixed(3)),
             updated_at: new Date().toISOString(),
           },
           {
@@ -252,21 +297,28 @@ export default function AdminProductsPage() {
         )
 
       if (error) {
-        console.error('Failed to save product pricing:', error)
-        setMessage('Failed to save product pricing: ' + error.message)
+        console.error('Failed to save product controls:', error)
+        setMessage('Failed to save product controls: ' + error.message)
         return
       }
 
-      setPriceDrafts((current) => ({
+      setControlDrafts((current) => ({
         ...current,
         [productSlug]: {
+          ...draft,
           mrp: mrp.toFixed(2),
           price: price.toFixed(2),
+          retailerPrice:
+            retailerPrice === null ? '' : retailerPrice.toFixed(2),
+          offerLabel: offerLabel || '',
+          shippingWeightKg:
+            shippingWeightKg === null ? '' : shippingWeightKg.toFixed(3),
         },
       }))
+      setMessage('Product settings saved successfully.')
     } catch (error) {
-      console.error('Failed to save product pricing:', error)
-      setMessage('Failed to save product pricing.')
+      console.error('Failed to save product controls:', error)
+      setMessage('Failed to save product settings.')
     } finally {
       setSavingSlug(null)
     }
@@ -339,12 +391,20 @@ export default function AdminProductsPage() {
       ...product,
       status: statuses[product.slug] || 'active',
       stockQuantity: stockQuantities[product.slug] ?? null,
-      priceDraft: priceDrafts[product.slug] || {
+      controlDraft: controlDrafts[product.slug] || {
         mrp: product.mrp || '',
         price: product.price || '',
+        retailerPrice: product.retailerPrice || '',
+        offerEnabled: product.offerEnabled ?? true,
+        offerLabel: product.offerLabel || '',
+        featured: product.featured ?? false,
+        shippingWeightKg:
+          product.shippingWeightKg === undefined
+            ? ''
+            : String(product.shippingWeightKg),
       },
     }))
-  }, [statuses, stockQuantities, priceDrafts])
+  }, [statuses, stockQuantities, controlDrafts])
 
   const lowStockProducts = productData.filter(
     (product) =>
@@ -527,7 +587,7 @@ export default function AdminProductsPage() {
                         </div>
                       </div>
 
-                      <div className="flex w-full flex-col gap-2 sm:w-64">
+                      <div className="flex w-full flex-col gap-2 sm:w-72">
                         <label className="text-xs font-medium text-muted-foreground">Product Status</label>
                         <select value={product.status} onChange={(e) => saveStatus(product.slug, e.target.value as ProductStatus)} disabled={isSaving} className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60">
                           {STATUS_OPTIONS.map((option) => (
@@ -537,16 +597,35 @@ export default function AdminProductsPage() {
 
                         <div className="mt-2 border-t pt-3">
                           <div className="flex items-center justify-between gap-2">
-                            <label className="text-xs font-medium text-muted-foreground">Pricing</label>
+                            <label className="text-xs font-medium text-muted-foreground">Product Settings</label>
                           </div>
+
                           <div className="mt-2 grid grid-cols-2 gap-2">
-                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.priceDraft.mrp} onChange={(e) => setPriceDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '' }), mrp: e.target.value } }))} disabled={isSaving} placeholder="MRP" aria-label={'MRP for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
-                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.priceDraft.price} onChange={(e) => setPriceDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '' }), price: e.target.value } }))} disabled={isSaving} placeholder="Selling price" aria-label={'Selling price for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.mrp} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), mrp: e.target.value } }))} disabled={isSaving} placeholder="MRP" aria-label={'MRP for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.price} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), price: e.target.value } }))} disabled={isSaving} placeholder="Selling price" aria-label={'Selling price for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.retailerPrice} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), retailerPrice: e.target.value } }))} disabled={isSaving} placeholder="Retailer price" aria-label={'Retailer price for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            <input type="number" inputMode="decimal" min="0.001" step="0.001" value={product.controlDraft.shippingWeightKg} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), shippingWeightKg: e.target.value } }))} disabled={isSaving} placeholder="Weight (kg)" aria-label={'Shipping weight in kg for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
                           </div>
-                          <button type="button" onClick={() => savePricing(product.slug)} disabled={isSaving || product.priceDraft.mrp === '' || product.priceDraft.price === ''} className="mt-2 w-full rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
-                            {isSaving ? 'Saving...' : 'Save Pricing'}
+
+                          <div className="mt-2 flex items-center gap-2">
+                            <button type="button" onClick={() => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), offerEnabled: !(current[product.slug]?.offerEnabled ?? true) } }))} disabled={isSaving} className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 ${product.controlDraft.offerEnabled ? 'bg-primary/5 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                              Offer {product.controlDraft.offerEnabled ? 'ON' : 'OFF'}
+                            </button>
+
+                            <button type="button" onClick={() => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), featured: !(current[product.slug]?.featured ?? false) } }))} disabled={isSaving} className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition disabled:opacity-60 ${product.controlDraft.featured ? 'bg-primary/5 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                              Featured {product.controlDraft.featured ? 'ON' : 'OFF'}
+                            </button>
+                          </div>
+
+                          <input type="text" maxLength={80} value={product.controlDraft.offerLabel} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), offerLabel: e.target.value } }))} disabled={isSaving} placeholder="Offer label (optional)" aria-label={'Offer label for ' + product.name} className="mt-2 h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+
+                          <button type="button" onClick={() => saveProductControls(product.slug)} disabled={isSaving || product.controlDraft.mrp === '' || product.controlDraft.price === ''} className="mt-2 w-full rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
+                            {isSaving ? 'Saving...' : 'Save Product Settings'}
                           </button>
-                          <p className="mt-1 text-[11px] text-muted-foreground">Pricing changes apply to the storefront and new orders.</p>
+
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            Price, retailer price, offer, featured status and shipping weight save together.
+                          </p>
 
                           <div className="mt-4 border-t pt-3">
                             <div className="flex items-center justify-between gap-2">

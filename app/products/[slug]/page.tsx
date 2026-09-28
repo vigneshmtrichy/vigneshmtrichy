@@ -12,7 +12,7 @@ import { ProductPurchasePanel } from '@/components/product/product-purchase-pane
 import { ProductReviews } from '@/components/product/product-reviews'
 import {
   ALL_PRODUCTS,
-  applyProductPricing,
+  applyProductControls,
   getProductBySlug,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
@@ -29,7 +29,7 @@ async function getProductStatus(slug: string) {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('status, mrp, price')
+    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
     .eq('product_slug', slug)
     .maybeSingle()
 
@@ -46,6 +46,11 @@ async function getProductStatus(slug: string) {
     status: data?.status || 'active',
     mrp: data?.mrp ?? null,
     price: data?.price ?? null,
+    retailer_price: data?.retailer_price ?? null,
+    offer_enabled: data?.offer_enabled ?? null,
+    offer_label: data?.offer_label ?? null,
+    featured: data?.featured ?? null,
+    shipping_weight_kg: data?.shipping_weight_kg ?? null,
   }
 }
 
@@ -107,7 +112,7 @@ if (!product) {
 }
 
 const productStatus = await getProductStatus(product.slug)
-const displayProduct = applyProductPricing(product, productStatus)
+const displayProduct = applyProductControls(product, productStatus)
 
 if (productStatus.status === 'hidden') {
   notFound()
@@ -151,6 +156,14 @@ const galleryImages = galleryFolder
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
   )
+
+  const offerText =
+    displayProduct.offerEnabled !== false &&
+    displayProduct.mrp &&
+    Number(displayProduct.mrp) > Number(displayProduct.price)
+      ? displayProduct.offerLabel ||
+        `${Math.round(((Number(displayProduct.mrp) - Number(displayProduct.price)) / Number(displayProduct.mrp)) * 100)}% OFF`
+      : null
   const productSchema = {
   '@context': 'https://schema.org',
   '@type': 'Product',
@@ -317,14 +330,9 @@ return (
       ₹{displayProduct.price}
     </span>
 
-    {displayProduct.mrp && Number(displayProduct.mrp) > Number(displayProduct.price) && (
+    {offerText && (
       <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-600">
-        {Math.round(
-          ((Number(displayProduct.mrp) - Number(displayProduct.price)) /
-            Number(displayProduct.mrp)) *
-            100
-        )}
-        % OFF
+        {offerText}
       </span>
     )}
   </div>

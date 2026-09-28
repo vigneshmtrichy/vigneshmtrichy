@@ -46,14 +46,18 @@ const isActive = status === 'active'
     : product.image || '/placeholder.svg'
 
   const discountPercentage =
-    product.mrp && product.price
+    product.mrp && product.price && Number(product.mrp) > Number(product.price)
       ? Math.round(
-          ((Number(product.mrp) -
-            Number(product.price)) /
+          ((Number(product.mrp) - Number(product.price)) /
             Number(product.mrp)) *
             100,
         )
       : 0
+
+  const offerText =
+    product.offerEnabled !== false && discountPercentage > 0
+      ? product.offerLabel || `${discountPercentage}% OFF`
+      : null
 
   const increaseQuantity = () => {
     setQuantity((current) => current + 1)
@@ -162,7 +166,7 @@ const handleBuyNow = () => {
               ₹{product.price}
             </span>
 
-            {discountPercentage > 0 && (
+            {offerText && (
               <span
                 className="
                   rounded-full
@@ -174,7 +178,7 @@ const handleBuyNow = () => {
                   text-orange-600
                 "
               >
-                {discountPercentage}% OFF
+                {offerText}
               </span>
             )}
           </div>
