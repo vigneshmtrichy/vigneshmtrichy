@@ -29,6 +29,7 @@ export type Product = {
   offerEnabled?: boolean
   offerLabel?: string
   featured?: boolean
+  featuredPriority?: number
   gstRate?: number
 
   allergen?: string
@@ -425,6 +426,9 @@ export type ProductControls = ProductPricing & {
   offer_enabled?: boolean | null
   offer_label?: string | null
   featured?: boolean | null
+  featured_priority?: number | string | null
+  display_name?: string | null
+  badges?: string[] | null
   shipping_weight_kg?: number | string | null
 }
 
@@ -457,6 +461,18 @@ export function applyProductControls(
 
   return {
     ...next,
+    name:
+      controls?.display_name !== null &&
+      controls?.display_name !== undefined &&
+      String(controls.display_name).trim().length > 0
+        ? String(controls.display_name).trim()
+        : product.name,
+    badges:
+      Array.isArray(controls?.badges) && controls.badges.length > 0
+        ? controls.badges
+            .map((badge) => String(badge).trim())
+            .filter(Boolean)
+        : product.badges,
     retailerPrice:
       controls?.retailer_price !== null &&
       controls?.retailer_price !== undefined &&
@@ -477,6 +493,12 @@ export function applyProductControls(
       typeof controls?.featured === 'boolean'
         ? controls.featured
         : product.featured,
+    featuredPriority:
+      controls?.featured_priority !== null &&
+      controls?.featured_priority !== undefined &&
+      Number(controls.featured_priority) > 0
+        ? Number(controls.featured_priority)
+        : product.featuredPriority,
     shippingWeightKg:
       controls?.shipping_weight_kg !== null &&
       controls?.shipping_weight_kg !== undefined &&
