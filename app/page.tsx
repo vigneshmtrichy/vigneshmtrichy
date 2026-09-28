@@ -11,6 +11,8 @@ import { Story } from '@/components/home/story'
 import { CtaBanner } from '@/components/home/cta-banner'
 import { TrustBar } from '@/components/home/trust-bar'
 
+ export const dynamic = 'force-dynamic'
+
 export default function HomePage() {
   return (
     <>
