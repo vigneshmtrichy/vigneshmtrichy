@@ -4,6 +4,7 @@ import { ProductCard } from '@/components/product-card'
 import {
   ADULT_PRODUCTS,
   KIDS_PRODUCTS,
+  applyProductPricing,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
 
@@ -17,7 +18,7 @@ async function getProductStatuses() {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('product_slug, status')
+    .select('product_slug, status, mrp, price')
 
   if (error) {
     console.error('Failed to load product statuses:', error)
@@ -27,7 +28,11 @@ async function getProductStatuses() {
   return Object.fromEntries(
     (data || []).map((item) => [
       item.product_slug,
-      item.status,
+      {
+        status: item.status,
+        mrp: item.mrp,
+        price: item.price,
+      },
     ]),
   )
 }
@@ -40,12 +45,16 @@ export async function Generations() {
       [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
         .filter(
           (product) =>
-            productStatuses[product.slug] !== 'hidden',
+            productStatuses[product.slug]?.status !== 'hidden',
         )
-        .map((product) => [
-          product.slug,
-          product,
-        ]),
+        .map((product) => {
+          const pricing = productStatuses[product.slug]
+
+          return [
+            product.slug,
+            applyProductPricing(product, pricing),
+          ]
+        }),
     ).values(),
   )
 
@@ -133,7 +142,7 @@ export async function Generations() {
             >
               <ProductCard
   product={product}
-  status={productStatuses[product.slug]}
+  status={productStatuses[product.slug]?.status}
 />
             </div>
           ))}

@@ -2,7 +2,11 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { ScrollReveal } from '@/components/scroll-reveal'
-import { KIDS_PRODUCTS, ADULT_PRODUCTS } from '@/lib/site'
+import {
+  KIDS_PRODUCTS,
+  ADULT_PRODUCTS,
+  applyProductPricing,
+} from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
 
@@ -25,7 +29,7 @@ async function getProductStatuses() {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('product_slug, status')
+    .select('product_slug, status, mrp, price')
 
   if (error) {
     console.error('Failed to load product statuses:', error)
@@ -35,7 +39,11 @@ async function getProductStatuses() {
   return Object.fromEntries(
     (data || []).map((item) => [
       item.product_slug,
-      item.status,
+      {
+        status: item.status,
+        mrp: item.mrp,
+        price: item.price,
+      },
     ]),
   )
 }
@@ -48,12 +56,16 @@ export default async function ProductsPage() {
       [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
         .filter(
           (product) =>
-            productStatuses[product.slug] !== 'hidden',
+            productStatuses[product.slug]?.status !== 'hidden',
         )
-        .map((product) => [
-          product.slug,
-          product,
-        ]),
+        .map((product) => {
+          const pricing = productStatuses[product.slug]
+
+          return [
+            product.slug,
+            applyProductPricing(product, pricing),
+          ]
+        }),
     ).values(),
   )
 
@@ -131,7 +143,7 @@ export default async function ProductsPage() {
   >
     <ProductCard
       product={product}
-      status={productStatuses[product.slug]}
+      status={productStatuses[product.slug]?.status}
     />
   </ScrollReveal>
 ))}

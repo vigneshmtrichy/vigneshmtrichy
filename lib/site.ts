@@ -411,6 +411,32 @@ export const PRODUCT_STATUS: Record<string, ProductStatus> = {
 }
 export const ALL_PRODUCTS: Product[] = [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
 
+export type ProductPricing = {
+  mrp?: number | string | null
+  price?: number | string | null
+}
+
+export function applyProductPricing(
+  product: Product,
+  pricing?: ProductPricing,
+): Product {
+  return {
+    ...product,
+    mrp:
+      pricing?.mrp !== null &&
+      pricing?.mrp !== undefined &&
+      Number(pricing.mrp) > 0
+        ? String(pricing.mrp)
+        : product.mrp,
+    price:
+      pricing?.price !== null &&
+      pricing?.price !== undefined &&
+      Number(pricing.price) > 0
+        ? String(pricing.price)
+        : product.price,
+  }
+}
+
 export function getProductBySlug(slug: string): Product | undefined {
   return ALL_PRODUCTS.find((p) => p.slug === slug)
 }
