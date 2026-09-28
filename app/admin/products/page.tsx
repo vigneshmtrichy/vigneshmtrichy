@@ -100,6 +100,9 @@ export default function AdminProductsPage() {
   const [stockDrafts, setStockDrafts] = useState<
     Record<string, string>
   >({})
+  const [priceDrafts, setPriceDrafts] = useState<
+    Record<string, { mrp: string; price: string }>
+  >({})
 
   const [savingSlug, setSavingSlug] = useState<
     string | null
@@ -132,6 +135,7 @@ export default function AdminProductsPage() {
         setStatuses({})
         setStockQuantities({})
         setStockDrafts({})
+        setPriceDrafts({})
       }
     }
 
@@ -157,7 +161,7 @@ export default function AdminProductsPage() {
     try {
       const { data, error } = await supabase
         .from('product_status')
-        .select('product_slug, status, stock_quantity')
+        .select('product_slug, status, stock_quantity, mrp, price')
 
       if (error) {
         console.error(
@@ -171,6 +175,7 @@ export default function AdminProductsPage() {
       const statusMap: Record<string, ProductStatus> = {}
       const stockMap: Record<string, number | null> = {}
       const stockDraftMap: Record<string, string> = {}
+      const priceDraftMap: Record<string, { mrp: string; price: string }> = {}
 
       data?.forEach((item) => {
         statusMap[item.product_slug] =
@@ -183,11 +188,17 @@ export default function AdminProductsPage() {
           item.stock_quantity === null
             ? ''
             : String(item.stock_quantity)
+
+        priceDraftMap[item.product_slug] = {
+          mrp: item.mrp === null || item.mrp === undefined ? '' : String(item.mrp),
+          price: item.price === null || item.price === undefined ? '' : String(item.price),
+        }
       })
 
       setStatuses(statusMap)
       setStockQuantities(stockMap)
       setStockDrafts(stockDraftMap)
+      setPriceDrafts(priceDraftMap)
     } catch (error) {
       console.error(
         'Failed to load product statuses:',
@@ -243,6 +254,66 @@ export default function AdminProductsPage() {
     setSavingSlug(null)
   }
 }
+  async function savePricing(productSlug: string) {
+    const draft = priceDrafts[productSlug]
+
+    if (!draft) {
+      setMessage('Enter MRP and selling price before saving.')
+      return
+    }
+
+    const mrp = Number(draft.mrp)
+    const price = Number(draft.price)
+
+    if (!Number.isFinite(mrp) || mrp <= 0 || !Number.isFinite(price) || price <= 0) {
+      setMessage('Enter valid positive MRP and selling price.')
+      return
+    }
+
+    if (price > mrp) {
+      setMessage('Selling price cannot be higher than MRP.')
+      return
+    }
+
+    try {
+      setSavingSlug(productSlug)
+      setMessage('')
+
+      const { error } = await supabase
+        .from('product_status')
+        .upsert(
+          {
+            product_slug: productSlug,
+            mrp: Number(mrp.toFixed(2)),
+            price: Number(price.toFixed(2)),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'product_slug',
+          },
+        )
+
+      if (error) {
+        console.error('Failed to save product pricing:', error)
+        setMessage('Failed to save product pricing: ' + error.message)
+        return
+      }
+
+      setPriceDrafts((current) => ({
+        ...current,
+        [productSlug]: {
+          mrp: mrp.toFixed(2),
+          price: price.toFixed(2),
+        },
+      }))
+    } catch (error) {
+      console.error('Failed to save product pricing:', error)
+      setMessage('Failed to save product pricing.')
+    } finally {
+      setSavingSlug(null)
+    }
+  }
+
   async function saveStock(productSlug: string) {
     const rawQuantity = stockDrafts[productSlug] ?? ''
 
@@ -311,6 +382,10 @@ export default function AdminProductsPage() {
       status:
         statuses[product.slug] || 'active',
       stockQuantity: stockQuantities[product.slug] ?? null,
+      priceDraft: priceDrafts[product.slug] || {
+        mrp: product.mrp || '',
+        price: product.price || '',
+      },
     }))
   }, [statuses, stockQuantities])
 
@@ -768,6 +843,79 @@ export default function AdminProductsPage() {
 
                           <div className="mt-2 border-t pt-3">
                             <div className="flex items-center justify-between gap-2">
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Pricing
+                              </label>
+                            </div>
+
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0.01"
+                                step="0.01"
+                                value={product.priceDraft.mrp}
+                                onChange={(e) =>
+                                  setPriceDrafts((current) => ({
+                                    ...current,
+                                    [product.slug]: {
+                                      ...(current[product.slug] || {
+                                        mrp: '',
+                                        price: '',
+                                      }),
+                                      mrp: e.target.value,
+                                    },
+                                  }))
+                                }
+                                disabled={isSaving}
+                                placeholder="MRP"
+                                aria-label={'MRP for ' + product.name}
+                                className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                              />
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0.01"
+                                step="0.01"
+                                value={product.priceDraft.price}
+                                onChange={(e) =>
+                                  setPriceDrafts((current) => ({
+                                    ...current,
+                                    [product.slug]: {
+                                      ...(current[product.slug] || {
+                                        mrp: '',
+                                        price: '',
+                                      }),
+                                      price: e.target.value,
+                                    },
+                                  }))
+                                }
+                                disabled={isSaving}
+                                placeholder="Selling price"
+                                aria-label={'Selling price for ' + product.name}
+                                className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => savePricing(product.slug)}
+                              disabled={
+                                isSaving ||
+                                product.priceDraft.mrp === '' ||
+                                product.priceDraft.price === ''
+                              }
+                              className="mt-2 w-full rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {isSaving ? 'Saving...' : 'Save Pricing'}
+                            </button>
+
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              Pricing changes apply to the storefront and new orders.
+                            </p>
+
+                            <div className="mt-4 border-t pt-3">
+                              <div className="flex items-center justify-between gap-2">
                               <label
                                 htmlFor={'stock-' + product.slug}
                                 className="text-xs font-medium text-muted-foreground"
@@ -819,9 +967,10 @@ export default function AdminProductsPage() {
                                 {isSaving ? 'Saving...' : 'Save'}
                               </button>
                             </div>
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              Orders reduce tracked stock automatically.
-                            </p>
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                Orders reduce tracked stock automatically.
+                              </p>
+                            </div>
                           </div>
 
                           {isSaving && (
