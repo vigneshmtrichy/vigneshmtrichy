@@ -56,12 +56,16 @@ export default async function ProductsPage() {
       [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
         .filter(
           (product) =>
-            productStatuses[product.slug] !== 'hidden',
+            productStatuses[product.slug]?.status !== 'hidden',
         )
-        .map((product) => [
-          product.slug,
-          product,
-        ]),
+        .map((product) => {
+          const pricing = productStatuses[product.slug]
+
+          return [
+            product.slug,
+            applyProductPricing(product, pricing),
+          ]
+        }),
     ).values(),
   )
 
