@@ -209,7 +209,7 @@ export default function AdminProductsPage() {
   async function saveStock(productSlug: string) {
     const rawQuantity = stockDrafts[productSlug] ?? ''
 
-    if (!/^\\d+$/.test(rawQuantity)) {
+    if (!/^\d+$/.test(rawQuantity)) {
       setMessage('Enter a whole stock quantity of zero or more.')
       return
     }
