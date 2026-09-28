@@ -89,6 +89,8 @@ function StatusIcon({
 }
 
 export default function AdminProductsPage() {
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const [statuses, setStatuses] = useState<
     Record<string, ProductStatus>
   >({})
@@ -113,7 +115,42 @@ export default function AdminProductsPage() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    loadStatuses()
+    let mounted = true
+
+    const applyAccess = (user: { email?: string } | null) => {
+      if (!mounted) return
+
+      const authorized = user?.email === 'info@tenoo.in'
+      setIsAdmin(authorized)
+      setAuthChecked(true)
+
+      if (authorized) {
+        setLoading(true)
+        void loadStatuses()
+      } else {
+        setLoading(false)
+        setStatuses({})
+        setStockQuantities({})
+        setStockDrafts({})
+      }
+    }
+
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      applyAccess(user)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        applyAccess(session?.user ?? null)
+      }
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function loadStatuses() {
@@ -346,7 +383,7 @@ export default function AdminProductsPage() {
         'out-of-stock',
     ).length
 
-  if (loading) {
+  if (!authChecked || (isAdmin && loading)) {
     return (
       <>
         <SiteHeader />
@@ -377,6 +414,28 @@ export default function AdminProductsPage() {
               )}
             </div>
           </div>
+        </main>
+      </>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="min-h-screen bg-background px-4 py-16">
+          <section className="mx-auto max-w-xl rounded-2xl border bg-background p-8 text-center shadow-sm">
+            <h1 className="text-2xl font-semibold">Admin access only</h1>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Sign in with the admin account to manage product status and stock.
+            </p>
+            <a
+              href="/"
+              className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Back to store
+            </a>
+          </section>
         </main>
       </>
     )
