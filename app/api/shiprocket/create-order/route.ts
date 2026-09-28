@@ -153,10 +153,15 @@ export async function POST(request: Request) {
       0.25,
       Number(
         items.reduce(
-          (total: number, item: any) =>
-            total +
-            getProductShippingWeightKg(item.product_slug) *
-              Number(item.quantity || 0),
+          (total: number, item: any) => {
+            const managedWeight = Number(item.shipping_weight_kg)
+            const weight =
+              Number.isFinite(managedWeight) && managedWeight > 0
+                ? managedWeight
+                : getProductShippingWeightKg(item.product_slug)
+
+            return total + weight * Number(item.quantity || 0)
+          },
           0,
         ).toFixed(3),
       ),
