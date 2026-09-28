@@ -149,14 +149,39 @@ export async function POST(request: Request) {
       0,
     )
 
+    const productSlugs = [
+      ...new Set(
+        items
+          .map((item: any) => item.product_slug)
+          .filter((slug: unknown): slug is string => typeof slug === 'string'),
+      ),
+    ]
+
+    const { data: shippingSettings } = await supabaseAdmin
+      .from('product_status')
+      .select('product_slug, shipping_weight_kg')
+      .in('product_slug', productSlugs)
+
+    const managedWeightBySlug = new Map(
+      (shippingSettings || []).map((item) => [
+        item.product_slug,
+        Number(item.shipping_weight_kg),
+      ]),
+    )
+
     const shipmentWeight = Math.max(
       0.25,
       Number(
         items.reduce(
-          (total: number, item: any) =>
-            total +
-            getProductShippingWeightKg(item.product_slug) *
-              Number(item.quantity || 0),
+          (total: number, item: any) => {
+            const managedWeight = managedWeightBySlug.get(item.product_slug)
+            const weight =
+              Number.isFinite(managedWeight) && managedWeight > 0
+                ? managedWeight
+                : getProductShippingWeightKg(item.product_slug)
+
+            return total + weight * Number(item.quantity || 0)
+          },
           0,
         ).toFixed(3),
       ),
