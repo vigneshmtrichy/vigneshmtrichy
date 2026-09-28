@@ -7,10 +7,23 @@ export function IntroAnimation() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
+    const navigationEntry = performance.getEntriesByType(
+      'navigation',
+    )[0] as PerformanceNavigationTiming | undefined
+    const isRefresh = navigationEntry?.type === 'reload'
+
+    if (isRefresh) {
+      sessionStorage.setItem('tenoo-intro-shown', '1')
+      return
+    }
+
     const internalHome =
       sessionStorage.getItem('tenoo-internal-home') === '1'
 
     if (internalHome) {
+      // Visiting home through an in-site link uses up this session's intro.
+      sessionStorage.setItem('tenoo-intro-shown', '1')
+
       // Keep the flag briefly so React Strict Mode's
       // second effect run also sees it.
       const internalHomeTimer = window.setTimeout(() => {
