@@ -838,7 +838,7 @@ export default function AdminProductSettingsPage() {
                       ))}
 
                       {draft.imageUrls.length + selectedImageFiles.length === 0 && (
-                        <div className="col-span-2 flex aspect-square items-center justify-center rounded-xl border bg-background text-center text-xs text-muted-foreground sm:col-span-5">
+                        <div className="col-span-2 flex min-h-20 items-center justify-center rounded-xl border border-dashed bg-background px-4 py-5 text-center text-xs text-muted-foreground sm:col-span-5">
                           Current site image will be used until you upload product images.
                         </div>
                       )}
