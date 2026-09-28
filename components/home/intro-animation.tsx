@@ -31,7 +31,7 @@ export function IntroAnimation() {
 
     const timer = window.setTimeout(() => {
       setShow(false)
-    }, 800)
+    }, 1200)
 
     return () => {
       window.clearTimeout(seenTimer)
@@ -47,7 +47,7 @@ export function IntroAnimation() {
       aria-hidden="true"
     >
       <div className="flex flex-col items-center">
-        <div className="relative h-[100px] w-[230px] animate-[tenooLogoReveal_550ms_cubic-bezier(0.22,1,0.36,1)_50ms_both]">
+        <div className="relative h-[100px] w-[230px] animate-[tenooLogoReveal_750ms_cubic-bezier(0.22,1,0.36,1)_100ms_both]">
           <Image
             src="/tenoo-logo.png"
             alt="Tenoo"
@@ -57,11 +57,11 @@ export function IntroAnimation() {
           />
         </div>
 
-        <p className="mt-2 text-center text-[9px] font-semibold uppercase tracking-[0.34em] text-[#8fbd24] animate-[tenooTaglineReveal_300ms_ease-out_250ms_both]">
+        <p className="mt-2 text-center text-[9px] font-semibold uppercase tracking-[0.34em] text-[#8fbd24] animate-[tenooTaglineReveal_400ms_ease-out_500ms_both]">
           Good Food. Made for Every Generation.
         </p>
 
-        <div className="mt-5 h-px w-[42px] bg-[#8fbd24] animate-[tenooLineReveal_250ms_ease-out_450ms_both]" />
+        <div className="mt-5 h-px w-[42px] bg-[#8fbd24] animate-[tenooLineReveal_300ms_ease-out_750ms_both]" />
       </div>
     </div>
   )
