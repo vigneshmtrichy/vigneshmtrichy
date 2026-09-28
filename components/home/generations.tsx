@@ -63,10 +63,11 @@ export async function Generations() {
     ).values(),
   )
 
+  const HOME_PRODUCT_LIMIT = 5
   const FEATURED_PRODUCTS = [
     ...ALL_PRODUCTS.filter((product) => product.featured),
     ...ALL_PRODUCTS.filter((product) => !product.featured),
-  ]
+  ].slice(0, HOME_PRODUCT_LIMIT)
 
 
   return (
