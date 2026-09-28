@@ -30,6 +30,7 @@ export type Product = {
   offerLabel?: string
   featured?: boolean
   featuredPriority?: number
+  imageUrl?: string
   gstRate?: number
 
   allergen?: string
@@ -429,6 +430,7 @@ export type ProductControls = ProductPricing & {
   featured_priority?: number | string | null
   display_name?: string | null
   badges?: string[] | null
+  image_url?: string | null
   shipping_weight_kg?: number | string | null
 }
 
@@ -499,6 +501,18 @@ export function applyProductControls(
       Number(controls.featured_priority) > 0
         ? Number(controls.featured_priority)
         : product.featuredPriority,
+    image: 
+      controls?.image_url !== null &&
+      controls?.image_url !== undefined &&
+      String(controls.image_url).trim().length > 0
+        ? String(controls.image_url).trim()
+        : product.image,
+    imageUrl:
+      controls?.image_url !== null &&
+      controls?.image_url !== undefined &&
+      String(controls.image_url).trim().length > 0
+        ? String(controls.image_url).trim()
+        : product.imageUrl,
     shippingWeightKg:
       controls?.shipping_weight_kg !== null &&
       controls?.shipping_weight_kg !== undefined &&

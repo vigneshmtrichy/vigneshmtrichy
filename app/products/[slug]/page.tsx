@@ -29,7 +29,7 @@ async function getProductStatus(slug: string) {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg')
+    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, shipping_weight_kg')
     .eq('product_slug', slug)
     .maybeSingle()
 
@@ -53,6 +53,7 @@ async function getProductStatus(slug: string) {
     featured_priority: data?.featured_priority ?? null,
     display_name: data?.display_name ?? null,
     badges: data?.badges ?? null,
+    image_url: data?.image_url ?? null,
     shipping_weight_kg: data?.shipping_weight_kg ?? null,
   }
 }
@@ -159,6 +160,14 @@ const galleryImages = galleryFolder
       .map((file) => `/products/${galleryFolder}/${file}`)
   : []
 
+const managedGalleryImages =
+  displayProduct.imageUrl &&
+  displayProduct.imageUrl !== product.image
+    ? [displayProduct.imageUrl, ...galleryImages]
+    : galleryImages.length > 0
+      ? galleryImages
+      : [displayProduct.image]
+
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
   )
@@ -175,7 +184,7 @@ const galleryImages = galleryFolder
   '@type': 'Product',
   name: displayProduct.name,
   description: displayProduct.description || displayProduct.tagline,
-  image: galleryImages.length > 0 ? galleryImages : [product.image],
+  image: managedGalleryImages,
   brand: {
     '@type': 'Brand',
     name: 'Tenoo',
@@ -270,11 +279,11 @@ return (
                   =================================================== */}
               <div className="mx-auto w-full max-w-[520px]">
                 <ProductGallery
-                  images={galleryImages}
+                  images={managedGalleryImages}
                   productName={displayProduct.name}
-                  tagline={product.tagline}
-                  packSize={product.packSize}
-                  fallbackImage={product.image}
+                  tagline={displayProduct.tagline}
+                  packSize={displayProduct.packSize}
+                  fallbackImage={displayProduct.image}
                 />
               </div>
 

@@ -16,6 +16,7 @@ type ProductStatus =
 type ProductDraft = {
   displayName: string
   badges: string
+  imageUrl: string
   status: ProductStatus
   stock: string
   mrp: string
@@ -59,6 +60,7 @@ function buildDefaultDraft(slug: string): ProductDraft {
   return {
     displayName: product?.name || '',
     badges: product?.badges.join(', ') || '',
+    imageUrl: product?.imageUrl || product?.image || '',
     status: 'active',
     stock: '',
     mrp: product?.mrp || '',
@@ -88,6 +90,8 @@ export default function AdminProductSettingsPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [statusPickerOpen, setStatusPickerOpen] = useState(false)
   const [productSearch, setProductSearch] = useState('')
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('')
   const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({})
 
   useEffect(() => {
@@ -136,7 +140,7 @@ export default function AdminProductSettingsPage() {
       const { data, error } = await supabase
         .from('product_status')
         .select(
-          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg',
+          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, shipping_weight_kg',
         )
 
       if (error) {
@@ -155,6 +159,10 @@ export default function AdminProductSettingsPage() {
             item?.display_name === null || item?.display_name === undefined
               ? product.name
               : String(item.display_name),
+          imageUrl:
+            item?.image_url === null || item?.image_url === undefined
+              ? product.imageUrl || product.image || ''
+              : String(item.image_url),
           badges: Array.isArray(item?.badges)
             ? item.badges.join(', ')
             : product.badges.join(', '),
@@ -221,11 +229,43 @@ export default function AdminProductSettingsPage() {
     setSelectedSlug(slug)
     setProductSearch('')
     setPickerOpen(false)
+    setSelectedImageFile(null)
+    setImagePreviewUrl('')
     setMessage('')
 
     const url = new URL(window.location.href)
     url.searchParams.set('product', slug)
     window.history.replaceState({}, '', url)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    }
+  }, [imagePreviewUrl])
+
+  const handleImageSelect = (file: File | null) => {
+    setMessage('')
+
+    if (!file) {
+      setSelectedImageFile(null)
+      setImagePreviewUrl('')
+      return
+    }
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setMessage('Use PNG, JPG or WEBP image.')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('Image must be 5 MB or smaller.')
+      return
+    }
+
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setSelectedImageFile(file)
+    setImagePreviewUrl(URL.createObjectURL(file))
   }
 
   useEffect(() => {
@@ -256,6 +296,60 @@ export default function AdminProductSettingsPage() {
         ...patch,
       },
     }))
+  }
+
+  async function uploadProductImage(file: File) {
+    const extension =
+      file.type === 'image/png'
+        ? 'png'
+        : file.type === 'image/webp'
+          ? 'webp'
+          : 'jpg'
+    const folder = 'products/' + selectedSlug
+
+    const { data: existingFiles, error: listError } = await supabase.storage
+      .from('product-images')
+      .list(folder)
+
+    if (listError) {
+      throw new Error('Unable to prepare product image storage.')
+    }
+
+    if (existingFiles && existingFiles.length > 0) {
+      const paths = existingFiles
+        .filter((file) => file.name)
+        .map((file) => folder + '/' + file.name)
+
+      if (paths.length > 0) {
+        const { error: removeError } = await supabase.storage
+          .from('product-images')
+          .remove(paths)
+
+        if (removeError) {
+          throw new Error('Unable to replace the existing product image.')
+        }
+      }
+    }
+
+    const objectPath = folder + '/primary.' + extension
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(objectPath, file, {
+        contentType: file.type,
+        upsert: true,
+        cacheControl: '3600',
+      })
+
+    if (uploadError) {
+      throw new Error('Product image upload failed: ' + uploadError.message)
+    }
+
+    const { data } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(objectPath)
+
+    return data.publicUrl
   }
 
   async function saveChanges() {
@@ -354,12 +448,18 @@ export default function AdminProductSettingsPage() {
       setSaving(true)
       setMessage('')
 
+      let imageUrl = draft.imageUrl
+      if (selectedImageFile) {
+        imageUrl = await uploadProductImage(selectedImageFile)
+      }
+
       const { error } = await supabase
         .from('product_status')
         .upsert(
           {
             product_slug: selectedSlug,
             display_name: displayName,
+            image_url: imageUrl || null,
             badges,
             featured_priority:
               featuredPriority === null ? null : featuredPriority,
@@ -397,6 +497,7 @@ export default function AdminProductSettingsPage() {
           ...draft,
           displayName,
           badges: badges.join(', '),
+          imageUrl,
           featuredPriority:
             featuredPriority === null ? '' : String(featuredPriority),
           status: nextStatus,
@@ -413,6 +514,8 @@ export default function AdminProductSettingsPage() {
         },
       }))
 
+      setSelectedImageFile(null)
+      setImagePreviewUrl('')
       setMessage('Product changes saved successfully.')
     } catch (error) {
       console.error('Failed to save product settings:', error)
@@ -601,6 +704,46 @@ export default function AdminProductSettingsPage() {
               </div>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Product Image
+                  </label>
+
+                  <div className="flex flex-col gap-4 rounded-xl border bg-muted/20 p-4 sm:flex-row sm:items-center">
+                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl border bg-background">
+                      <img
+                        src={
+                          imagePreviewUrl ||
+                          draft.imageUrl ||
+                          selectedProduct.image
+                        }
+                        alt={draft.displayName || selectedProduct.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(e) =>
+                          handleImageSelect(e.target.files?.[0] || null)
+                        }
+                        disabled={saving}
+                        className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground hover:file:opacity-90"
+                      />
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        PNG, JPG or WEBP · Maximum 5 MB. Upload replaces the current primary image.
+                      </p>
+                      {selectedImageFile && (
+                        <p className="mt-1 text-xs font-medium text-primary">
+                          Ready to upload: {selectedImageFile.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="sm:col-span-2">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Display Name

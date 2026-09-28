@@ -13,17 +13,6 @@ import {
 } from '@/lib/site'
 import { useCart } from '@/components/cart/cart-context'
 
-const GALLERY_FOLDERS: Record<string, string> = {
-  'millet-abc': 'Meltiva-Nutrimix',
-  'pink-abc': 'Rubyblend-Nutrimix',
-  'cotton-milk-mix': 'Paruthipaal-mix',
-  'pirandai-rice-mix': 'Pirandai-rice-mix',
-  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
-  'mudavaattu-kizhangu-soup-mix':
-    'Mudavaatukaal-soup-mix',
-  'black-rice-milk-mix': 'blacko-cocoa-mix',
-}
-
 export function ProductCard({
   product,
   status: statusProp,
@@ -41,9 +30,7 @@ const status =
   'active'
 const isActive = status === 'active'
 
-  const cardImage = GALLERY_FOLDERS[product.slug]
-    ? `/products/${GALLERY_FOLDERS[product.slug]}/1.png`
-    : product.image || '/placeholder.svg'
+  const cardImage = product.image || '/placeholder.svg'
 
   const discountPercentage =
     product.mrp && product.price && Number(product.mrp) > Number(product.price)
