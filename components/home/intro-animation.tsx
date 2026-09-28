@@ -13,21 +13,30 @@ export function IntroAnimation() {
     if (internalHome) {
       // Keep the flag briefly so React Strict Mode's
       // second effect run also sees it.
-      window.setTimeout(() => {
+      const internalHomeTimer = window.setTimeout(() => {
         sessionStorage.removeItem('tenoo-internal-home')
       }, 100)
 
-      return
+      return () => window.clearTimeout(internalHomeTimer)
     }
 
-    // Show animation on initial page load / browser refresh
+    if (sessionStorage.getItem('tenoo-intro-shown') === '1') return
+
+    // Mark the intro after the effect has settled so React Strict Mode's
+    // development-only second effect run can still start its timer.
     setShow(true)
+    const seenTimer = window.setTimeout(() => {
+      sessionStorage.setItem('tenoo-intro-shown', '1')
+    }, 0)
 
     const timer = window.setTimeout(() => {
       setShow(false)
-    }, 1400)
+    }, 800)
 
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.clearTimeout(seenTimer)
+      window.clearTimeout(timer)
+    }
   }, [])
 
   if (!show) return null
@@ -38,7 +47,7 @@ export function IntroAnimation() {
       aria-hidden="true"
     >
       <div className="flex flex-col items-center">
-        <div className="relative h-[100px] w-[230px] animate-[tenooLogoReveal_650ms_cubic-bezier(0.22,1,0.36,1)_100ms_both]">
+        <div className="relative h-[100px] w-[230px] animate-[tenooLogoReveal_550ms_cubic-bezier(0.22,1,0.36,1)_50ms_both]">
           <Image
             src="/tenoo-logo.png"
             alt="Tenoo"
@@ -48,11 +57,11 @@ export function IntroAnimation() {
           />
         </div>
 
-        <p className="mt-2 text-center text-[9px] font-semibold uppercase tracking-[0.34em] text-[#8fbd24] animate-[tenooTaglineReveal_450ms_ease-out_500ms_both]">
+        <p className="mt-2 text-center text-[9px] font-semibold uppercase tracking-[0.34em] text-[#8fbd24] animate-[tenooTaglineReveal_300ms_ease-out_250ms_both]">
           Good Food. Made for Every Generation.
         </p>
 
-        <div className="mt-5 h-px w-[42px] bg-[#8fbd24] animate-[tenooLineReveal_400ms_ease-out_750ms_both]" />
+        <div className="mt-5 h-px w-[42px] bg-[#8fbd24] animate-[tenooLineReveal_250ms_ease-out_450ms_both]" />
       </div>
     </div>
   )
