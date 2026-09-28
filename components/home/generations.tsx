@@ -18,7 +18,7 @@ async function getProductStatuses() {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
+    .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg')
 
   if (error) {
     console.error('Failed to load product statuses:', error)
@@ -36,6 +36,9 @@ async function getProductStatuses() {
         offer_enabled: item.offer_enabled,
         offer_label: item.offer_label,
         featured: item.featured,
+        featured_priority: item.featured_priority,
+        display_name: item.display_name,
+        badges: item.badges,
         shipping_weight_kg: item.shipping_weight_kg,
       },
     ]),
@@ -65,7 +68,13 @@ export async function Generations() {
 
   const HOME_PRODUCT_LIMIT = 5
   const FEATURED_PRODUCTS = [
-    ...ALL_PRODUCTS.filter((product) => product.featured),
+    ...ALL_PRODUCTS
+      .filter((product) => product.featured)
+      .sort(
+        (a, b) =>
+          (a.featuredPriority ?? Number.MAX_SAFE_INTEGER) -
+          (b.featuredPriority ?? Number.MAX_SAFE_INTEGER),
+      ),
     ...ALL_PRODUCTS.filter((product) => !product.featured),
   ].slice(0, HOME_PRODUCT_LIMIT)
 
