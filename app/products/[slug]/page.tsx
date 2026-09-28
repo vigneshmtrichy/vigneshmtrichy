@@ -71,28 +71,32 @@ export async function generateMetadata({
     }
   }
 
+  const productStatus = await getProductStatus(product.slug)
+  const displayProduct = applyProductControls(product, productStatus)
+
   return {
-    title: `${product.name} | Tenoo`,
+    title: `${displayProduct.name} | Tenoo`,
     description:
-      product.description ||
-      `${product.name} by Tenoo — thoughtfully crafted food made for everyday goodness.`,
+      displayProduct.description ||
+      `${displayProduct.name} by Tenoo — thoughtfully crafted food made for everyday goodness.`,
     alternates: {
-      canonical: `https://www.tenoo.in/products/${product.slug}`,
+      canonical: `https://www.tenoo.in/products/${displayProduct.slug}`,
     },
     openGraph: {
-      title: `${product.name} | Tenoo`,
+      title: `${displayProduct.name} | Tenoo`,
       description:
-        product.description ||
-        `${product.name} by Tenoo — thoughtfully crafted food made for everyday goodness.`,
-      url: `https://www.tenoo.in/products/${product.slug}`,
+        displayProduct.description ||
+        `${displayProduct.name} by Tenoo — thoughtfully crafted food made for everyday goodness.`,
+      url: `https://www.tenoo.in/products/${displayProduct.slug}`,
       type: 'website',
       images: [
         {
-          url: product.image,
-          alt: product.name,
+          url: displayProduct.image,
+          alt: displayProduct.name,
         },
       ],
     },
+  }
   }
 }
 export function generateStaticParams() {
