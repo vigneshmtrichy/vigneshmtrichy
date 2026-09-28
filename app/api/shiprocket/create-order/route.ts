@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getProductShippingWeightKg } from '@/lib/shipping'
 
 function getSupabaseAdmin() {
   return createClient(
@@ -148,9 +149,18 @@ export async function POST(request: Request) {
       0,
     )
 
-    // Temporary development weight.
-    // Replace with actual packed weight once products arrive.
-    const shipmentWeight = 0.5
+    const shipmentWeight = Math.max(
+      0.25,
+      Number(
+        items.reduce(
+          (total: number, item: any) =>
+            total +
+            getProductShippingWeightKg(item.product_slug) *
+              Number(item.quantity || 0),
+          0,
+        ).toFixed(3),
+      ),
+    )
 
     // 4. Create order in Shiprocket
     const orderResponse = await fetch(
