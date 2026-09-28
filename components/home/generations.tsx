@@ -39,6 +39,7 @@ async function getProductStatuses() {
         featured_priority: item.featured_priority,
         display_name: item.display_name,
         badges: item.badges,
+        image_url: item.image_url,
         shipping_weight_kg: item.shipping_weight_kg,
       },
     ]),
