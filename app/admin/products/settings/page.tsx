@@ -285,12 +285,27 @@ export default function AdminProductSettingsPage() {
       selectedImageFiles.length
   }
 
+  const makeMainImage = (index: number) => {
+    if (!draft || index === 0) return
+
+    const reordered = [
+      draft.imageUrls[index],
+      ...draft.imageUrls.filter((_, current) => current !== index),
+    ]
+
+    updateDraft({
+      imageUrls: reordered,
+    })
+    setMessage('')
+  }
+
   const removeDraftImage = (index: number) => {
     if (!draft) return
 
     updateDraft({
       imageUrls: draft.imageUrls.filter((_, current) => current !== index),
     })
+    setMessage('')
   }
 
   const removeNewImage = (index: number) => {
@@ -804,10 +819,19 @@ export default function AdminProductSettingsPage() {
                             ×
                           </button>
 
-                          {index === 0 && (
+                          {index === 0 ? (
                             <span className="absolute bottom-2 left-2 rounded-full bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
                               Main
                             </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => makeMainImage(index)}
+                              disabled={saving}
+                              className="absolute bottom-2 left-2 rounded-full bg-background/95 px-2 py-1 text-[10px] font-semibold text-foreground shadow-sm hover:bg-background"
+                            >
+                              Make Main
+                            </button>
                           )}
                         </div>
                       ))}
