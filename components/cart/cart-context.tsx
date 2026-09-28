@@ -9,7 +9,11 @@ import {
   type ReactNode,
 } from 'react'
 
-import type { Product } from '@/lib/site'
+import {
+  applyProductPricing,
+  type Product,
+} from '@/lib/site'
+import { supabase } from '@/lib/supabase'
 
 type CartItem = {
   product: Product
@@ -32,14 +36,62 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
 
   useEffect(() => {
-    const savedCart = localStorage.getItem('tenoo-cart')
+    let mounted = true
 
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart))
-      } catch {
-        localStorage.removeItem('tenoo-cart')
+    const loadCart = async () => {
+      let savedItems: CartItem[] = []
+
+      const savedCart = localStorage.getItem('tenoo-cart')
+
+      if (savedCart) {
+        try {
+          const parsed = JSON.parse(savedCart)
+          if (Array.isArray(parsed)) {
+            savedItems = parsed
+          }
+        } catch {
+          localStorage.removeItem('tenoo-cart')
+        }
       }
+
+      if (savedItems.length === 0) {
+        if (mounted) setItems([])
+        return
+      }
+
+      const slugs = savedItems.map((item) => item.product.slug)
+      const { data } = await supabase
+        .from('product_status')
+        .select('product_slug, mrp, price')
+        .in('product_slug', slugs)
+
+      const pricingBySlug = new Map(
+        (data || []).map((item) => [
+          item.product_slug,
+          {
+            mrp: item.mrp,
+            price: item.price,
+          },
+        ]),
+      )
+
+      const refreshedItems = savedItems.map((item) => ({
+        ...item,
+        product: applyProductPricing(
+          item.product,
+          pricingBySlug.get(item.product.slug),
+        ),
+      }))
+
+      if (mounted) {
+        setItems(refreshedItems)
+      }
+    }
+
+    void loadCart()
+
+    return () => {
+      mounted = false
     }
   }, [])
 
