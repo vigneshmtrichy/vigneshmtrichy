@@ -14,6 +14,8 @@ type ProductStatus =
   | 'out-of-stock'
 
 type ProductDraft = {
+  displayName: string
+  badges: string
   status: ProductStatus
   stock: string
   mrp: string
@@ -22,6 +24,7 @@ type ProductDraft = {
   offerEnabled: boolean
   offerLabel: string
   featured: boolean
+  featuredPriority: string
   shippingWeightKg: string
 }
 
@@ -54,6 +57,8 @@ function buildDefaultDraft(slug: string): ProductDraft {
   const product = ALL_PRODUCTS.find((item) => item.slug === slug)
 
   return {
+    displayName: product?.name || '',
+    badges: product?.badges.join(', ') || '',
     status: 'active',
     stock: '',
     mrp: product?.mrp || '',
@@ -62,6 +67,10 @@ function buildDefaultDraft(slug: string): ProductDraft {
     offerEnabled: product?.offerEnabled ?? true,
     offerLabel: product?.offerLabel || '',
     featured: product?.featured ?? false,
+    featuredPriority:
+      product?.featuredPriority === undefined
+        ? ''
+        : String(product.featuredPriority),
     shippingWeightKg:
       product?.shippingWeightKg === undefined
         ? ''
@@ -127,7 +136,7 @@ export default function AdminProductSettingsPage() {
       const { data, error } = await supabase
         .from('product_status')
         .select(
-          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg',
+          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg',
         )
 
       if (error) {
@@ -142,6 +151,13 @@ export default function AdminProductSettingsPage() {
         const item = data?.find((row) => row.product_slug === product.slug)
 
         nextDrafts[product.slug] = {
+          displayName:
+            item?.display_name === null || item?.display_name === undefined
+              ? product.name
+              : String(item.display_name),
+          badges: Array.isArray(item?.badges)
+            ? item.badges.join(', ')
+            : product.badges.join(', '),
           status: (item?.status as ProductStatus) || 'active',
           stock:
             item?.stock_quantity === null ||
@@ -163,6 +179,11 @@ export default function AdminProductSettingsPage() {
           offerEnabled: item?.offer_enabled !== false,
           offerLabel: item?.offer_label || '',
           featured: Boolean(item?.featured),
+          featuredPriority:
+            item?.featured_priority === null ||
+            item?.featured_priority === undefined
+              ? ''
+              : String(item.featured_priority),
           shippingWeightKg:
             item?.shipping_weight_kg === null ||
             item?.shipping_weight_kg === undefined
@@ -240,6 +261,15 @@ export default function AdminProductSettingsPage() {
   async function saveChanges() {
     if (!selectedSlug || !draft) return
 
+    const displayName = draft.displayName.trim()
+    const badges = draft.badges
+      .split(',')
+      .map((badge) => badge.trim())
+      .filter(Boolean)
+    const featuredPriority =
+      draft.featuredPriority.trim() === ''
+        ? null
+        : Number(draft.featuredPriority)
     const mrp = Number(draft.mrp)
     const price = Number(draft.price)
     const retailerPrice =
@@ -250,6 +280,24 @@ export default function AdminProductSettingsPage() {
         : Number(draft.shippingWeightKg)
     const stock = draft.stock.trim() === '' ? null : Number(draft.stock)
     const offerLabel = draft.offerLabel.trim() || null
+
+    if (!displayName || displayName.length > 120) {
+      setMessage('Product name must be between 1 and 120 characters.')
+      return
+    }
+
+    if (badges.length > 6 || badges.some((badge) => badge.length > 80)) {
+      setMessage('Use up to 6 badges, with each badge up to 80 characters.')
+      return
+    }
+
+    if (
+      featuredPriority !== null &&
+      (!Number.isSafeInteger(featuredPriority) || featuredPriority <= 0)
+    ) {
+      setMessage('Featured priority must be a positive whole number or left empty.')
+      return
+    }
 
     if (
       !Number.isFinite(mrp) ||
@@ -311,6 +359,10 @@ export default function AdminProductSettingsPage() {
         .upsert(
           {
             product_slug: selectedSlug,
+            display_name: displayName,
+            badges,
+            featured_priority:
+              featuredPriority === null ? null : featuredPriority,
             status: nextStatus,
             stock_quantity: stock,
             mrp: Number(mrp.toFixed(2)),
@@ -343,6 +395,10 @@ export default function AdminProductSettingsPage() {
         ...current,
         [selectedSlug]: {
           ...draft,
+          displayName,
+          badges: badges.join(', '),
+          featuredPriority:
+            featuredPriority === null ? '' : String(featuredPriority),
           status: nextStatus,
           stock: stock === null ? '' : String(stock),
           mrp: mrp.toFixed(2),
@@ -439,7 +495,7 @@ export default function AdminProductSettingsPage() {
                   className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-xl border bg-background px-4 text-left text-sm font-medium outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 >
                   <span className="min-w-0 truncate">
-                    {selectedProduct?.name || 'Select product'}
+                    {draft?.displayName || selectedProduct?.name || 'Select product'}
                   </span>
                   <ChevronDown
                     className={
@@ -484,7 +540,9 @@ export default function AdminProductSettingsPage() {
                               onClick={() => chooseProduct(product.slug)}
                               className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-muted"
                             >
-                              <span className="min-w-0 truncate">{product.name}</span>
+                              <span className="min-w-0 truncate">
+                                {drafts[product.slug]?.displayName || product.name}
+                              </span>
                               {isSelected && (
                                 <Check className="h-4 w-4 shrink-0 text-primary" />
                               )}
@@ -507,7 +565,9 @@ export default function AdminProductSettingsPage() {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{selectedProduct.name}</p>
+                    <p className="truncate font-semibold">
+                      {draft.displayName || selectedProduct.name}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {selectedProduct.packSize || selectedProduct.slug}
                     </p>
@@ -521,7 +581,9 @@ export default function AdminProductSettingsPage() {
             <div className="mt-5 rounded-2xl border bg-background p-4 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold">{selectedProduct.name}</h2>
+                  <h2 className="text-lg font-semibold">
+                    {draft.displayName || selectedProduct.name}
+                  </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     All changes below save together.
                   </p>
@@ -539,6 +601,43 @@ export default function AdminProductSettingsPage() {
               </div>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={120}
+                    value={draft.displayName}
+                    onChange={(e) =>
+                      updateDraft({ displayName: e.target.value })
+                    }
+                    disabled={saving}
+                    placeholder="Product name"
+                    className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                  />
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Customer-facing name. Product URL slug stays locked.
+                  </p>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Product Badges
+                  </label>
+                  <input
+                    type="text"
+                    value={draft.badges}
+                    onChange={(e) => updateDraft({ badges: e.target.value })}
+                    disabled={saving}
+                    placeholder="Rich in Protein, New, Best Seller"
+                    className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                  />
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Separate badges with commas. Up to 6 badges.
+                  </p>
+                </div>
+
                 <div className="relative min-w-0">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Product Status
@@ -732,6 +831,28 @@ export default function AdminProductSettingsPage() {
                     Featured {draft.featured ? 'ON' : 'OFF'}
                   </button>
                 </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    Featured Priority
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={draft.featuredPriority}
+                    onChange={(e) =>
+                      updateDraft({ featuredPriority: e.target.value })
+                    }
+                    disabled={saving || !draft.featured}
+                    placeholder="Optional — 1 shows first"
+                    className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Lower number appears earlier among Featured products on Home.
+                  </p>
+                </div>
               </div>
 
               {message && (
@@ -750,7 +871,7 @@ export default function AdminProductSettingsPage() {
               </button>
 
               <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                Status, stock, pricing, retailer rate, offer, featured setting and shipping weight save together.
+                Name, badges, status, stock, pricing, offer, featured priority and shipping weight save together.
               </p>
             </div>
           )}
