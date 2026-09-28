@@ -12,6 +12,7 @@ import { ProductPurchasePanel } from '@/components/product/product-purchase-pane
 import { ProductReviews } from '@/components/product/product-reviews'
 import {
   ALL_PRODUCTS,
+  applyProductPricing,
   getProductBySlug,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
@@ -28,16 +29,24 @@ async function getProductStatus(slug: string) {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('status')
+    .select('status, mrp, price')
     .eq('product_slug', slug)
     .maybeSingle()
 
   if (error) {
     console.error('Failed to load product status:', error)
-    return 'active'
+    return {
+      status: 'active' as const,
+      mrp: null,
+      price: null,
+    }
   }
 
-  return data?.status || 'active'
+  return {
+    status: data?.status || 'active',
+    mrp: data?.mrp ?? null,
+    price: data?.price ?? null,
+  }
 }
 
 export async function generateMetadata({
@@ -98,8 +107,9 @@ if (!product) {
 }
 
 const productStatus = await getProductStatus(product.slug)
+const displayProduct = applyProductPricing(product, productStatus)
 
-if (productStatus === 'hidden') {
+if (productStatus.status === 'hidden') {
   notFound()
 }
 
@@ -144,19 +154,19 @@ const galleryImages = galleryFolder
   const productSchema = {
   '@context': 'https://schema.org',
   '@type': 'Product',
-  name: product.name,
-  description: product.description || product.tagline,
+  name: displayProduct.name,
+  description: displayProduct.description || displayProduct.tagline,
   image: galleryImages.length > 0 ? galleryImages : [product.image],
   brand: {
     '@type': 'Brand',
     name: 'Tenoo',
   },
   url: `https://www.tenoo.in/products/${product.slug}`,
-  ...(product.price
+  ...(displayProduct.price
     ? {
         offers: {
           '@type': 'Offer',
-          price: product.price,
+          price: displayProduct.price,
           priceCurrency: 'INR',
           url: `https://www.tenoo.in/products/${product.slug}`,
         },
@@ -321,8 +331,8 @@ return (
 )}
          {/* PURCHASE ACTIONS */}
 <ProductPurchasePanel
-  product={product}
-  status={productStatus}
+  product={displayProduct}
+  status={productStatus.status}
 />
 
               </div>
@@ -359,8 +369,8 @@ return (
               )}
 
      <ProductPurchasePanel
-  product={product}
-  status={productStatus}
+  product={displayProduct}
+  status={productStatus.status}
 />
 
             </div>
