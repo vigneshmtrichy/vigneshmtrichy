@@ -31,6 +31,7 @@ export type Product = {
   featured?: boolean
   featuredPriority?: number
   imageUrl?: string
+  imageUrls?: string[]
   gstRate?: number
 
   allergen?: string
@@ -431,6 +432,7 @@ export type ProductControls = ProductPricing & {
   display_name?: string | null
   badges?: string[] | null
   image_url?: string | null
+  image_urls?: string[] | null
   shipping_weight_kg?: number | string | null
 }
 
@@ -501,18 +503,37 @@ export function applyProductControls(
       Number(controls.featured_priority) > 0
         ? Number(controls.featured_priority)
         : product.featuredPriority,
-    image: 
-      controls?.image_url !== null &&
-      controls?.image_url !== undefined &&
-      String(controls.image_url).trim().length > 0
-        ? String(controls.image_url).trim()
-        : product.image,
+    image: (() => {
+      const managedImages =
+        Array.isArray(controls?.image_urls) &&
+        controls.image_urls.length > 0
+          ? controls.image_urls
+              .map((image) => String(image).trim())
+              .filter(Boolean)
+          : controls?.image_url !== null &&
+              controls?.image_url !== undefined &&
+              String(controls.image_url).trim().length > 0
+            ? [String(controls.image_url).trim()]
+            : []
+
+      return managedImages[0] || product.image
+    })(),
     imageUrl:
       controls?.image_url !== null &&
       controls?.image_url !== undefined &&
       String(controls.image_url).trim().length > 0
         ? String(controls.image_url).trim()
         : product.imageUrl,
+    imageUrls:
+      Array.isArray(controls?.image_urls)
+        ? controls.image_urls
+            .map((image) => String(image).trim())
+            .filter(Boolean)
+        : controls?.image_url !== null &&
+            controls?.image_url !== undefined &&
+            String(controls.image_url).trim().length > 0
+          ? [String(controls.image_url).trim()]
+          : product.imageUrls,
     shippingWeightKg:
       controls?.shipping_weight_kg !== null &&
       controls?.shipping_weight_kg !== undefined &&
