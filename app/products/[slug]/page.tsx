@@ -29,7 +29,7 @@ async function getProductStatus(slug: string) {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, shipping_weight_kg')
+    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg')
     .eq('product_slug', slug)
     .maybeSingle()
 
@@ -54,6 +54,7 @@ async function getProductStatus(slug: string) {
     display_name: data?.display_name ?? null,
     badges: data?.badges ?? null,
     image_url: data?.image_url ?? null,
+    image_urls: data?.image_urls ?? null,
     shipping_weight_kg: data?.shipping_weight_kg ?? null,
   }
 }
@@ -161,12 +162,14 @@ const galleryImages = galleryFolder
   : []
 
 const managedGalleryImages =
-  displayProduct.imageUrl &&
-  displayProduct.imageUrl !== product.image
-    ? [displayProduct.imageUrl, ...galleryImages]
-    : galleryImages.length > 0
-      ? galleryImages
-      : [displayProduct.image]
+  displayProduct.imageUrls && displayProduct.imageUrls.length > 0
+    ? displayProduct.imageUrls
+    : displayProduct.imageUrl &&
+        displayProduct.imageUrl !== product.image
+      ? [displayProduct.imageUrl, ...galleryImages]
+      : galleryImages.length > 0
+        ? galleryImages
+        : [displayProduct.image]
 
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
