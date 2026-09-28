@@ -29,7 +29,7 @@ async function getProductStatus(slug: string) {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg')
+    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, shipping_weight_kg')
     .eq('product_slug', slug)
     .maybeSingle()
 
@@ -53,6 +53,7 @@ async function getProductStatus(slug: string) {
     featured_priority: data?.featured_priority ?? null,
     display_name: data?.display_name ?? null,
     badges: data?.badges ?? null,
+    image_url: data?.image_url ?? null,
     shipping_weight_kg: data?.shipping_weight_kg ?? null,
   }
 }
