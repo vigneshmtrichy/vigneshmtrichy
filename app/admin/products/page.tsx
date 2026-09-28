@@ -548,10 +548,33 @@ export default function AdminProductsPage() {
                           </div>
 
                           <div className="mt-2 grid grid-cols-2 gap-2">
-                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.mrp} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), mrp: e.target.value } }))} disabled={isSaving} placeholder="MRP" aria-label={'MRP for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
-                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.price} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), price: e.target.value } }))} disabled={isSaving} placeholder="Selling price" aria-label={'Selling price for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
-                            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.retailerPrice} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), retailerPrice: e.target.value } }))} disabled={isSaving} placeholder="Retailer price" aria-label={'Retailer price for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
-                            <input type="number" inputMode="decimal" min="0.001" step="0.001" value={product.controlDraft.shippingWeightKg} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), shippingWeightKg: e.target.value } }))} disabled={isSaving} placeholder="Weight (kg)" aria-label={'Shipping weight in kg for ' + product.name} className="h-10 min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            <div className="min-w-0">
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                                MRP
+                              </label>
+                              <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.mrp} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), mrp: e.target.value } }))} disabled={isSaving} aria-label={'MRP for ' + product.name} className="h-10 w-full min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                                Selling Price
+                              </label>
+                              <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.price} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), price: e.target.value } }))} disabled={isSaving} aria-label={'Selling price for ' + product.name} className="h-10 w-full min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                                Retailer Price
+                              </label>
+                              <input type="number" inputMode="decimal" min="0.01" step="0.01" value={product.controlDraft.retailerPrice} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), retailerPrice: e.target.value } }))} disabled={isSaving} placeholder="Optional" aria-label={'Retailer price for ' + product.name} className="h-10 w-full min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                                Shipping Weight (kg)
+                              </label>
+                              <input type="number" inputMode="decimal" min="0.001" step="0.001" value={product.controlDraft.shippingWeightKg} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), shippingWeightKg: e.target.value } }))} disabled={isSaving} placeholder="Optional" aria-label={'Shipping weight in kg for ' + product.name} className="h-10 w-full min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                            </div>
                           </div>
 
                           <div className="mt-2 flex items-center gap-2">
