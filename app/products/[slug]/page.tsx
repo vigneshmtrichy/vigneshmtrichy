@@ -305,23 +305,23 @@ return (
   </div>
 )}
 {/* PRICE */}
-{product.price && (
+{displayProduct.price && (
   <div className="mt-5 flex items-center gap-3">
-    {product.mrp && (
+    {displayProduct.mrp && (
       <span className="text-base text-muted-foreground line-through">
-        ₹{product.mrp}
+        ₹{displayProduct.mrp}
       </span>
     )}
 
     <span className="text-2xl font-bold text-primary">
-      ₹{product.price}
+      ₹{displayProduct.price}
     </span>
 
-    {product.mrp && Number(product.mrp) > Number(product.price) && (
+    {displayProduct.mrp && Number(displayProduct.mrp) > Number(displayProduct.price) && (
       <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-600">
         {Math.round(
-          ((Number(product.mrp) - Number(product.price)) /
-            Number(product.mrp)) *
+          ((Number(displayProduct.mrp) - Number(displayProduct.price)) /
+            Number(displayProduct.mrp)) *
             100
         )}
         % OFF
