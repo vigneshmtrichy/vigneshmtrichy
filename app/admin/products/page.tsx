@@ -573,7 +573,7 @@ export default function AdminProductsPage() {
                               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
                                 Shipping Weight (kg)
                               </label>
-                              <input type="number" inputMode="decimal" min="0.001" step="0.001" value={product.controlDraft.shippingWeightKg} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), shippingWeightKg: e.target.value } }))} disabled={isSaving} placeholder="e.g. 0.3" aria-label={'Shipping weight in kg for ' + product.name} className="h-10 w-full min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
+                              <input type="number" inputMode="decimal" min="0.001" step="0.001" value={product.controlDraft.shippingWeightKg} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), shippingWeightKg: e.target.value } }))} disabled={isSaving} placeholder="Optional" aria-label={'Shipping weight in kg for ' + product.name} className="h-10 w-full min-w-0 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
                             </div>
                           </div>
 
