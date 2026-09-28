@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, Clock3, EyeOff, CircleAlert } from 'lucide-react'
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock3, EyeOff, CircleAlert, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ALL_PRODUCTS } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
@@ -76,10 +76,17 @@ export default function AdminProductSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [selectedSlug, setSelectedSlug] = useState(ALL_PRODUCTS[0]?.slug || '')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [productSearch, setProductSearch] = useState('')
   const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({})
 
   useEffect(() => {
     let mounted = true
+
+    const requestedSlug = new URLSearchParams(window.location.search).get('product')
+    if (requestedSlug && ALL_PRODUCTS.some((product) => product.slug === requestedSlug)) {
+      setSelectedSlug(requestedSlug)
+    }
 
     const applyAccess = (user: { email?: string } | null) => {
       if (!mounted) return
@@ -176,6 +183,39 @@ export default function AdminProductSettingsPage() {
     () => ALL_PRODUCTS.find((product) => product.slug === selectedSlug) || null,
     [selectedSlug],
   )
+
+  const filteredProductOptions = useMemo(() => {
+    const query = productSearch.trim().toLowerCase()
+    if (!query) return ALL_PRODUCTS
+
+    return ALL_PRODUCTS.filter(
+      (product) =>
+        product.name.toLowerCase().includes(query) ||
+        product.slug.toLowerCase().includes(query),
+    )
+  }, [productSearch])
+
+  const chooseProduct = (slug: string) => {
+    setSelectedSlug(slug)
+    setProductSearch('')
+    setPickerOpen(false)
+    setMessage('')
+
+    const url = new URL(window.location.href)
+    url.searchParams.set('product', slug)
+    window.history.replaceState({}, '', url)
+  }
+
+  useEffect(() => {
+    if (!pickerOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPickerOpen(false)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [pickerOpen])
 
   const draft =
     drafts[selectedSlug] ||
@@ -380,43 +420,91 @@ export default function AdminProductSettingsPage() {
             </p>
           </div>
 
-          <div className="mt-7 rounded-2xl border bg-background p-4 shadow-sm sm:p-5">
-            <label
-              htmlFor="product-selector"
-              className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-            >
+          <div className="mt-7 overflow-visible rounded-2xl border bg-background p-4 shadow-sm sm:p-5">
+            <label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Select Product
             </label>
 
-            <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <select
-                id="product-selector"
-                value={selectedSlug}
-                onChange={(e) => {
-                  setSelectedSlug(e.target.value)
-                  setMessage('')
-                }}
-                className="h-12 w-full rounded-xl border bg-background px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-              >
-                {ALL_PRODUCTS.map((product) => (
-                  <option key={product.slug} value={product.slug}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
+            <div className="mt-2 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="relative min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen((open) => !open)}
+                  aria-haspopup="listbox"
+                  aria-expanded={pickerOpen}
+                  className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-xl border bg-background px-4 text-left text-sm font-medium outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                >
+                  <span className="min-w-0 truncate">
+                    {selectedProduct?.name || 'Select product'}
+                  </span>
+                  <ChevronDown
+                    className={
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform ' +
+                      (pickerOpen ? 'rotate-180' : '')
+                    }
+                  />
+                </button>
+
+                {pickerOpen && (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 right-0 top-full z-50 mt-2 max-w-full overflow-hidden rounded-xl border bg-background p-2 shadow-xl"
+                  >
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        autoFocus
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Search products..."
+                        aria-label="Search products"
+                        className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                      />
+                    </div>
+
+                    <div className="mt-2 max-h-64 overflow-y-auto overscroll-contain">
+                      {filteredProductOptions.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          No products found.
+                        </p>
+                      ) : (
+                        filteredProductOptions.map((product) => {
+                          const isSelected = product.slug === selectedSlug
+
+                          return (
+                            <button
+                              key={product.slug}
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              onClick={() => chooseProduct(product.slug)}
+                              className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-muted"
+                            >
+                              <span className="min-w-0 truncate">{product.name}</span>
+                              {isSelected && (
+                                <Check className="h-4 w-4 shrink-0 text-primary" />
+                              )}
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {selectedProduct && draft && (
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 overflow-hidden rounded-xl border bg-muted">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border bg-muted">
                     <img
                       src={selectedProduct.image}
                       alt={selectedProduct.name}
                       className="h-full w-full object-contain"
                     />
                   </div>
-                  <div>
-                    <p className="font-semibold">{selectedProduct.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{selectedProduct.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {selectedProduct.packSize || selectedProduct.slug}
                     </p>
                   </div>
