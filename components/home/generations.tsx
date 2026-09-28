@@ -63,11 +63,10 @@ export async function Generations() {
     ).values(),
   )
 
-  const selectedFeaturedProducts = ALL_PRODUCTS.filter((product) => product.featured)
-  const FEATURED_PRODUCTS =
-    selectedFeaturedProducts.length > 0
-      ? selectedFeaturedProducts.slice(0, 6)
-      : ALL_PRODUCTS.slice(0, 6)
+  const FEATURED_PRODUCTS = [
+    ...ALL_PRODUCTS.filter((product) => product.featured),
+    ...ALL_PRODUCTS.filter((product) => !product.featured),
+  ]
 
 
   return (
