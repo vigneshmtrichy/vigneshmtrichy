@@ -57,6 +57,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true)
   const [statuses, setStatuses] = useState<Record<string, ProductStatus>>({})
   const [stockQuantities, setStockQuantities] = useState<Record<string, number | null>>({})
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [message, setMessage] = useState('')
@@ -78,6 +79,7 @@ export default function AdminProductsPage() {
         setLoading(false)
         setStatuses({})
         setStockQuantities({})
+        setDisplayNames({})
       }
     }
 
@@ -103,7 +105,7 @@ export default function AdminProductsPage() {
     try {
       const { data, error } = await supabase
         .from('product_status')
-        .select('product_slug, status, stock_quantity')
+        .select('product_slug, status, stock_quantity, display_name')
 
       if (error) {
         console.error('Failed to load product statuses:', error)
@@ -113,15 +115,20 @@ export default function AdminProductsPage() {
 
       const statusMap: Record<string, ProductStatus> = {}
       const stockMap: Record<string, number | null> = {}
+      const nameMap: Record<string, string> = {}
 
       data?.forEach((item) => {
         statusMap[item.product_slug] = item.status as ProductStatus
         stockMap[item.product_slug] =
           item.stock_quantity === null ? null : Number(item.stock_quantity)
+        if (item.display_name) {
+          nameMap[item.product_slug] = String(item.display_name)
+        }
       })
 
       setStatuses(statusMap)
       setStockQuantities(stockMap)
+      setDisplayNames(nameMap)
     } catch (error) {
       console.error('Failed to load product statuses:', error)
       setMessage('Unable to load product statuses.')
@@ -133,6 +140,7 @@ export default function AdminProductsPage() {
   const productData = useMemo(() => {
     return ALL_PRODUCTS.map((product) => ({
       ...product,
+      name: displayNames[product.slug] || product.name,
       status: statuses[product.slug] || 'active',
       stockQuantity: stockQuantities[product.slug] ?? null,
     }))

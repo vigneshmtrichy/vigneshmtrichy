@@ -29,7 +29,7 @@ async function getProductStatuses() {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
+    .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg')
 
   if (error) {
     console.error('Failed to load product statuses:', error)
@@ -47,6 +47,9 @@ async function getProductStatuses() {
         offer_enabled: item.offer_enabled,
         offer_label: item.offer_label,
         featured: item.featured,
+        featured_priority: item.featured_priority,
+        display_name: item.display_name,
+        badges: item.badges,
         shipping_weight_kg: item.shipping_weight_kg,
       },
     ]),
