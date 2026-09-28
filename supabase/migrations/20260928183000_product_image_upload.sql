@@ -4,18 +4,6 @@ BEGIN;
 ALTER TABLE public.product_status
   ADD COLUMN IF NOT EXISTS image_url text;
 
-CREATE TABLE IF NOT EXISTS storage.buckets (
-  id text primary key,
-  name text not null,
-  owner uuid,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  public boolean not null default false,
-  avif_autodetection boolean not null default false,
-  file_size_limit bigint,
-  allowed_mime_types text[]
-);
-
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'product-images',
