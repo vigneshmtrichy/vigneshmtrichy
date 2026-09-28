@@ -169,6 +169,7 @@ export async function POST(request: Request) {
         mrp,
         gst_rate: gstRate,
         image: product.image,
+        shipping_weight_kg: null as number | null,
       })
     }
 
