@@ -16,7 +16,7 @@ type ProductStatus =
 type ProductDraft = {
   displayName: string
   badges: string
-  imageUrl: string
+  imageUrls: string[]
   status: ProductStatus
   stock: string
   mrp: string
@@ -60,7 +60,7 @@ function buildDefaultDraft(slug: string): ProductDraft {
   return {
     displayName: product?.name || '',
     badges: product?.badges.join(', ') || '',
-    imageUrl: product?.imageUrl || product?.image || '',
+    imageUrls: product?.imageUrls || [],
     status: 'active',
     stock: '',
     mrp: product?.mrp || '',
@@ -90,8 +90,8 @@ export default function AdminProductSettingsPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [statusPickerOpen, setStatusPickerOpen] = useState(false)
   const [productSearch, setProductSearch] = useState('')
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
-  const [imagePreviewUrl, setImagePreviewUrl] = useState('')
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([])
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([])
   const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({})
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function AdminProductSettingsPage() {
       const { data, error } = await supabase
         .from('product_status')
         .select(
-          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, shipping_weight_kg',
+          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg',
         )
 
       if (error) {
@@ -159,10 +159,12 @@ export default function AdminProductSettingsPage() {
             item?.display_name === null || item?.display_name === undefined
               ? product.name
               : String(item.display_name),
-          imageUrl:
-            item?.image_url === null || item?.image_url === undefined
-              ? product.imageUrl || product.image || ''
-              : String(item.image_url),
+          imageUrls:
+            Array.isArray(item?.image_urls)
+              ? item.image_urls.map((image) => String(image))
+              : item?.image_url
+                ? [String(item.image_url)]
+                : product.imageUrls || [],
           badges: Array.isArray(item?.badges)
             ? item.badges.join(', ')
             : product.badges.join(', '),
@@ -229,8 +231,8 @@ export default function AdminProductSettingsPage() {
     setSelectedSlug(slug)
     setProductSearch('')
     setPickerOpen(false)
-    setSelectedImageFile(null)
-    setImagePreviewUrl('')
+    setSelectedImageFiles([])
+    setImagePreviewUrls([])
     setMessage('')
 
     const url = new URL(window.location.href)
@@ -240,32 +242,65 @@ export default function AdminProductSettingsPage() {
 
   useEffect(() => {
     return () => {
-      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url))
     }
-  }, [imagePreviewUrl])
+  }, [imagePreviewUrls])
 
-  const handleImageSelect = (file: File | null) => {
+  const handleImageSelect = (files: FileList | null) => {
     setMessage('')
 
-    if (!file) {
-      setSelectedImageFile(null)
-      setImagePreviewUrl('')
+    if (!files) return
+
+    const incomingFiles = Array.from(files)
+    const invalidFile = incomingFiles.find(
+      (file) =>
+        !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
+        file.size > 5 * 1024 * 1024,
+    )
+
+    if (invalidFile) {
+      setMessage(
+        !['image/png', 'image/jpeg', 'image/webp'].includes(invalidFile.type)
+          ? 'Use PNG, JPG or WEBP images.'
+          : 'Each image must be 5 MB or smaller.',
+      )
       return
     }
 
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      setMessage('Use PNG, JPG or WEBP image.')
+    const availableSlots = 5 - draftImageCount()
+    if (incomingFiles.length > availableSlots) {
+      setMessage(
+        'You can keep up to 5 images. Remove one before adding more.',
+      )
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage('Image must be 5 MB or smaller.')
-      return
-    }
+    const previews = incomingFiles.map((file) => URL.createObjectURL(file))
+    setSelectedImageFiles((current) => [...current, ...incomingFiles])
+    setImagePreviewUrls((current) => [...current, ...previews])
+  }
 
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
-    setSelectedImageFile(file)
-    setImagePreviewUrl(URL.createObjectURL(file))
+  const draftImageCount = () => {
+    return (drafts[selectedSlug]?.imageUrls?.length || 0) +
+      selectedImageFiles.length
+  }
+
+  const removeDraftImage = (index: number) => {
+    if (!draft) return
+
+    updateDraft({
+      imageUrls: draft.imageUrls.filter((_, current) => current !== index),
+    })
+  }
+
+  const removeNewImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviewUrls[index])
+    setSelectedImageFiles((current) =>
+      current.filter((_, currentIndex) => currentIndex !== index),
+    )
+    setImagePreviewUrls((current) =>
+      current.filter((_, currentIndex) => currentIndex !== index),
+    )
   }
 
   useEffect(() => {
@@ -298,58 +333,86 @@ export default function AdminProductSettingsPage() {
     }))
   }
 
-  async function uploadProductImage(file: File) {
-    const extension =
-      file.type === 'image/png'
-        ? 'png'
-        : file.type === 'image/webp'
-          ? 'webp'
-          : 'jpg'
-    const folder = 'products/' + selectedSlug
+  function getStoragePath(publicUrl: string) {
+    const marker = '/storage/v1/object/public/product-images/'
+    const index = publicUrl.indexOf(marker)
+    return index >= 0
+      ? decodeURIComponent(publicUrl.slice(index + marker.length))
+      : null
+  }
 
+  async function uploadProductImages(files: File[]) {
+    const folder = 'products/' + selectedSlug
+    const urls: string[] = []
+    const uploadedPaths: string[] = []
+
+    for (const [index, file] of files.entries()) {
+      const extension =
+        file.type === 'image/png'
+          ? 'png'
+          : file.type === 'image/webp'
+            ? 'webp'
+            : 'jpg'
+      const objectPath =
+        folder + '/gallery-' + Date.now() + '-' + index + '.' + extension
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(objectPath, file, {
+          contentType: file.type,
+          upsert: false,
+          cacheControl: '3600',
+        })
+
+      if (uploadError) {
+        if (uploadedPaths.length > 0) {
+          await supabase.storage.from('product-images').remove(uploadedPaths)
+        }
+        throw new Error(
+          'Product image upload failed: ' + uploadError.message,
+        )
+      }
+
+      uploadedPaths.push(objectPath)
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(objectPath)
+
+      urls.push(data.publicUrl)
+    }
+
+    return { urls, uploadedPaths }
+  }
+
+  async function cleanupRemovedProductImages(retainedUrls: string[]) {
+    const folder = 'products/' + selectedSlug
     const { data: existingFiles, error: listError } = await supabase.storage
       .from('product-images')
       .list(folder)
 
-    if (listError) {
-      throw new Error('Unable to prepare product image storage.')
-    }
+    if (listError || !existingFiles?.length) return
 
-    if (existingFiles && existingFiles.length > 0) {
-      const paths = existingFiles
-        .filter((file) => file.name)
-        .map((file) => folder + '/' + file.name)
+    const retainedPaths = new Set(
+      retainedUrls
+        .map(getStoragePath)
+        .filter((path): path is string => Boolean(path)),
+    )
 
-      if (paths.length > 0) {
-        const { error: removeError } = await supabase.storage
-          .from('product-images')
-          .remove(paths)
+    const pathsToRemove = existingFiles
+      .filter((file) => file.name)
+      .map((file) => folder + '/' + file.name)
+      .filter((path) => !retainedPaths.has(path))
 
-        if (removeError) {
-          throw new Error('Unable to replace the existing product image.')
-        }
+    if (pathsToRemove.length > 0) {
+      const { error } = await supabase.storage
+        .from('product-images')
+        .remove(pathsToRemove)
+
+      if (error) {
+        console.warn('Could not clean up old product images:', error)
       }
     }
-
-    const objectPath = folder + '/primary.' + extension
-
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(objectPath, file, {
-        contentType: file.type,
-        upsert: true,
-        cacheControl: '3600',
-      })
-
-    if (uploadError) {
-      throw new Error('Product image upload failed: ' + uploadError.message)
-    }
-
-    const { data } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(objectPath)
-
-    return data.publicUrl
   }
 
   async function saveChanges() {
@@ -448,10 +511,11 @@ export default function AdminProductSettingsPage() {
       setSaving(true)
       setMessage('')
 
-      let imageUrl = draft.imageUrl
-      if (selectedImageFile) {
-        imageUrl = await uploadProductImage(selectedImageFile)
-      }
+      const { urls: uploadedUrls, uploadedPaths } =
+        await uploadProductImages(selectedImageFiles)
+
+      const finalImageUrls = [...draft.imageUrls, ...uploadedUrls].slice(0, 5)
+      const primaryImageUrl = finalImageUrls[0] || null
 
       const { error } = await supabase
         .from('product_status')
@@ -459,7 +523,8 @@ export default function AdminProductSettingsPage() {
           {
             product_slug: selectedSlug,
             display_name: displayName,
-            image_url: imageUrl || null,
+            image_url: primaryImageUrl,
+            image_urls: finalImageUrls.length > 0 ? finalImageUrls : null,
             badges,
             featured_priority:
               featuredPriority === null ? null : featuredPriority,
@@ -486,10 +551,15 @@ export default function AdminProductSettingsPage() {
         )
 
       if (error) {
+        if (uploadedPaths.length > 0) {
+          await supabase.storage.from('product-images').remove(uploadedPaths)
+        }
         console.error('Failed to save product settings:', error)
         setMessage('Failed to save product settings: ' + error.message)
         return
       }
+
+      await cleanupRemovedProductImages(finalImageUrls)
 
       setDrafts((current) => ({
         ...current,
@@ -497,7 +567,7 @@ export default function AdminProductSettingsPage() {
           ...draft,
           displayName,
           badges: badges.join(', '),
-          imageUrl,
+          imageUrls: finalImageUrls,
           featuredPriority:
             featuredPriority === null ? '' : String(featuredPriority),
           status: nextStatus,
@@ -514,8 +584,8 @@ export default function AdminProductSettingsPage() {
         },
       }))
 
-      setSelectedImageFile(null)
-      setImagePreviewUrl('')
+      setSelectedImageFiles([])
+      setImagePreviewUrls([])
       setMessage('Product changes saved successfully.')
     } catch (error) {
       console.error('Failed to save product settings:', error)
@@ -706,44 +776,101 @@ export default function AdminProductSettingsPage() {
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Product Image
+                    Product Images
                   </label>
 
-                  <div className="flex flex-col gap-4 rounded-xl border bg-muted/20 p-4 sm:flex-row sm:items-center">
-                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl border bg-background">
-                      <img
-                        src={
-                          imagePreviewUrl ||
-                          draft.imageUrl ||
-                          selectedProduct.image
-                        }
-                        alt={draft.displayName || selectedProduct.name}
-                        className="h-full w-full object-contain"
-                      />
+                  <div className="rounded-xl border bg-muted/20 p-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                      {draft.imageUrls.map((image, index) => (
+                        <div
+                          key={image}
+                          className="relative overflow-hidden rounded-xl border bg-background"
+                        >
+                          <div className="aspect-square">
+                            <img
+                              src={image}
+                              alt={(draft.displayName || selectedProduct.name) + ' image ' + (index + 1)}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeDraftImage(index)}
+                            disabled={saving}
+                            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/95 text-sm font-bold shadow-sm hover:bg-background"
+                            aria-label={'Remove image ' + (index + 1)}
+                          >
+                            ×
+                          </button>
+
+                          {index === 0 && (
+                            <span className="absolute bottom-2 left-2 rounded-full bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+                              Main
+                            </span>
+                          )}
+                        </div>
+                      ))}
+
+                      {selectedImageFiles.map((file, index) => (
+                        <div
+                          key={imagePreviewUrls[index] || file.name + index}
+                          className="relative overflow-hidden rounded-xl border border-dashed bg-background"
+                        >
+                          <div className="aspect-square">
+                            <img
+                              src={imagePreviewUrls[index]}
+                              alt={file.name}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeNewImage(index)}
+                            disabled={saving}
+                            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/95 text-sm font-bold shadow-sm hover:bg-background"
+                            aria-label={'Remove new image ' + (index + 1)}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+
+                      {draft.imageUrls.length + selectedImageFiles.length === 0 && (
+                        <div className="col-span-2 flex aspect-square items-center justify-center rounded-xl border bg-background text-center text-xs text-muted-foreground sm:col-span-5">
+                          Current site image will be used until you upload product images.
+                        </div>
+                      )}
                     </div>
 
-                    <div className="min-w-0 flex-1">
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {draft.imageUrls.length + selectedImageFiles.length}/5 images
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          First image is the main product image. PNG, JPG or WEBP · 5 MB max each.
+                        </p>
+                      </div>
+
                       <input
                         type="file"
+                        multiple
                         accept="image/png,image/jpeg,image/webp"
-                        onChange={(e) =>
-                          handleImageSelect(e.target.files?.[0] || null)
+                        onChange={(e) => {
+                          handleImageSelect(e.target.files)
+                          e.currentTarget.value = ''
+                        }}
+                        disabled={
+                          saving ||
+                          draft.imageUrls.length + selectedImageFiles.length >= 5
                         }
-                        disabled={saving}
-                        className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground hover:file:opacity-90"
+                        className="block w-full text-sm sm:w-auto file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground hover:file:opacity-90 disabled:opacity-50"
                       />
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        PNG, JPG or WEBP · Maximum 5 MB. Upload replaces the current primary image.
-                      </p>
-                      {selectedImageFile && (
-                        <p className="mt-1 text-xs font-medium text-primary">
-                          Ready to upload: {selectedImageFile.name}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>
-
                 <div className="sm:col-span-2">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Display Name
