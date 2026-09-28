@@ -408,6 +408,106 @@ export default function AdminOrdersPage() {
     })
   }, [orders, searchQuery, statusFilter])
 
+  const exportOrdersCsv = () => {
+    if (filteredOrders.length === 0) {
+      alert('No orders available to export.')
+      return
+    }
+
+    const csvEscape = (value: unknown) => {
+      const text = String(value ?? '')
+        .replace(/\r?\n|\r/g, ' ')
+        .trim()
+
+      return `"${text.replace(/"/g, '""')}"`
+    }
+
+    const headers = [
+      'Order ID',
+      'Date',
+      'Customer Name',
+      'Phone',
+      'Email',
+      'Status',
+      'Payment Method',
+      'Products',
+      'Product Total',
+      'Taxable Value',
+      'CGST',
+      'SGST',
+      'IGST',
+      'Delivery Charge',
+      'Total',
+      'Shipping Method',
+      'Courier',
+      'Tracking Number',
+      'City',
+      'State',
+      'Pincode',
+    ]
+
+    const rows = filteredOrders.map((order) => {
+      const items = Array.isArray(order.items)
+        ? order.items
+            .map(
+              (item: any) =>
+                `${item?.product_name || ''} × ${item?.quantity || 0}`,
+            )
+            .join('; ')
+        : ''
+
+      return [
+        order.id,
+        order.created_at
+          ? new Date(order.created_at).toLocaleString('en-IN')
+          : '',
+        order.customer_name || '',
+        order.phone || '',
+        order.customer_email || '',
+        statusLabel(order.order_status),
+        order.payment_method || '',
+        items,
+        order.product_total ?? '',
+        order.taxable_value ?? '',
+        order.cgst ?? '',
+        order.sgst ?? '',
+        order.igst ?? '',
+        order.delivery_charge ?? '',
+        order.total ?? '',
+        SHIPPING_LABELS[order.shipping_method || 'not_selected'] ||
+          order.shipping_method ||
+          '',
+        order.courier_name || '',
+        order.tracking_number || '',
+        order.city || '',
+        order.state || '',
+        order.pincode || '',
+      ].map(csvEscape)
+    })
+
+    const csv = [
+      headers.map(csvEscape).join(','),
+      ...rows.map((row) => row.join(',')),
+    ].join('\\r\\n')
+
+    const blob = new Blob(['\\uFEFF' + csv], {
+      type: 'text/csv;charset=utf-8;',
+    })
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `tenoo-orders-${getIndiaDateKey(
+      new Date().toISOString(),
+    )}.csv`
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
   const totalPages = Math.max(
     1,
     Math.ceil(filteredOrders.length / pageSize),
@@ -844,17 +944,28 @@ export default function AdminOrdersPage() {
               </p>
             </div>
 
-            <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              {filteredOrders.length}{' '}
-              {filteredOrders.length === 1
-                ? 'order'
-                : 'orders'}
-              {filteredOrders.length > pageSize && (
-                <span className="ml-1">
-                  · Page {currentPage}/{totalPages}
-                </span>
-              )}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={exportOrdersCsv}
+                disabled={filteredOrders.length === 0}
+                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ↓ Export CSV
+              </button>
+
+              <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                {filteredOrders.length}{' '}
+                {filteredOrders.length === 1
+                  ? 'order'
+                  : 'orders'}
+                {filteredOrders.length > pageSize && (
+                  <span className="ml-1">
+                    · Page {currentPage}/{totalPages}
+                  </span>
+                )}
+              </span>
+            </div>
           </div>
 
           {/* ORDER LIST */}
