@@ -5,7 +5,7 @@ import { ScrollReveal } from '@/components/scroll-reveal'
 import {
   KIDS_PRODUCTS,
   ADULT_PRODUCTS,
-  applyProductPricing,
+  applyProductControls,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
@@ -29,7 +29,7 @@ async function getProductStatuses() {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('product_slug, status, mrp, price')
+    .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
 
   if (error) {
     console.error('Failed to load product statuses:', error)
@@ -43,6 +43,11 @@ async function getProductStatuses() {
         status: item.status,
         mrp: item.mrp,
         price: item.price,
+        retailer_price: item.retailer_price,
+        offer_enabled: item.offer_enabled,
+        offer_label: item.offer_label,
+        featured: item.featured,
+        shipping_weight_kg: item.shipping_weight_kg,
       },
     ]),
   )
@@ -63,7 +68,7 @@ export default async function ProductsPage() {
 
           return [
             product.slug,
-            applyProductPricing(product, pricing),
+            applyProductControls(product, pricing),
           ]
         }),
     ).values(),
