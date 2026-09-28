@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { SalesOverview } from '@/components/admin/SalesOverview'
+import { OrderStats } from '@/components/admin/OrderStats'
+import { OrderFilters } from '@/components/admin/OrderFilters'
 
 const STATUS_FILTERS = [
   'all',
@@ -785,149 +788,27 @@ export default function AdminOrdersPage() {
             </button>
           </div>
 
-          {/* SALES OVERVIEW */}
-          <section
-            aria-label="Sales overview"
-            className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
-          >
-            {[
-              ['Orders today', String(periodCounts.todayOrderCount)],
-              ['Sales today', money(periodCounts.todaySales)],
-              ['Orders this month', String(periodCounts.monthOrderCount)],
-              ['Sales this month', money(periodCounts.monthSales)],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
-              >
-                <p className="text-xs font-medium text-muted-foreground">
-                  {label}
-                </p>
-                <p className="mt-2 text-2xl font-bold text-foreground">
-                  {value}
-                </p>
-              </div>
-            ))}
-            <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">
-              Sales exclude cancelled orders. Dates use India time.
-            </p>
-          </section>
+          <SalesOverview
+            todayOrderCount={periodCounts.todayOrderCount}
+            todaySales={periodCounts.todaySales}
+            monthOrderCount={periodCounts.monthOrderCount}
+            monthSales={periodCounts.monthSales}
+            money={money}
+          />
 
-          {/* STATS */}
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              ['Total Orders', counts.total, 'all'],
-              ['Pending', counts.pending, 'pending'],
-              ['Confirmed', counts.confirmed, 'confirmed'],
-              ['Processing', counts.processing, 'processing'],
-              ['Shipped', counts.shipped, 'shipped'],
-              ['Delivered', counts.delivered, 'delivered'],
-            ].map(([label, value, filter]) => {
-              const active =
-                statusFilter === String(filter)
+          <OrderStats
+            counts={counts}
+            statusFilter={statusFilter}
+            selectStatusFilter={selectStatusFilter}
+            money={money}
+          />
 
-              return (
-                <button
-                  key={String(label)}
-                  type="button"
-                  onClick={() =>
-                    selectStatusFilter(String(filter))
-                  }
-                  className={`rounded-2xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
-                    active
-                      ? 'border-foreground ring-1 ring-foreground/10'
-                      : 'border-border'
-                  }`}
-                >
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {label}
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-foreground">
-                    {value}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* CANCELLED + SALES */}
-          <div className="mt-3 grid gap-3 sm:mt-4 lg:grid-cols-[1fr_2fr]">
-            <button
-              type="button"
-              onClick={() =>
-                selectStatusFilter('cancelled')
-              }
-              className={`rounded-2xl border bg-card p-5 text-left shadow-sm transition hover:shadow-md ${
-                statusFilter === 'cancelled'
-                  ? 'border-foreground ring-1 ring-foreground/10'
-                  : 'border-border'
-              }`}
-            >
-              <p className="text-sm font-medium text-muted-foreground">
-                Cancelled
-              </p>
-
-              <p className="mt-1 text-2xl font-bold text-foreground">
-                {counts.cancelled}
-              </p>
-            </button>
-
-            <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Sales
-                </p>
-
-                <p className="mt-1 text-3xl font-bold tracking-tight text-primary">
-                  {money(counts.sales)}
-                </p>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Excludes cancelled orders
-              </p>
-            </div>
-          </div>
-
-          {/* SEARCH + FILTERS */}
-          <div className="sticky top-10 z-20 mt-5 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur sm:p-5">
-            
-
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-              {STATUS_FILTERS.map((status) => {
-                const active =
-                  statusFilter === status
-
-                return (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() =>
-                      selectStatusFilter(status)
-                    }
-                    className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${
-                      active
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border bg-background text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {statusLabel(status)}
-
-                    <span
-                      className={
-                        active
-                          ? 'ml-1 opacity-70'
-                          : 'ml-1 text-muted-foreground'
-                      }
-                    >
-                      {getCountForFilter(status)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <OrderFilters
+            statusFilters={STATUS_FILTERS}
+            statusFilter={statusFilter}
+            selectStatusFilter={selectStatusFilter}
+            getCountForFilter={getCountForFilter}
+          />
 
           {/* ORDER HEADER */}
           <div
