@@ -29,7 +29,7 @@ async function getProductStatus(slug: string) {
 
   const { data, error } = await supabase
     .from('product_status')
-    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, shipping_weight_kg')
+    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, shipping_weight_kg')
     .eq('product_slug', slug)
     .maybeSingle()
 
@@ -50,6 +50,9 @@ async function getProductStatus(slug: string) {
     offer_enabled: data?.offer_enabled ?? null,
     offer_label: data?.offer_label ?? null,
     featured: data?.featured ?? null,
+    featured_priority: data?.featured_priority ?? null,
+    display_name: data?.display_name ?? null,
+    badges: data?.badges ?? null,
     shipping_weight_kg: data?.shipping_weight_kg ?? null,
   }
 }
@@ -245,7 +248,7 @@ return (
               </p>
 
               <h1 className="mt-2 font-serif text-3xl font-bold leading-tight text-primary">
-                {product.name}
+                {displayProduct.name}
               </h1>
 
               <p className="mt-3 text-base leading-7 text-muted-foreground">
@@ -265,7 +268,7 @@ return (
               <div className="mx-auto w-full max-w-[520px]">
                 <ProductGallery
                   images={galleryImages}
-                  productName={product.name}
+                  productName={displayProduct.name}
                   tagline={product.tagline}
                   packSize={product.packSize}
                   fallbackImage={product.image}
@@ -290,7 +293,7 @@ return (
                 </p>
 
                 <h1 className="mt-2 font-serif text-3xl font-bold leading-tight text-primary md:text-5xl">
-                  {product.name}
+                  {displayProduct.name}
                 </h1>
 
                 <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
@@ -299,7 +302,7 @@ return (
 
                 {/* Product Badges */}
                 <div className="mt-6 flex flex-wrap gap-2">
-                  {product.badges.map((badge) => (
+                  {displayProduct.badges.map((badge) => (
                     <span
                       key={badge}
                       className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-primary"
@@ -351,7 +354,7 @@ return (
                 ===================================================== */}
             <div className="mt-5 md:hidden">
               <div className="flex flex-wrap gap-2">
-                {product.badges.map((badge) => (
+                {displayProduct.badges.map((badge) => (
                   <span
                     key={badge}
                     className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-primary"
