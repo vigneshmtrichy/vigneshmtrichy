@@ -368,6 +368,92 @@ export default function AdminOrdersPage() {
     }
   }, [orders])
 
+  const exportOrdersCsv = () => {
+    const headers = [
+      'Order ID',
+      'Created At',
+      'Customer Name',
+      'Phone',
+      'Email',
+      'Address',
+      'City',
+      'State',
+      'Pincode',
+      'Items',
+      'MRP Total',
+      'Product Total',
+      'Taxable Value',
+      'CGST',
+      'SGST',
+      'IGST',
+      'Delivery Charge',
+      'Total',
+      'Order Status',
+      'Payment Method',
+      'Shipping Method',
+      'Courier',
+      'Tracking Number',
+      'Shiprocket Order ID',
+      'Shiprocket Shipment ID',
+    ]
+    const rows = filteredOrders.map((order) => {
+      const items = Array.isArray(order.items)
+        ? order.items
+            .map((item: any) =>
+              `${item?.product_name || 'Product'} × ${item?.quantity || 0} @ ₹${item?.unit_price || 0}`,
+            )
+            .join('; ')
+        : ''
+
+      return [
+        order.id,
+        order.created_at || '',
+        order.customer_name || '',
+        order.phone || '',
+        order.customer_email || '',
+        order.address || '',
+        order.city || '',
+        order.state || '',
+        order.pincode || '',
+        items,
+        order.mrp_total ?? '',
+        order.product_total ?? '',
+        order.taxable_value ?? '',
+        order.cgst ?? '',
+        order.sgst ?? '',
+        order.igst ?? '',
+        order.delivery_charge ?? '',
+        order.total ?? '',
+        statusLabel(order.order_status),
+        order.payment_method || '',
+        SHIPPING_LABELS[order.shipping_method || 'not_selected'] || order.shipping_method || '',
+        order.courier_name || '',
+        order.tracking_number || '',
+        order.shiprocket_order_id || '',
+        order.shiprocket_shipment_id || '',
+      ]
+    })
+    const escapeCell = (value: unknown) => {
+      let text = String(value ?? '')
+      if (/^[\\s]*[=+@-]/.test(text)) text = `'${text}`
+      return `"${text.replace(/"/g, '""')}"`
+    }
+    const csv = [headers, ...rows]
+      .map((row) => row.map(escapeCell).join(','))
+      .join('\\r\\n')
+    const blob = new Blob(['\\uFEFF', csv], {
+      type: 'text/csv;charset=utf-8;',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `tenoo-orders-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
   const filteredOrders = useMemo(() => {
     const rawQuery = searchQuery.trim().toLowerCase()
     // Allow both "7" and "#7" when searching for an order.
@@ -675,14 +761,25 @@ export default function AdminOrdersPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => loadOrders(true)}
-              disabled={refreshing}
-              className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {refreshing ? 'Refreshing...' : '↻ Refresh Orders'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={exportOrdersCsv}
+                disabled={filteredOrders.length === 0}
+                className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Export CSV
+              </button>
+
+              <button
+                type="button"
+                onClick={() => loadOrders(true)}
+                disabled={refreshing}
+                className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {refreshing ? 'Refreshing...' : '↻ Refresh Orders'}
+              </button>
+            </div>
           </div>
 
           {/* SALES OVERVIEW */}
