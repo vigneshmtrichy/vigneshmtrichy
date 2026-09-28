@@ -160,6 +160,14 @@ const galleryImages = galleryFolder
       .map((file) => `/products/${galleryFolder}/${file}`)
   : []
 
+const managedGalleryImages =
+  displayProduct.imageUrl &&
+  displayProduct.imageUrl !== product.image
+    ? [displayProduct.imageUrl, ...galleryImages]
+    : galleryImages.length > 0
+      ? galleryImages
+      : [displayProduct.image]
+
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
   )
@@ -176,7 +184,7 @@ const galleryImages = galleryFolder
   '@type': 'Product',
   name: displayProduct.name,
   description: displayProduct.description || displayProduct.tagline,
-  image: galleryImages.length > 0 ? galleryImages : [product.image],
+  image: managedGalleryImages,
   brand: {
     '@type': 'Brand',
     name: 'Tenoo',
@@ -271,11 +279,11 @@ return (
                   =================================================== */}
               <div className="mx-auto w-full max-w-[520px]">
                 <ProductGallery
-                  images={galleryImages}
+                  images={managedGalleryImages}
                   productName={displayProduct.name}
-                  tagline={product.tagline}
-                  packSize={product.packSize}
-                  fallbackImage={product.image}
+                  tagline={displayProduct.tagline}
+                  packSize={displayProduct.packSize}
+                  fallbackImage={displayProduct.image}
                 />
               </div>
 
