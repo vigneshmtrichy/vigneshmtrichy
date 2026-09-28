@@ -468,7 +468,7 @@ export function applyProductControls(
         ? String(controls.display_name).trim()
         : product.name,
     badges:
-      Array.isArray(controls?.badges) && controls.badges.length > 0
+      Array.isArray(controls?.badges)
         ? controls.badges
             .map((badge) => String(badge).trim())
             .filter(Boolean)
