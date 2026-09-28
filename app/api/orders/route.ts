@@ -175,7 +175,7 @@ export async function POST(request: Request) {
     const supabasePublic = getSupabasePublic()
     const { data: statuses, error: statusError } = await supabasePublic
       .from('product_status')
-      .select('product_slug, status, stock_quantity')
+      .select('product_slug, status, stock_quantity, mrp, price')
       .in('product_slug', [...seenSlugs])
 
     if (statusError) {
@@ -189,6 +189,19 @@ export async function POST(request: Request) {
     const statusBySlug = new Map(
       (statuses || []).map((item) => [item.product_slug, item]),
     )
+
+    for (const item of orderItems) {
+      const managedPricing = statusBySlug.get(item.product_slug)
+
+      if (managedPricing?.price !== null && managedPricing?.price !== undefined) {
+        item.unit_price = Number(managedPricing.price)
+      }
+
+      if (managedPricing?.mrp !== null && managedPricing?.mrp !== undefined) {
+        item.mrp = Number(managedPricing.mrp)
+      }
+    }
+
     const unavailable = orderItems.some((item) => {
       const productStatus = statusBySlug.get(item.product_slug)
       const status = productStatus?.status
