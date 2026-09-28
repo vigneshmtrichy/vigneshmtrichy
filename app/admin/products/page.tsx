@@ -10,6 +10,7 @@ import {
   Clock3,
   EyeOff,
   CircleAlert,
+  AlertTriangle,
   Search,
 } from 'lucide-react'
 
@@ -20,6 +21,8 @@ type ProductStatus =
   | 'out-of-stock'
 
 type StatusFilter = 'all' | ProductStatus
+
+const LOW_STOCK_THRESHOLD = 5
 
 const STATUS_OPTIONS: {
   value: ProductStatus
@@ -89,6 +92,12 @@ export default function AdminProductsPage() {
   const [statuses, setStatuses] = useState<
     Record<string, ProductStatus>
   >({})
+  const [stockQuantities, setStockQuantities] = useState<
+    Record<string, number | null>
+  >({})
+  const [stockDrafts, setStockDrafts] = useState<
+    Record<string, string>
+  >({})
 
   const [savingSlug, setSavingSlug] = useState<
     string | null
@@ -111,7 +120,7 @@ export default function AdminProductsPage() {
     try {
       const { data, error } = await supabase
         .from('product_status')
-        .select('product_slug, status')
+        .select('product_slug, status, stock_quantity')
 
       if (error) {
         console.error(
@@ -122,17 +131,26 @@ export default function AdminProductsPage() {
         return
       }
 
-      const statusMap: Record<
-        string,
-        ProductStatus
-      > = {}
+      const statusMap: Record<string, ProductStatus> = {}
+      const stockMap: Record<string, number | null> = {}
+      const stockDraftMap: Record<string, string> = {}
 
       data?.forEach((item) => {
         statusMap[item.product_slug] =
           item.status as ProductStatus
+        stockMap[item.product_slug] =
+          item.stock_quantity === null
+            ? null
+            : Number(item.stock_quantity)
+        stockDraftMap[item.product_slug] =
+          item.stock_quantity === null
+            ? ''
+            : String(item.stock_quantity)
       })
 
       setStatuses(statusMap)
+      setStockQuantities(stockMap)
+      setStockDrafts(stockDraftMap)
     } catch (error) {
       console.error(
         'Failed to load product statuses:',
@@ -149,6 +167,11 @@ export default function AdminProductsPage() {
   productSlug: string,
   status: ProductStatus,
 ) {
+  if (status === 'active' && stockQuantities[productSlug] === 0) {
+    setMessage('Add stock above zero before making this product active.')
+    return
+  }
+
   try {
     setSavingSlug(productSlug)
     setMessage('')
@@ -183,13 +206,86 @@ export default function AdminProductsPage() {
     setSavingSlug(null)
   }
 }
+  async function saveStock(productSlug: string) {
+    const rawQuantity = stockDrafts[productSlug] ?? ''
+
+    if (!/^\\d+$/.test(rawQuantity)) {
+      setMessage('Enter a whole stock quantity of zero or more.')
+      return
+    }
+
+    const stockQuantity = Number(rawQuantity)
+    if (!Number.isSafeInteger(stockQuantity)) {
+      setMessage('Enter a valid stock quantity.')
+      return
+    }
+
+    const currentStatus = statuses[productSlug] || 'active'
+    const nextStatus: ProductStatus =
+      stockQuantity === 0
+        ? 'out-of-stock'
+        : currentStatus === 'out-of-stock'
+          ? 'active'
+          : currentStatus
+
+    try {
+      setSavingSlug(productSlug)
+      setMessage('')
+
+      const { error } = await supabase
+        .from('product_status')
+        .upsert(
+          {
+            product_slug: productSlug,
+            status: nextStatus,
+            stock_quantity: stockQuantity,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'product_slug',
+          },
+        )
+
+      if (error) {
+        console.error('Failed to save stock quantity:', error)
+        setMessage('Failed to save stock quantity: ' + error.message)
+        return
+      }
+
+      setStockQuantities((current) => ({
+        ...current,
+        [productSlug]: stockQuantity,
+      }))
+      setStatuses((current) => ({
+        ...current,
+        [productSlug]: nextStatus,
+      }))
+    } catch (error) {
+      console.error('Failed to save stock quantity:', error)
+      setMessage('Failed to save stock quantity.')
+    } finally {
+      setSavingSlug(null)
+    }
+  }
+
   const productData = useMemo(() => {
     return ALL_PRODUCTS.map((product) => ({
       ...product,
       status:
         statuses[product.slug] || 'active',
+      stockQuantity: stockQuantities[product.slug] ?? null,
     }))
-  }, [statuses])
+  }, [statuses, stockQuantities])
+
+  const lowStockProducts = productData.filter(
+    (product) =>
+      product.stockQuantity !== null &&
+      product.stockQuantity > 0 &&
+      product.stockQuantity <= LOW_STOCK_THRESHOLD,
+  )
+  const untrackedStockCount = productData.filter(
+    (product) => product.stockQuantity === null,
+  ).length
 
   const filteredProducts = useMemo(() => {
     const query = search
@@ -429,8 +525,31 @@ export default function AdminProductsPage() {
 
           </div>
 
+          {lowStockProducts.length > 0 && (
+            <div
+              role="alert"
+              className="mt-6 flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900"
+            >
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <p className="font-semibold">
+                  Low stock: {lowStockProducts.length} product{lowStockProducts.length === 1 ? '' : 's'}
+                </p>
+                <p className="mt-1 text-sm">
+                  {lowStockProducts
+                    .map((product) => product.name + ' (' + product.stockQuantity + ' left)')
+                    .join(', ')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <p className="mt-4 text-xs text-muted-foreground">
+            Low stock alert threshold: {LOW_STOCK_THRESHOLD}. Inventory has not been set for {untrackedStockCount} product{untrackedStockCount === 1 ? '' : 's'}.
+          </p>
+
           {/* SEARCH + FILTER */}
-          <div className="mt-7 rounded-2xl border bg-background p-4 shadow-sm">
+          <div className="mt-4 rounded-2xl border bg-background p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row">
 
               <div className="relative flex-1">
@@ -564,46 +683,87 @@ export default function AdminProductsPage() {
 
                         </div>
 
-                        {/* STATUS CONTROL */}
-                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-48">
+                        {/* STATUS + INVENTORY CONTROLS */}
+                        <div className="flex w-full flex-col gap-2 sm:w-64">
                           <label className="text-xs font-medium text-muted-foreground">
                             Product Status
                           </label>
 
                           <select
-                            value={
-                              product.status
-                            }
+                            value={product.status}
                             onChange={(e) =>
                               saveStatus(
                                 product.slug,
                                 e.target.value as ProductStatus,
                               )
                             }
-                            disabled={
-                              isSaving
-                            }
+                            disabled={isSaving}
                             className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {STATUS_OPTIONS.map(
-                              (
-                                option,
-                              ) => (
-                                <option
-                                  key={
-                                    option.value
-                                  }
-                                  value={
-                                    option.value
-                                  }
-                                >
-                                  {
-                                    option.label
-                                  }
-                                </option>
-                              ),
-                            )}
+                            {STATUS_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
+
+                          <div className="mt-2 border-t pt-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <label
+                                htmlFor={'stock-' + product.slug}
+                                className="text-xs font-medium text-muted-foreground"
+                              >
+                                Stock quantity
+                              </label>
+                              {product.stockQuantity !== null &&
+                                product.stockQuantity > 0 &&
+                                product.stockQuantity <= LOW_STOCK_THRESHOLD && (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
+                                    <AlertTriangle className="h-3.5 w-3.5" />
+                                    Low stock
+                                  </span>
+                                )}
+                            </div>
+
+                            <div className="mt-2 flex gap-2">
+                              <input
+                                id={'stock-' + product.slug}
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                step="1"
+                                value={stockDrafts[product.slug] ?? ''}
+                                onChange={(e) =>
+                                  setStockDrafts((current) => ({
+                                    ...current,
+                                    [product.slug]: e.target.value,
+                                  }))
+                                }
+                                disabled={isSaving}
+                                placeholder="Not set"
+                                aria-label={'Stock quantity for ' + product.name}
+                                className="h-10 min-w-0 flex-1 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => saveStock(product.slug)}
+                                disabled={
+                                  isSaving ||
+                                  stockDrafts[product.slug] === undefined ||
+                                  stockDrafts[product.slug] ===
+                                    (product.stockQuantity === null
+                                      ? ''
+                                      : String(product.stockQuantity))
+                                }
+                                className="rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {isSaving ? 'Saving...' : 'Save'}
+                              </button>
+                            </div>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              Orders reduce tracked stock automatically.
+                            </p>
+                          </div>
 
                           {isSaving && (
                             <span className="text-xs text-muted-foreground">
