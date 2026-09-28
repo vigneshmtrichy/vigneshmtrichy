@@ -175,7 +175,7 @@ export async function POST(request: Request) {
     const supabasePublic = getSupabasePublic()
     const { data: statuses, error: statusError } = await supabasePublic
       .from('product_status')
-      .select('product_slug, status')
+      .select('product_slug, status, stock_quantity')
       .in('product_slug', [...seenSlugs])
 
     if (statusError) {
@@ -187,16 +187,29 @@ export async function POST(request: Request) {
     }
 
     const statusBySlug = new Map(
-      (statuses || []).map((item) => [item.product_slug, item.status]),
+      (statuses || []).map((item) => [item.product_slug, item]),
     )
     const unavailable = orderItems.some((item) => {
-      const status = statusBySlug.get(item.product_slug)
+      const productStatus = statusBySlug.get(item.product_slug)
+      const status = productStatus?.status
       return status === 'hidden' || status === 'coming-soon' || status === 'out-of-stock'
     })
 
     if (unavailable) {
       return NextResponse.json(
         { success: false, message: 'A product in your cart is no longer available. Please refresh your cart.' },
+        { status: 409 },
+      )
+    }
+
+    const insufficientStock = orderItems.some((item) => {
+      const stock = statusBySlug.get(item.product_slug)?.stock_quantity
+      return stock !== null && stock !== undefined && stock < item.quantity
+    })
+
+    if (insufficientStock) {
+      return NextResponse.json(
+        { success: false, message: 'There is not enough stock for one of the products in your cart. Please update the quantity and try again.' },
         { status: 409 },
       )
     }
@@ -222,40 +235,56 @@ export async function POST(request: Request) {
       productTotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING
     const total = roundCurrency(productTotal + deliveryCharge)
 
-    const { data: order, error: insertError } = await supabaseAdmin
-      .from('orders')
-      .insert({
-        user_id: user?.id ?? null,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        phone,
-        address,
-        pincode,
-        city,
-        state,
-        items: orderItems,
-        mrp_total: mrpTotal,
-        product_total: productTotal,
-        taxable_value: taxableValue,
-        gst_total: gstTotal,
-        cgst,
-        sgst,
-        igst,
-        delivery_charge: deliveryCharge,
-        total,
-        payment_method: 'WhatsApp',
-        order_status: 'pending',
-      })
-      .select('id')
-      .single()
+    const { data: orderResult, error: insertError } = await supabaseAdmin.rpc(
+      'create_order_with_stock',
+      {
+        p_order: {
+          user_id: user?.id ?? null,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          phone,
+          address,
+          pincode,
+          city,
+          state,
+          items: orderItems,
+          mrp_total: mrpTotal,
+          product_total: productTotal,
+          taxable_value: taxableValue,
+          gst_total: gstTotal,
+          cgst,
+          sgst,
+          igst,
+          delivery_charge: deliveryCharge,
+          total,
+        },
+        p_items: orderItems.map((item) => ({
+          product_slug: item.product_slug,
+          quantity: item.quantity,
+        })),
+      },
+    )
 
-    if (insertError || !order) {
-      console.error('Failed to create order:', insertError)
+    if (insertError || !orderResult?.success || !orderResult?.order_id) {
+      console.error('Failed to create order:', insertError || orderResult)
+      const stockConflict =
+        orderResult?.message?.includes('stock') ||
+        insertError?.message?.includes('INSUFFICIENT_STOCK')
+
       return NextResponse.json(
-        { success: false, message: 'Unable to place your order. Please try again.' },
-        { status: 500 },
+        {
+          success: false,
+          message: stockConflict
+            ? orderResult?.message ||
+              'There is not enough stock for one of the products in your cart. Please update the quantity and try again.'
+            : orderResult?.message ||
+              'Unable to place your order. Please try again.',
+        },
+        { status: stockConflict ? 409 : 500 },
       )
     }
+
+    const order = { id: orderResult.order_id }
 
     return NextResponse.json({
       success: true,
