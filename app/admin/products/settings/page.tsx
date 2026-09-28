@@ -77,6 +77,7 @@ export default function AdminProductSettingsPage() {
   const [message, setMessage] = useState('')
   const [selectedSlug, setSelectedSlug] = useState(ALL_PRODUCTS[0]?.slug || '')
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [statusPickerOpen, setStatusPickerOpen] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({})
 
@@ -207,15 +208,18 @@ export default function AdminProductSettingsPage() {
   }
 
   useEffect(() => {
-    if (!pickerOpen) return
+    if (!pickerOpen && !statusPickerOpen) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setPickerOpen(false)
+      if (event.key === 'Escape') {
+        setPickerOpen(false)
+        setStatusPickerOpen(false)
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [pickerOpen])
+  }, [pickerOpen, statusPickerOpen])
 
   const draft =
     drafts[selectedSlug] ||
@@ -535,24 +539,64 @@ export default function AdminProductSettingsPage() {
               </div>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                <div>
+                <div className="relative min-w-0">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     Product Status
                   </label>
-                  <select
-                    value={draft.status}
-                    onChange={(e) =>
-                      updateDraft({ status: e.target.value as ProductStatus })
-                    }
+
+                  <button
+                    type="button"
+                    onClick={() => setStatusPickerOpen((open) => !open)}
                     disabled={saving}
-                    className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                    aria-haspopup="listbox"
+                    aria-expanded={statusPickerOpen}
+                    className="flex h-11 w-full min-w-0 items-center justify-between gap-3 rounded-xl border bg-background px-3 text-left text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {STATUS_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    <span className="flex min-w-0 items-center gap-2 truncate">
+                      <StatusIcon status={draft.status} />
+                      <span className="truncate">{getStatusLabel(draft.status)}</span>
+                    </span>
+                    <ChevronDown
+                      className={
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform ' +
+                        (statusPickerOpen ? 'rotate-180' : '')
+                      }
+                    />
+                  </button>
+
+                  {statusPickerOpen && (
+                    <div
+                      role="listbox"
+                      className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border bg-background p-1.5 shadow-xl"
+                    >
+                      {STATUS_OPTIONS.map((option) => {
+                        const isSelected = option.value === draft.status
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            onClick={() => {
+                              updateDraft({ status: option.value })
+                              setStatusPickerOpen(false)
+                              setMessage('')
+                            }}
+                            className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-muted"
+                          >
+                            <span className="flex min-w-0 items-center gap-2 truncate">
+                              <StatusIcon status={option.value} />
+                              <span className="truncate">{option.label}</span>
+                            </span>
+                            {isSelected && (
+                              <Check className="h-4 w-4 shrink-0 text-primary" />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div>
