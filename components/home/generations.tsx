@@ -129,7 +129,7 @@ export async function Generations() {
             [scrollbar-width:none]
             [&::-webkit-scrollbar]:hidden
 
-            sm:grid sm:grid-cols-6
+            sm:grid sm:grid-cols-5
             sm:overflow-visible
             sm:pb-0
             sm:snap-none
