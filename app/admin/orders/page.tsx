@@ -49,6 +49,16 @@ const statusLabel = (status?: string) => {
 const getStatusStyle = (status?: string) =>
   STATUS_STYLES[status || 'pending'] || STATUS_STYLES.pending
 
+const INDIA_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Kolkata',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+const getIndiaDateKey = (value: string) =>
+  INDIA_DATE_FORMATTER.format(new Date(value))
+
 export default function AdminOrdersPage() {
   const searchParams = new URLSearchParams(
   typeof window !== 'undefined' ? window.location.search : ''
@@ -323,6 +333,38 @@ export default function AdminOrdersPage() {
             total + Number(order.total || 0),
           0,
         ),
+    }
+  }, [orders])
+
+  const periodCounts = useMemo(() => {
+    const todayKey = getIndiaDateKey(new Date().toISOString())
+    const monthKey = todayKey.slice(0, 7)
+
+    const nonCancelledOrders = orders.filter(
+      (order) => order.order_status !== 'cancelled',
+    )
+    const todayOrders = nonCancelledOrders.filter(
+      (order) =>
+        order.created_at &&
+        getIndiaDateKey(order.created_at) === todayKey,
+    )
+    const monthOrders = nonCancelledOrders.filter(
+      (order) =>
+        order.created_at &&
+        getIndiaDateKey(order.created_at).startsWith(monthKey),
+    )
+
+    return {
+      todayOrderCount: todayOrders.length,
+      todaySales: todayOrders.reduce(
+        (total, order) => total + Number(order.total || 0),
+        0,
+      ),
+      monthOrderCount: monthOrders.length,
+      monthSales: monthOrders.reduce(
+        (total, order) => total + Number(order.total || 0),
+        0,
+      ),
     }
   }, [orders])
 
@@ -642,6 +684,34 @@ export default function AdminOrdersPage() {
               {refreshing ? 'Refreshing...' : '↻ Refresh Orders'}
             </button>
           </div>
+
+          {/* SALES OVERVIEW */}
+          <section
+            aria-label="Sales overview"
+            className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
+          >
+            {[
+              ['Orders today', String(periodCounts.todayOrderCount)],
+              ['Sales today', money(periodCounts.todaySales)],
+              ['Orders this month', String(periodCounts.monthOrderCount)],
+              ['Sales this month', money(periodCounts.monthSales)],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
+              >
+                <p className="text-xs font-medium text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-foreground">
+                  {value}
+                </p>
+              </div>
+            ))}
+            <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">
+              Sales exclude cancelled orders. Dates use India time.
+            </p>
+          </section>
 
           {/* STATS */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
