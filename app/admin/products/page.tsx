@@ -89,6 +89,7 @@ export default function AdminProductsPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, ProductStatus>>({})
+  const [statusDrafts, setStatusDrafts] = useState<Record<string, ProductStatus>>({})
   const [stockQuantities, setStockQuantities] = useState<Record<string, number | null>>({})
   const [stockDrafts, setStockDrafts] = useState<Record<string, string>>({})
   const [controlDrafts, setControlDrafts] = useState<
@@ -116,6 +117,7 @@ export default function AdminProductsPage() {
       } else {
         setLoading(false)
         setStatuses({})
+        setStatusDrafts({})
         setStockQuantities({})
         setStockDrafts({})
         setControlDrafts({})
@@ -181,6 +183,7 @@ export default function AdminProductsPage() {
       })
 
       setStatuses(statusMap)
+      setStatusDrafts(statusMap)
       setStockQuantities(stockMap)
       setStockDrafts(stockDraftMap)
       setControlDrafts(controlDraftMap)
@@ -192,52 +195,27 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function saveStatus(productSlug: string, status: ProductStatus) {
-    if (status === 'active' && stockQuantities[productSlug] === 0) {
+  async function saveProduct(productSlug: string) {
+    const draft = controlDrafts[productSlug]
+    const selectedStatus = statusDrafts[productSlug] || 'active'
+    const rawStock = stockDrafts[productSlug] ?? ''
+    const stockQuantity = rawStock.trim() === '' ? null : Number(rawStock)
+
+    if (!draft) {
+      setMessage('Enter the product settings before saving.')
+      return
+    }
+
+    if (selectedStatus === 'active' && stockQuantity === 0) {
       setMessage('Add stock above zero before making this product active.')
       return
     }
 
-    try {
-      setSavingSlug(productSlug)
-      setMessage('')
-
-      const { error } = await supabase
-        .from('product_status')
-        .upsert(
-          {
-            product_slug: productSlug,
-            status,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'product_slug',
-          },
-        )
-
-      if (error) {
-        console.error('Failed to save product status:', error)
-        setMessage(`Failed to save product status: ${error.message}`)
-        return
-      }
-
-      setStatuses((current) => ({
-        ...current,
-        [productSlug]: status,
-      }))
-    } catch (error) {
-      console.error('Failed to save product status:', error)
-      setMessage('Failed to save product status.')
-    } finally {
-      setSavingSlug(null)
-    }
-  }
-
-  async function saveProductControls(productSlug: string) {
-    const draft = controlDrafts[productSlug]
-
-    if (!draft) {
-      setMessage('Enter the product settings before saving.')
+    if (
+      stockQuantity !== null &&
+      (!/^\d+$/.test(rawStock) || !Number.isSafeInteger(stockQuantity))
+    ) {
+      setMessage('Enter a whole stock quantity of zero or more, or leave it empty.')
       return
     }
 
@@ -259,15 +237,28 @@ export default function AdminProductsPage() {
       return
     }
 
-    if (retailerPrice !== null && (!Number.isFinite(retailerPrice) || retailerPrice <= 0)) {
+    if (
+      retailerPrice !== null &&
+      (!Number.isFinite(retailerPrice) || retailerPrice <= 0)
+    ) {
       setMessage('Enter a valid retailer price or leave it empty.')
       return
     }
 
-    if (shippingWeightKg !== null && (!Number.isFinite(shippingWeightKg) || shippingWeightKg <= 0)) {
+    if (
+      shippingWeightKg !== null &&
+      (!Number.isFinite(shippingWeightKg) || shippingWeightKg <= 0)
+    ) {
       setMessage('Enter a valid shipping weight or leave it empty.')
       return
     }
+
+    const nextStatus: ProductStatus =
+      stockQuantity === 0
+        ? 'out-of-stock'
+        : selectedStatus === 'out-of-stock' && stockQuantity !== 0
+          ? 'active'
+          : selectedStatus
 
     try {
       setSavingSlug(productSlug)
@@ -278,6 +269,8 @@ export default function AdminProductsPage() {
         .upsert(
           {
             product_slug: productSlug,
+            status: nextStatus,
+            stock_quantity: stockQuantity,
             mrp: Number(mrp.toFixed(2)),
             price: Number(price.toFixed(2)),
             retailer_price:
@@ -297,11 +290,27 @@ export default function AdminProductsPage() {
         )
 
       if (error) {
-        console.error('Failed to save product controls:', error)
-        setMessage('Failed to save product controls: ' + error.message)
+        console.error('Failed to save product:', error)
+        setMessage('Failed to save product: ' + error.message)
         return
       }
 
+      setStatuses((current) => ({
+        ...current,
+        [productSlug]: nextStatus,
+      }))
+      setStatusDrafts((current) => ({
+        ...current,
+        [productSlug]: nextStatus,
+      }))
+      setStockQuantities((current) => ({
+        ...current,
+        [productSlug]: stockQuantity,
+      }))
+      setStockDrafts((current) => ({
+        ...current,
+        [productSlug]: stockQuantity === null ? '' : String(stockQuantity),
+      }))
       setControlDrafts((current) => ({
         ...current,
         [productSlug]: {
@@ -315,72 +324,10 @@ export default function AdminProductsPage() {
             shippingWeightKg === null ? '' : shippingWeightKg.toFixed(3),
         },
       }))
-      setMessage('Product settings saved successfully.')
+      setMessage('Product changes saved successfully.')
     } catch (error) {
-      console.error('Failed to save product controls:', error)
-      setMessage('Failed to save product settings.')
-    } finally {
-      setSavingSlug(null)
-    }
-  }
-
-  async function saveStock(productSlug: string) {
-    const rawQuantity = stockDrafts[productSlug] ?? ''
-
-    if (!/^\d+$/.test(rawQuantity)) {
-      setMessage('Enter a whole stock quantity of zero or more.')
-      return
-    }
-
-    const stockQuantity = Number(rawQuantity)
-    if (!Number.isSafeInteger(stockQuantity)) {
-      setMessage('Enter a valid stock quantity.')
-      return
-    }
-
-    const currentStatus = statuses[productSlug] || 'active'
-    const nextStatus: ProductStatus =
-      stockQuantity === 0
-        ? 'out-of-stock'
-        : currentStatus === 'out-of-stock'
-          ? 'active'
-          : currentStatus
-
-    try {
-      setSavingSlug(productSlug)
-      setMessage('')
-
-      const { error } = await supabase
-        .from('product_status')
-        .upsert(
-          {
-            product_slug: productSlug,
-            status: nextStatus,
-            stock_quantity: stockQuantity,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'product_slug',
-          },
-        )
-
-      if (error) {
-        console.error('Failed to save stock quantity:', error)
-        setMessage('Failed to save stock quantity: ' + error.message)
-        return
-      }
-
-      setStockQuantities((current) => ({
-        ...current,
-        [productSlug]: stockQuantity,
-      }))
-      setStatuses((current) => ({
-        ...current,
-        [productSlug]: nextStatus,
-      }))
-    } catch (error) {
-      console.error('Failed to save stock quantity:', error)
-      setMessage('Failed to save stock quantity.')
+      console.error('Failed to save product:', error)
+      setMessage('Failed to save product changes.')
     } finally {
       setSavingSlug(null)
     }
@@ -389,7 +336,7 @@ export default function AdminProductsPage() {
   const productData = useMemo(() => {
     return ALL_PRODUCTS.map((product) => ({
       ...product,
-      status: statuses[product.slug] || 'active',
+      status: statusDrafts[product.slug] || statuses[product.slug] || 'active',
       stockQuantity: stockQuantities[product.slug] ?? null,
       controlDraft: controlDrafts[product.slug] || {
         mrp: product.mrp || '',
@@ -404,7 +351,7 @@ export default function AdminProductsPage() {
             : String(product.shippingWeightKg),
       },
     }))
-  }, [statuses, stockQuantities, controlDrafts])
+  }, [statuses, statusDrafts, stockQuantities, controlDrafts])
 
   const lowStockProducts = productData.filter(
     (product) =>
@@ -589,7 +536,7 @@ export default function AdminProductsPage() {
 
                       <div className="flex w-full flex-col gap-2 sm:w-72">
                         <label className="text-xs font-medium text-muted-foreground">Product Status</label>
-                        <select value={product.status} onChange={(e) => saveStatus(product.slug, e.target.value as ProductStatus)} disabled={isSaving} className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60">
+                        <select value={product.status} onChange={(e) => setStatusDrafts((current) => ({ ...current, [product.slug]: e.target.value as ProductStatus }))} disabled={isSaving} className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60">
                           {STATUS_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
                           ))}
@@ -619,12 +566,8 @@ export default function AdminProductsPage() {
 
                           <input type="text" maxLength={80} value={product.controlDraft.offerLabel} onChange={(e) => setControlDrafts((current) => ({ ...current, [product.slug]: { ...(current[product.slug] || { mrp: '', price: '', retailerPrice: '', offerEnabled: true, offerLabel: '', featured: false, shippingWeightKg: '' }), offerLabel: e.target.value } }))} disabled={isSaving} placeholder="Offer label (optional)" aria-label={'Offer label for ' + product.name} className="mt-2 h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
 
-                          <button type="button" onClick={() => saveProductControls(product.slug)} disabled={isSaving || product.controlDraft.mrp === '' || product.controlDraft.price === ''} className="mt-2 w-full rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
-                            {isSaving ? 'Saving...' : 'Save Product Settings'}
-                          </button>
-
                           <p className="mt-1 text-[11px] text-muted-foreground">
-                            Price, retailer price, offer, featured status and shipping weight save together.
+                            Product status, pricing, offer, featured status, shipping weight and stock save together.
                           </p>
 
                           <div className="mt-4 border-t pt-3">
@@ -636,12 +579,22 @@ export default function AdminProductsPage() {
                             </div>
                             <div className="mt-2 flex gap-2">
                               <input id={'stock-' + product.slug} type="number" inputMode="numeric" min="0" step="1" value={stockDrafts[product.slug] ?? ''} onChange={(e) => setStockDrafts((current) => ({ ...current, [product.slug]: e.target.value }))} disabled={isSaving} placeholder="Not set" aria-label={'Stock quantity for ' + product.name} className="h-10 min-w-0 flex-1 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60" />
-                              <button type="button" onClick={() => saveStock(product.slug)} disabled={isSaving || stockDrafts[product.slug] === undefined || stockDrafts[product.slug] === (product.stockQuantity === null ? '' : String(product.stockQuantity))} className="rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
-                                {isSaving ? 'Saving...' : 'Save'}
-                              </button>
                             </div>
                             <p className="mt-1 text-[11px] text-muted-foreground">Orders reduce tracked stock automatically.</p>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => saveProduct(product.slug)}
+                            disabled={
+                              isSaving ||
+                              product.controlDraft.mrp === '' ||
+                              product.controlDraft.price === ''
+                            }
+                            className="mt-4 w-full rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isSaving ? 'Saving Changes...' : 'Save Changes'}
+                          </button>
                         </div>
 
                         {isSaving && <span className="text-xs text-muted-foreground">Saving changes...</span>}
