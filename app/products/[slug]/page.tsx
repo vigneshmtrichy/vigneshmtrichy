@@ -97,7 +97,6 @@ export async function generateMetadata({
       ],
     },
   }
-  }
 }
 export function generateStaticParams() {
   return ALL_PRODUCTS.map((product) => ({
