@@ -488,9 +488,9 @@ export default function AdminOrdersPage() {
     const csv = [
       headers.map(csvEscape).join(','),
       ...rows.map((row) => row.join(',')),
-    ].join('\\r\\n')
+    ].join('\r\n')
 
-    const blob = new Blob(['\\uFEFF' + csv], {
+    const blob = new Blob(['\uFEFF' + csv], {
       type: 'text/csv;charset=utf-8;',
     })
 
