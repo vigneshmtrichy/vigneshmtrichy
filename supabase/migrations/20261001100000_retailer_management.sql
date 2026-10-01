@@ -122,6 +122,8 @@ DECLARE
   taxable_total numeric := 0;
   gst_total_value numeric := 0;
   payment_days integer;
+  credit_limit_value numeric;
+  existing_outstanding numeric;
 BEGIN
   IF (SELECT auth.jwt() ->> 'email') <> 'info@tenoo.in' THEN
     RAISE EXCEPTION 'Admin access required' USING ERRCODE = '42501';
@@ -133,7 +135,7 @@ BEGIN
     RAISE EXCEPTION 'At least one product is required' USING ERRCODE = 'P0001';
   END IF;
 
-  SELECT payment_terms_days INTO payment_days FROM public.retailers WHERE id = p_retailer_id;
+  SELECT payment_terms_days, credit_limit INTO payment_days, credit_limit_value FROM public.retailers WHERE id = p_retailer_id;
 
   INSERT INTO public.retailer_orders (retailer_id, payment_type, due_date, notes)
   VALUES (
@@ -179,6 +181,20 @@ BEGIN
   END LOOP;
 
   gst_total_value := gross_total - taxable_total;
+
+  IF p_payment_type IN ('credit', 'partial') AND credit_limit_value > 0 THEN
+    SELECT
+      COALESCE(SUM(total) FILTER (WHERE order_status <> 'cancelled'), 0)
+      - COALESCE((SELECT SUM(amount) FROM public.retailer_payments WHERE retailer_id = p_retailer_id), 0)
+    INTO existing_outstanding
+    FROM public.retailer_orders
+    WHERE retailer_id = p_retailer_id;
+
+    IF existing_outstanding + gross_total > credit_limit_value THEN
+      RAISE EXCEPTION 'Credit limit exceeded for this retailer' USING ERRCODE = 'P0001';
+    END IF;
+  END IF;
+
   UPDATE public.retailer_orders
   SET subtotal = round(gross_total, 2), taxable_value = round(taxable_total, 2), gst_total = round(gst_total_value, 2), total = round(gross_total, 2)
   WHERE id = order_id;
@@ -196,6 +212,9 @@ AS $function$
 DECLARE item record;
 BEGIN
   IF OLD.order_status IS NOT DISTINCT FROM NEW.order_status THEN RETURN NEW; END IF;
+  IF OLD.order_status = 'cancelled' AND NEW.order_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'Cancelled retailer orders cannot be reopened; create a new order instead' USING ERRCODE = 'P0001';
+  END IF;
   IF NEW.order_status = 'cancelled' AND OLD.order_status <> 'cancelled' AND OLD.inventory_reserved THEN
     FOR item IN SELECT product_slug, quantity FROM public.retailer_order_items WHERE retailer_order_id = OLD.id LOOP
       UPDATE public.product_status
