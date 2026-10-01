@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { ALL_PRODUCTS } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
 import { supabase } from '@/lib/supabase'
-import { Check, ChevronDown } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Retailer = { id: string; business_name: string; payment_terms_days: number; credit_limit: number }
 type OrderLine = { product_slug: string; quantity: string }
@@ -81,6 +81,99 @@ function CustomSelect({
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DateFilter({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const initialDate = value ? new Date(value + 'T00:00:00') : new Date()
+  const [viewDate, setViewDate] = useState(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1))
+
+  useEffect(() => {
+    if (value) {
+      const selected = new Date(value + 'T00:00:00')
+      if (!Number.isNaN(selected.getTime())) setViewDate(new Date(selected.getFullYear(), selected.getMonth(), 1))
+    }
+  }, [value])
+
+  const year = viewDate.getFullYear()
+  const month = viewDate.getMonth()
+  const firstDay = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const day = index - firstDay + 1
+    return day >= 1 && day <= daysInMonth ? day : null
+  })
+  const monthLabel = viewDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+  const selectedLabel = value
+    ? new Date(value + 'T00:00:00').toLocaleDateString('en-GB')
+    : 'dd-mm-yyyy'
+
+  const selectDate = (day: number) => {
+    const next = new Date(year, month, day)
+    const iso = [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-')
+    onChange(iso)
+    setOpen(false)
+  }
+
+  const chooseToday = () => {
+    const today = new Date()
+    const iso = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-')
+    onChange(iso)
+    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1))
+    setOpen(false)
+  }
+
+  return (
+    <div>
+      <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">{label}</span>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-10 w-full items-center justify-between rounded-lg border bg-background px-3 text-left text-sm transition hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        aria-label={label}
+      >
+        <span className={value ? 'text-foreground' : 'text-muted-foreground'}>{selectedLabel}</span>
+        <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4" onMouseDown={() => setOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl border bg-background p-4 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="rounded-lg p-2 hover:bg-muted" aria-label="Previous month"><ChevronLeft className="h-5 w-5" /></button>
+              <p className="text-sm font-semibold">{monthLabel}</p>
+              <button type="button" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="rounded-lg p-2 hover:bg-muted" aria-label="Next month"><ChevronRight className="h-5 w-5" /></button>
+            </div>
+            <div className="mt-3 grid grid-cols-7 text-center text-xs font-semibold text-muted-foreground">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => <span key={day} className="py-2">{day}</span>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {cells.map((day, index) => {
+                const isSelected = day !== null && value === [year, String(month + 1).padStart(2, '0'), String(day).padStart(2, '0')].join('-')
+                return day === null ? <span key={index} className="h-10" /> : (
+                  <button key={index} type="button" onClick={() => selectDate(day)} className={`h-10 rounded-lg text-sm hover:bg-muted ${isSelected ? 'bg-primary text-primary-foreground font-semibold hover:bg-primary' : ''}`}>
+                    {day}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-3 flex justify-between border-t pt-3">
+              <button type="button" onClick={() => { onChange(''); setOpen(false) }} className="rounded-lg px-3 py-2 text-sm font-semibold hover:bg-muted">Clear</button>
+              <button type="button" onClick={chooseToday} className="rounded-lg px-3 py-2 text-sm font-semibold text-primary hover:bg-muted">Today</button>
+            </div>
           </div>
         </div>
       )}
@@ -313,14 +406,8 @@ export default function RetailerOrdersPage() {
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
         <CustomSelect value={paymentFilter} onChange={setPaymentFilter} className="w-full" options={[{ value: 'all', label: 'All payment statuses' }, { value: 'paid', label: 'Paid' }, { value: 'partial', label: 'Partial' }, { value: 'unpaid', label: 'Unpaid' }]} />
         <div className="grid grid-cols-2 gap-2">
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">From date</span>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm cursor-pointer" aria-label="From date" />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">To date</span>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm cursor-pointer" aria-label="To date" />
-          </label>
+          <DateFilter label="From date" value={dateFrom} onChange={setDateFrom} />
+          <DateFilter label="To date" value={dateTo} onChange={setDateTo} />
         </div>
       </div>
       {statusHistoryError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">Status history could not be loaded: {statusHistoryError}</p>}
