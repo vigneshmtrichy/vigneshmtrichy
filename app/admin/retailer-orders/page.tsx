@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { ALL_PRODUCTS } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
 import { supabase } from '@/lib/supabase'
-import { Check, ChevronDown } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown } from 'lucide-react'
 
 type Retailer = { id: string; business_name: string; payment_terms_days: number; credit_limit: number }
 type OrderLine = { product_slug: string; quantity: string }
@@ -308,11 +308,22 @@ export default function RetailerOrdersPage() {
 
     <section className="mt-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Showing the latest 50 orders.</p></div><p className="text-sm text-muted-foreground">{filteredOrders.length} shown</p></div>
-      <div className="mt-4 grid gap-2 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-10 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
+      <div className="mt-4 grid gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-11 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
         <CustomSelect value={paymentFilter} onChange={setPaymentFilter} className="w-full" options={[{ value: 'all', label: 'All payment statuses' }, { value: 'paid', label: 'Paid' }, { value: 'partial', label: 'Partial' }, { value: 'unpaid', label: 'Unpaid' }]} />
-        <div className="grid grid-cols-2 gap-2"><input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 min-w-0 rounded-lg border bg-background px-2 text-sm" aria-label="From date" /><input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 min-w-0 rounded-lg border bg-background px-2 text-sm" aria-label="To date" /></div>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="relative block">
+            <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">From date</span>
+            <CalendarDays className="pointer-events-none absolute right-3 top-[34px] h-4 w-4 text-muted-foreground" />
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full min-w-0 appearance-none rounded-lg border bg-background px-3 pr-9 text-sm" aria-label="From date" />
+          </label>
+          <label className="relative block">
+            <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">To date</span>
+            <CalendarDays className="pointer-events-none absolute right-3 top-[34px] h-4 w-4 text-muted-foreground" />
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full min-w-0 appearance-none rounded-lg border bg-background px-3 pr-9 text-sm" aria-label="To date" />
+          </label>
+        </div>
       </div>
       {statusHistoryError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">Status history could not be loaded: {statusHistoryError}</p>}
       <div className="mt-4 space-y-3">{filteredOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
