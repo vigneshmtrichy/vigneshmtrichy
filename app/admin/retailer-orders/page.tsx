@@ -18,6 +18,7 @@ export default function RetailerOrdersPage() {
   const [retailerId, setRetailerId] = useState('')
   const [lines, setLines] = useState<OrderLine[]>([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
   const [prices, setPrices] = useState<Record<string, number>>({})
+  const [gstRates, setGstRates] = useState<Record<string, number>>({})
   const [paymentType, setPaymentType] = useState('credit')
   const [initialPayment, setInitialPayment] = useState('')
   const [initialPaymentMethod, setInitialPaymentMethod] = useState('upi')
@@ -56,7 +57,7 @@ export default function RetailerOrdersPage() {
   }, [requestedRetailerId, retailerId, retailers])
 
   useEffect(() => {
-    if (!retailerId) { setPrices({}); setRetailerBalance({ outstanding: 0, unapplied: 0 }); return }
+    if (!retailerId) { setPrices({}); setGstRates({}); setRetailerBalance({ outstanding: 0, unapplied: 0 }); return }
     const loadBalance = async () => {
       const { data } = await supabase.from('retailer_balances').select('outstanding_balance, unapplied_credit').eq('retailer_id', retailerId).maybeSingle()
       setRetailerBalance({ outstanding: Number(data?.outstanding_balance || 0), unapplied: Number(data?.unapplied_credit || 0) })
@@ -64,23 +65,30 @@ export default function RetailerOrdersPage() {
     void loadBalance()
     const loadPrices = async () => {
       const [{ data: defaults }, { data: overrides }] = await Promise.all([
-        supabase.from('product_status').select('product_slug, retailer_price, price'),
+        supabase.from('product_status').select('product_slug, retailer_price, gst_rate'),
         supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailerId),
       ])
       const next: Record<string, number> = {}
+      const nextGst: Record<string, number> = {}
       defaults?.forEach((row: any) => {
         next[row.product_slug] = Number(row.retailer_price || 0)
+        nextGst[row.product_slug] = Number(row.gst_rate ?? 5)
       })
       overrides?.forEach((row: any) => {
         next[row.product_slug] = Number(row.unit_price)
       })
       setPrices(next)
+      setGstRates(nextGst)
     }
     void loadPrices()
   }, [retailerId])
 
   const estimatedTaxableTotal = useMemo(() => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0), [lines, prices])
-  const estimatedTotal = Math.round(estimatedTaxableTotal * 1.05 * 100) / 100
+  const estimatedGstTotal = useMemo(() => lines.reduce((sum, line) => {
+    const taxable = Number(line.quantity || 0) * Number(prices[line.product_slug] || 0)
+    return sum + taxable * Number(gstRates[line.product_slug] ?? 5) / 100
+  }, 0), [lines, prices, gstRates])
+  const estimatedTotal = Math.round((estimatedTaxableTotal + estimatedGstTotal) * 100) / 100
   const missingRetailerPrice = lines.some((line) => Number(prices[line.product_slug] || 0) <= 0)
   const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
   const creditRequired = paymentType === 'prepaid' ? 0 : Math.max(estimatedTotal - (paymentType === 'partial' ? Number(initialPayment || 0) : 0) - retailerBalance.unapplied, 0)
@@ -153,8 +161,8 @@ export default function RetailerOrdersPage() {
         </label>
       </div>}
       {paymentType !== 'prepaid' && retailerBalance.unapplied > 0 && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><p className="font-semibold">Unapplied credit available: {money(retailerBalance.unapplied)}</p><p className="mt-1">This existing credit will be automatically applied to this order.</p></div>}{creditExceeded && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><p className="font-semibold">Credit limit exceeded</p><p className="mt-1">Available credit: {money(availableCredit)} · Required credit after existing credit: {money(creditRequired)}. Reduce the quantity, record a payment, or choose prepaid.</p></div>}
-      <div className="mt-5 space-y-3">{lines.map((line, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_80px] sm:items-end"><label className="text-xs font-medium text-muted-foreground">Product<select value={line.product_slug} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, product_slug: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm">{ALL_PRODUCTS.map((product) => <option key={product.slug} value={product.slug}>{product.name}</option>)}</select></label><label className="text-xs font-medium text-muted-foreground">Quantity<input type="number" min="1" step="1" value={line.quantity} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" /></label><p className="pb-2 text-right text-sm font-semibold">{Number(prices[line.product_slug] || 0) > 0 ? money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0)) : 'Retailer price not set'}</p><button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm disabled:opacity-30">Remove</button></div>)}</div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold">Add product</button><div className="flex items-center gap-4"><span className="text-lg font-bold">Estimated {money(estimatedTotal)}</span><button disabled={saving || creditExceeded || missingRetailerPrice} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
+      <div className="mt-5 space-y-3">{lines.map((line, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_80px] sm:items-end"><label className="text-xs font-medium text-muted-foreground">Product<select value={line.product_slug} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, product_slug: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm">{ALL_PRODUCTS.map((product) => <option key={product.slug} value={product.slug}>{product.name}</option>)}</select></label><label className="text-xs font-medium text-muted-foreground">Quantity<input type="number" min="1" step="1" value={line.quantity} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" /></label><p className="pb-2 text-right text-sm font-semibold">{Number(prices[line.product_slug] || 0) > 0 ? <span>{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.product_slug] ?? 5)}% GST</span></span> : 'Retailer price not set'}</p><button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm disabled:opacity-30">Remove</button></div>)}</div>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold">Add product</button><div className="flex items-center gap-4"><span className="text-right"><span className="block text-lg font-bold">Estimated {money(estimatedTotal)}</span><span className="block text-xs font-normal text-muted-foreground">Taxable {money(estimatedTaxableTotal)} · GST {money(estimatedGstTotal)}</span></span><button disabled={saving || creditExceeded || missingRetailerPrice} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
     </form>
 
     <section className="mt-8"><h2 className="text-xl font-semibold">Recent retailer orders</h2><div className="mt-4 space-y-3">{orders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex items-center gap-3"><a href={`/admin/retailer-orders/invoice/${order.id}`} className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Invoice</a><p className="text-lg font-bold text-primary">{money(order.total)}</p><select value={order.order_status} onChange={(e) => void updateStatus(order, e.target.value)} className="h-10 rounded-lg border bg-background px-2 text-sm"><option value="confirmed">Confirmed</option><option value="packing">Packing</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div></div></article>)}</div></section>
