@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { ALL_PRODUCTS } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
 import { supabase } from '@/lib/supabase'
-import { CalendarDays, Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 
 type Retailer = { id: string; business_name: string; payment_terms_days: number; credit_limit: number }
 type OrderLine = { product_slug: string; quantity: string }
@@ -313,15 +313,13 @@ export default function RetailerOrdersPage() {
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
         <CustomSelect value={paymentFilter} onChange={setPaymentFilter} className="w-full" options={[{ value: 'all', label: 'All payment statuses' }, { value: 'paid', label: 'Paid' }, { value: 'partial', label: 'Partial' }, { value: 'unpaid', label: 'Unpaid' }]} />
         <div className="grid grid-cols-2 gap-2">
-          <label className="relative block">
+          <label className="block">
             <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">From date</span>
-            <CalendarDays className="pointer-events-none absolute right-3 top-[34px] h-4 w-4 text-muted-foreground" />
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full min-w-0 appearance-none rounded-lg border bg-background px-3 pr-9 text-sm" aria-label="From date" />
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm cursor-pointer" aria-label="From date" />
           </label>
-          <label className="relative block">
+          <label className="block">
             <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">To date</span>
-            <CalendarDays className="pointer-events-none absolute right-3 top-[34px] h-4 w-4 text-muted-foreground" />
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full min-w-0 appearance-none rounded-lg border bg-background px-3 pr-9 text-sm" aria-label="To date" />
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm cursor-pointer" aria-label="To date" />
           </label>
         </div>
       </div>
