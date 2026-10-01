@@ -15,6 +15,7 @@ export default function RetailerOrdersPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [orders, setOrders] = useState<any[]>([])
+  const [balances, setBalances] = useState<Record<string, number>>({})
   const [retailerId, setRetailerId] = useState('')
   const [lines, setLines] = useState<OrderLine[]>([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
   const [prices, setPrices] = useState<Record<string, number>>({})
@@ -27,10 +28,14 @@ export default function RetailerOrdersPage() {
   const [message, setMessage] = useState('')
 
   const load = async () => {
-    const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
+    const [{ data: retailerRows }, { data: orderRows }, { data: balanceRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
       supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }).limit(50),
+      supabase.from('retailer_balances').select('retailer_id, outstanding_balance'),
     ])
+    const nextBalances: Record<string, number> = {}
+    balanceRows?.forEach((row: any) => { nextBalances[row.retailer_id] = Number(row.outstanding_balance || 0) })
+    setBalances(nextBalances)
     setRetailers((retailerRows || []) as Retailer[])
     setOrders(orderRows || [])
   }
@@ -70,6 +75,10 @@ export default function RetailerOrdersPage() {
   }, [retailerId])
 
   const estimatedTotal = useMemo(() => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0), [lines, prices])
+  const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
+  const currentOutstanding = retailerId ? Number(balances[retailerId] || 0) : 0
+  const availableCredit = Math.max(Number(selectedRetailer?.credit_limit || 0) - currentOutstanding, 0)
+  const creditLimitExceeded = paymentType === 'credit' && !!selectedRetailer && estimatedTotal > availableCredit
 
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
@@ -133,7 +142,11 @@ export default function RetailerOrdersPage() {
         </label>
       </div>}
       <div className="mt-5 space-y-3">{lines.map((line, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_80px] sm:items-end"><label className="text-xs font-medium text-muted-foreground">Product<select value={line.product_slug} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, product_slug: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm">{ALL_PRODUCTS.map((product) => <option key={product.slug} value={product.slug}>{product.name}</option>)}</select></label><label className="text-xs font-medium text-muted-foreground">Quantity<input type="number" min="1" step="1" value={line.quantity} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" /></label><p className="pb-2 text-right text-sm font-semibold">{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}</p><button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm disabled:opacity-30">Remove</button></div>)}</div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold">Add product</button><div className="flex items-center gap-4"><span className="text-lg font-bold">Estimated {money(estimatedTotal)}</span><button disabled={saving} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
+      {creditLimitExceeded && <div className="mt-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="font-semibold">Credit limit exceeded</p>
+        <p className="mt-1">Available credit: {money(availableCredit)} · Order value: {money(estimatedTotal)}. Reduce the quantity or choose another payment option.</p>
+      </div>}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold">Add product</button><div className="flex items-center gap-4"><span className="text-lg font-bold">Estimated {money(estimatedTotal)}</span><button disabled={saving || creditLimitExceeded} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
     </form>
 
     <section className="mt-8"><h2 className="text-xl font-semibold">Recent retailer orders</h2><div className="mt-4 space-y-3">{orders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex items-center gap-3"><p className="text-lg font-bold text-primary">{money(order.total)}</p><select value={order.order_status} onChange={(e) => void updateStatus(order, e.target.value)} className="h-10 rounded-lg border bg-background px-2 text-sm"><option value="confirmed">Confirmed</option><option value="packing">Packing</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div></div></article>)}</div></section>
