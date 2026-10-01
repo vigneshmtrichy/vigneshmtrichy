@@ -75,6 +75,10 @@ export default function RetailerOrdersPage() {
   }, [retailerId])
 
   const estimatedTotal = useMemo(() => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0), [lines, prices])
+  const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
+  const currentOutstanding = retailerId ? Number(balances[retailerId] || 0) : 0
+  const availableCredit = Math.max(Number(selectedRetailer?.credit_limit || 0) - currentOutstanding, 0)
+  const creditLimitExceeded = paymentType === 'credit' && !!selectedRetailer && estimatedTotal > availableCredit
 
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
