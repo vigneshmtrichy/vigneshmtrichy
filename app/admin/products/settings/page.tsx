@@ -1041,23 +1041,34 @@ export default function AdminProductSettingsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Retailer Price
-                  </label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0.01"
-                    step="0.01"
-                    value={draft.retailerPrice}
-                    onChange={(e) =>
-                      updateDraft({ retailerPrice: e.target.value })
-                    }
-                    disabled={saving}
-                    placeholder="Optional"
-                    className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
-                  />
+                <div className="sm:col-span-2">
+                  <div className="rounded-xl border bg-muted/20 p-4">
+                    <div className="mb-3">
+                      <h3 className="text-sm font-semibold">Retailer Pricing</h3>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Enter the retailer price excluding GST. This price is used for retailer orders; 5% GST is added on the retailer bill.
+                      </p>
+                    </div>
+
+                    <div className="max-w-sm">
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                        Retailer Price (Excl. GST)
+                      </label>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min="0.01"
+                        step="0.01"
+                        value={draft.retailerPrice}
+                        onChange={(e) =>
+                          updateDraft({ retailerPrice: e.target.value })
+                        }
+                        disabled={saving}
+                        placeholder="Enter retailer price"
+                        className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
