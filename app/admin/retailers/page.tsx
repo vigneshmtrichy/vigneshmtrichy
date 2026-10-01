@@ -15,6 +15,10 @@ type Retailer = {
   city: string | null
   state: string | null
   gstin: string | null
+  email: string | null
+  billing_name: string | null
+  address: string | null
+  pincode: string | null
   status: 'prospect' | 'active' | 'on-hold' | 'inactive'
   payment_terms_days: number
   credit_limit: number
@@ -22,7 +26,7 @@ type Retailer = {
 }
 
 const emptyForm = {
-  business_name: '', contact_name: '', phone: '', whatsapp: '', city: '', state: '',
+  business_name: '', contact_name: '', phone: '', whatsapp: '', email: '', billing_name: '', address: '', city: '', state: '', pincode: '',
   gstin: '', payment_terms_days: '0', credit_limit: '0', notes: '',
 }
 
@@ -75,8 +79,10 @@ export default function RetailersPage() {
     setSaving(true); setMessage('')
     const payload = {
       business_name: form.business_name.trim(), contact_name: form.contact_name.trim() || null,
-      phone: form.phone.trim(), whatsapp: form.whatsapp.trim() || null, city: form.city.trim() || null,
-      state: form.state.trim() || null, gstin: form.gstin.trim() || null,
+      phone: form.phone.trim(), whatsapp: form.whatsapp.trim() || null, email: form.email.trim() || null,
+      billing_name: form.billing_name.trim() || null, address: form.address.trim() || null,
+      city: form.city.trim() || null, state: form.state.trim() || null, pincode: form.pincode.trim() || null,
+      gstin: form.gstin.trim() || null,
       payment_terms_days: Number(form.payment_terms_days || 0),
       credit_limit: Number(form.credit_limit || 0), notes: form.notes.trim() || null,
       updated_at: new Date().toISOString(),
@@ -94,7 +100,8 @@ export default function RetailersPage() {
     setEditing(retailer)
     setForm({
       business_name: retailer.business_name, contact_name: retailer.contact_name || '', phone: retailer.phone,
-      whatsapp: retailer.whatsapp || '', city: retailer.city || '', state: retailer.state || '',
+      whatsapp: retailer.whatsapp || '', email: retailer.email || '', billing_name: retailer.billing_name || '',
+      address: retailer.address || '', city: retailer.city || '', state: retailer.state || '', pincode: retailer.pincode || '',
       gstin: retailer.gstin || '', payment_terms_days: String(retailer.payment_terms_days || 0),
       credit_limit: String(retailer.credit_limit || 0), notes: retailer.notes || '',
     })
@@ -129,12 +136,25 @@ export default function RetailersPage() {
     if (!raw) return
     const amount = Number(raw)
     if (!Number.isFinite(amount) || amount <= 0) { setMessage('Enter a valid payment amount.'); return }
-    const reference = window.prompt('UPI / bank reference (optional)') || null
-    const { error } = await supabase.from('retailer_payments').insert({
-      retailer_id: selected.id, amount, payment_method: 'upi', reference,
+    const method = (window.prompt('Payment method: cash / upi / bank-transfer / cheque / other', 'upi') || 'upi').trim()
+    const reference = window.prompt('Payment reference (optional)') || null
+    const notes = window.prompt('Payment note (optional)') || null
+    const { data, error } = await supabase.rpc('record_retailer_payment', {
+      p_retailer_id: selected.id,
+      p_amount: amount,
+      p_payment_method: method,
+      p_reference: reference,
+      p_notes: notes,
     })
-    setMessage(error ? error.message : 'Payment recorded.')
-    if (!error) await load()
+    if (error || !data?.success) {
+      setMessage(error?.message || data?.message || 'Unable to record payment.')
+      return
+    }
+    const unapplied = Number(data.unapplied_amount || 0)
+    setMessage(unapplied > 0
+      ? 'Payment recorded. ₹' + unapplied.toLocaleString('en-IN') + ' remains as unapplied credit.'
+      : 'Payment recorded and allocated to outstanding orders.')
+    await load()
   }
 
   if (authorized === null) return <><SiteHeader /><main className="p-10 text-center">Loading…</main></>
@@ -185,7 +205,7 @@ export default function RetailersPage() {
               <div className="mt-6 border-t pt-5"><h3 className="font-semibold">Special product prices</h3><p className="mt-1 text-xs text-muted-foreground">Leave empty to use the default retailer price from Product Settings.</p>
               <div className="mt-3 max-h-96 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span>{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 rounded-lg border px-2 text-right" /></label>)}</div>
               <button disabled={saving} onClick={() => void savePrices()} className="mt-4 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button></div>
-            </> : <p className="text-sm text-muted-foreground">Select a retailer to manage its prices, payments and orders.</p>}</aside>
+            </> : <p className="text-sm text-muted-foreground">Select a retailer to manage its prices, payments and orders. Payments are automatically allocated to the oldest outstanding orders.</p>}</aside>
           </div>
         </div>
       </main>
