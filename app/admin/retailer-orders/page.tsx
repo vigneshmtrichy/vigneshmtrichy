@@ -15,6 +15,7 @@ export default function RetailerOrdersPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [orders, setOrders] = useState<any[]>([])
+  const [balances, setBalances] = useState<Record<string, number>>({})
   const [retailerId, setRetailerId] = useState('')
   const [lines, setLines] = useState<OrderLine[]>([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
   const [prices, setPrices] = useState<Record<string, number>>({})
@@ -27,10 +28,14 @@ export default function RetailerOrdersPage() {
   const [message, setMessage] = useState('')
 
   const load = async () => {
-    const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
+    const [{ data: retailerRows }, { data: orderRows }, { data: balanceRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
       supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }).limit(50),
+      supabase.from('retailer_balances').select('retailer_id, outstanding_balance'),
     ])
+    const nextBalances: Record<string, number> = {}
+    balanceRows?.forEach((row: any) => { nextBalances[row.retailer_id] = Number(row.outstanding_balance || 0) })
+    setBalances(nextBalances)
     setRetailers((retailerRows || []) as Retailer[])
     setOrders(orderRows || [])
   }
