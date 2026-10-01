@@ -105,14 +105,33 @@ export default function RetailerOrdersPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [retailerBalance, setRetailerBalance] = useState({ outstanding: 0, unapplied: 0 })
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [paymentFilter, setPaymentFilter] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [statusHistory, setStatusHistory] = useState<Record<string, any[]>>({})
+  const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
+  const [cancelOrder, setCancelOrder] = useState<any | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
 
   const load = async () => {
     const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
       supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }).limit(50),
     ])
+    const nextOrders = orderRows || []
     setRetailers((retailerRows || []) as Retailer[])
-    setOrders(orderRows || [])
+    setOrders(nextOrders)
+    const ids = nextOrders.map((order: any) => order.id)
+    if (ids.length) {
+      const { data: historyRows } = await supabase.from('retailer_order_status_history').select('retailer_order_id, old_status, new_status, note, changed_by, changed_at').in('retailer_order_id', ids).order('changed_at', { ascending: false })
+      const grouped: Record<string, any[]> = {}
+      ;(historyRows || []).forEach((row: any) => { const key = String(row.retailer_order_id); if (!grouped[key]) grouped[key] = []; grouped[key].push(row) })
+      setStatusHistory(grouped)
+    } else {
+      setStatusHistory({})
+    }
   }
 
   useEffect(() => {
@@ -173,6 +192,21 @@ export default function RetailerOrdersPage() {
   const availableCredit = Math.max(Number(selectedRetailer?.credit_limit || 0) - retailerBalance.outstanding, 0)
   const creditExceeded = Boolean(retailerId && creditRequired > availableCredit)
 
+  const filteredOrders = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return orders.filter((order) => {
+      const retailerName = String(order.retailers?.business_name || '').toLowerCase()
+      const productText = (order.retailer_order_items || []).map((item: any) => item.product_name).join(' ').toLowerCase()
+      const matchesSearch = !query || String(order.id).includes(query) || retailerName.includes(query) || productText.includes(query)
+      const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter
+      const matchesPayment = paymentFilter === 'all' || order.payment_status === paymentFilter
+      const created = new Date(order.created_at).toISOString().slice(0, 10)
+      const matchesFrom = !dateFrom || created >= dateFrom
+      const matchesTo = !dateTo || created <= dateTo
+      return matchesSearch && matchesStatus && matchesPayment && matchesFrom && matchesTo
+    })
+  }, [orders, search, statusFilter, paymentFilter, dateFrom, dateTo])
+
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
     if (!retailerId) { setMessage('Choose a retailer.'); return }
@@ -211,9 +245,31 @@ export default function RetailerOrdersPage() {
   }
 
   const updateStatus = async (order: any, order_status: string) => {
+    if (order_status === 'cancelled') {
+      setCancelOrder(order)
+      setCancelReason('')
+      return
+    }
     const { error } = await supabase.from('retailer_orders').update({ order_status, updated_at: new Date().toISOString() }).eq('id', order.id)
     setMessage(error ? error.message : 'Order status updated.')
     if (!error) await load()
+  }
+
+  const confirmCancellation = async () => {
+    if (!cancelOrder) return
+    const reason = cancelReason.trim()
+    if (!reason) {
+      setMessage('Enter a cancellation reason.')
+      return
+    }
+    const notes = [cancelOrder.notes, 'Cancellation reason: ' + reason].filter(Boolean).join(' · ')
+    const { error } = await supabase.from('retailer_orders').update({ order_status: 'cancelled', notes, updated_at: new Date().toISOString() }).eq('id', cancelOrder.id)
+    setMessage(error ? error.message : 'Order cancelled. Stock and payment allocation have been restored.')
+    if (!error) {
+      setCancelOrder(null)
+      setCancelReason('')
+      await load()
+    }
   }
 
   if (authorized === null) return <><SiteHeader /><main className="p-10 text-center">Loading…</main></>
@@ -243,6 +299,21 @@ export default function RetailerOrdersPage() {
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold">Add product</button><div className="flex items-center gap-4"><span className="text-right"><span className="block text-lg font-bold">Estimated {money(estimatedTotal)}</span><span className="block text-xs font-normal text-muted-foreground">Taxable {money(estimatedTaxableTotal)} · GST {money(estimatedGstTotal)}</span></span><button disabled={saving || creditExceeded || missingRetailerPrice} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
     </form>
 
-    <section className="mt-8"><h2 className="text-xl font-semibold">Recent retailer orders</h2><div className="mt-4 space-y-3">{orders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex items-center gap-3"><a href={`/admin/retailer-orders/invoice/${order.id}`} className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Invoice</a><p className="text-lg font-bold text-primary">{money(order.total)}</p><CustomSelect value={order.order_status} onChange={(value) => void updateStatus(order, value)} className="w-44" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} /></div></div></article>)}</div></section>
+    <section className="mt-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Showing the latest 50 orders.</p></div><p className="text-sm text-muted-foreground">{filteredOrders.length} shown</p></div>
+      <div className="mt-4 grid gap-2 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-10 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
+        <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
+        <CustomSelect value={paymentFilter} onChange={setPaymentFilter} className="w-full" options={[{ value: 'all', label: 'All payment statuses' }, { value: 'paid', label: 'Paid' }, { value: 'partial', label: 'Partial' }, { value: 'unpaid', label: 'Unpaid' }]} />
+        <div className="grid grid-cols-2 gap-2"><input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 min-w-0 rounded-lg border bg-background px-2 text-sm" aria-label="From date" /><input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 min-w-0 rounded-lg border bg-background px-2 text-sm" aria-label="To date" /></div>
+      </div>
+      <div className="mt-4 space-y-3">{filteredOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex flex-wrap items-center gap-2"><a href={`/admin/retailer-orders/invoice/${order.id}`} className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Invoice</a><p className="text-lg font-bold text-primary">{money(order.total)}</p><CustomSelect value={order.order_status} onChange={(value) => void updateStatus(order, value)} className="w-44" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} /></div></div>
+        {order.order_status === 'cancelled' && order.notes?.includes('Cancellation reason:') && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{order.notes.split('Cancellation reason:').pop()?.trim()}</p>}
+        {statusHistory[String(order.id)]?.length > 0 && <div className="mt-3"><button type="button" onClick={() => setOpenHistory((current) => ({ ...current, [order.id]: !current[order.id] }))} className="text-xs font-semibold text-primary">{openHistory[order.id] ? 'Hide status history' : 'View status history'}</button>{openHistory[order.id] && <div className="mt-2 rounded-lg border bg-muted/30 p-3 text-xs">{statusHistory[String(order.id)].slice(0, 8).map((entry: any, index: number) => <div key={index} className="flex justify-between gap-3 border-b py-2 last:border-0"><span>{entry.old_status ? entry.old_status + ' → ' : ''}{entry.new_status}</span><span className="text-right text-muted-foreground">{new Date(entry.changed_at).toLocaleString('en-IN')}{entry.note ? ' · ' + entry.note : ''}</span></div>)}</div>}</div>}
+      </article>)}</div>
+      {filteredOrders.length === 0 && <div className="mt-4 rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground">No retailer orders match these filters.</div>}
+    </section>
+    {cancelOrder && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-xl"><h3 className="text-lg font-semibold">Cancel order #{cancelOrder.id}?</h3><p className="mt-1 text-sm text-muted-foreground">Stock will be restored and allocated payment will become unapplied credit.</p><label className="mt-4 block text-sm font-medium">Cancellation reason<textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" placeholder="Why is this order being cancelled?" autoFocus /></label><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setCancelOrder(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Keep order</button><button type="button" onClick={() => void confirmCancellation()} className="rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground">Cancel order</button></div></div></div>}
   </div></main></>
 }
