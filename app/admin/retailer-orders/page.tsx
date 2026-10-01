@@ -18,6 +18,9 @@ export default function RetailerOrdersPage() {
   const [lines, setLines] = useState<OrderLine[]>([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
   const [prices, setPrices] = useState<Record<string, number>>({})
   const [paymentType, setPaymentType] = useState('credit')
+  const [initialPayment, setInitialPayment] = useState('')
+  const [initialPaymentMethod, setInitialPaymentMethod] = useState('upi')
+  const [initialPaymentReference, setInitialPaymentReference] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -63,13 +66,29 @@ export default function RetailerOrdersPage() {
     if (payload.some((line) => !line.product_slug || !Number.isSafeInteger(line.quantity) || line.quantity < 1)) {
       setMessage('Every line needs a product and whole quantity.'); return
     }
+    const requestedInitialPayment = paymentType === 'prepaid'
+      ? estimatedTotal
+      : paymentType === 'partial'
+        ? Number(initialPayment || 0)
+        : 0
+    if (paymentType === 'partial' && (!Number.isFinite(requestedInitialPayment) || requestedInitialPayment <= 0 || requestedInitialPayment >= estimatedTotal)) {
+      setMessage('For partial payment, enter an amount greater than zero and less than the estimated order total.')
+      return
+    }
     setSaving(true); setMessage('')
     const { data, error } = await supabase.rpc('create_retailer_order_with_stock', {
-      p_retailer_id: retailerId, p_items: payload, p_payment_type: paymentType, p_due_date: null, p_notes: notes || null,
+      p_retailer_id: retailerId,
+      p_items: payload,
+      p_payment_type: paymentType,
+      p_due_date: null,
+      p_notes: notes || null,
+      p_initial_payment: requestedInitialPayment,
+      p_initial_payment_method: initialPaymentMethod,
+      p_initial_payment_reference: initialPaymentReference || null,
     })
     setSaving(false)
     if (error || !data?.success) { setMessage(error?.message || data?.message || 'Unable to create retailer order.'); return }
-    setLines([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }]); setNotes(''); setMessage('Retailer order #' + data.order_id + ' created and stock reserved.')
+    setLines([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }]); setInitialPayment(''); setInitialPaymentReference(''); setNotes(''); setMessage('Retailer order #' + data.order_id + ' created and stock reserved.')
     await load()
   }
 
@@ -94,6 +113,6 @@ export default function RetailerOrdersPage() {
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold">Add product</button><div className="flex items-center gap-4"><span className="text-lg font-bold">Estimated {money(estimatedTotal)}</span><button disabled={saving} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
     </form>
 
-    <section className="mt-8"><h2 className="text-xl font-semibold">Recent retailer orders</h2><div className="mt-4 space-y-3">{orders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex items-center gap-3"><p className="text-lg font-bold text-primary">{money(order.total)}</p><select value={order.order_status} onChange={(e) => void updateStatus(order, e.target.value)} className="h-10 rounded-lg border bg-background px-2 text-sm"><option value="confirmed">Confirmed</option><option value="packing">Packing</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div></div></article>)}</div></section>
+    <section className="mt-8"><h2 className="text-xl font-semibold">Recent retailer orders</h2><div className="mt-4 space-y-3">{orders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex items-center gap-3"><p className="text-lg font-bold text-primary">{money(order.total)}</p><select value={order.order_status} onChange={(e) => void updateStatus(order, e.target.value)} className="h-10 rounded-lg border bg-background px-2 text-sm"><option value="confirmed">Confirmed</option><option value="packing">Packing</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div></div></article>)}</div></section>
   </div></main></>
 }
