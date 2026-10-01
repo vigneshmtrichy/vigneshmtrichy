@@ -292,7 +292,40 @@ export default function RetailersPage() {
                 const unappliedCredit = Number(balance?.unapplied_credit || 0)
                 return unappliedCredit > 0 ? <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{money(unappliedCredit)} unapplied credit available on this account.</p> : null
               })()}
-              <div className="mt-4 flex gap-2 sm:mt-5 sm:flex-wrap"><Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground sm:flex-none">Create order</Link><button onClick={() => setShowPaymentModal(true)} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold sm:flex-none">Record payment</button></div>
+              <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
+                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground sm:flex-none">Create order</Link>
+                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg border px-3 py-2 text-center text-sm font-semibold sm:flex-none">View orders</Link>
+                <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold sm:flex-none">Record payment</button>
+                <button onClick={() => { setShowStatement(true); void loadStatement() }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold sm:flex-none">Statement</button>
+              </div>
+              {showStatement && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-xl">
+                  <div className="flex items-start justify-between gap-3"><div><h3 className="text-xl font-semibold">Retailer statement</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><button type="button" onClick={() => setShowStatement(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div>
+                  {statementLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading statement…</p> : (() => {
+                    const now = new Date()
+                    const buckets = { current: 0, d1_15: 0, d16_30: 0, d31_60: 0, d60: 0 }
+                    statementOrders.filter((order) => order.order_status !== 'cancelled' && order.outstanding > 0).forEach((order) => {
+                      const due = order.due_date ? new Date(order.due_date + 'T23:59:59') : now
+                      const days = Math.max(0, Math.floor((now.getTime() - due.getTime()) / 86400000))
+                      if (days === 0) buckets.current += order.outstanding
+                      else if (days <= 15) buckets.d1_15 += order.outstanding
+                      else if (days <= 30) buckets.d16_30 += order.outstanding
+                      else if (days <= 60) buckets.d31_60 += order.outstanding
+                      else buckets.d60 += order.outstanding
+                    })
+                    const transactions = [
+                      ...statementOrders.filter((o) => o.order_status !== 'cancelled').map((o) => ({ date: o.created_at, label: 'Order #' + o.id, detail: o.payment_status, amount: Number(o.total || 0) })),
+                      ...statementPayments.map((p) => ({ date: p.created_at, label: 'Payment', detail: p.payment_method + (p.reference ? ' · ' + p.reference : ''), amount: -Number(p.amount || 0) })),
+                    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    return <div className="mt-5 space-y-5">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                        {[['Current', buckets.current], ['1–15 days', buckets.d1_15], ['16–30 days', buckets.d16_30], ['31–60 days', buckets.d31_60], ['60+ days', buckets.d60]].map(([label, value]) => <div key={String(label)} className="rounded-xl border p-3"><p className="text-[11px] text-muted-foreground">{label}</p><p className="mt-1 text-sm font-semibold">{money(value)}</p></div>)}
+                      </div>
+                      <div><h4 className="font-semibold">Transactions</h4><div className="mt-2 divide-y rounded-xl border">{transactions.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No transactions yet.</p> : transactions.map((tx, index) => <div key={index} className="flex items-center justify-between gap-3 p-3 text-sm"><div><p className="font-medium">{tx.label}</p><p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleString('en-IN')} · {tx.detail}</p></div><span className={tx.amount < 0 ? 'font-semibold text-emerald-700' : 'font-semibold text-amber-700'}>{tx.amount < 0 ? '−' : '+'}{money(Math.abs(tx.amount))}</span></div>)}</div></div>
+                    </div>
+                  })()}
+                </div>
+              </div>}
               {showPaymentModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"><div className="flex items-center justify-between"><div><h3 className="text-xl font-semibold">Record payment</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div><div className="mt-5 space-y-4"><label className="block text-sm font-medium">Payment amount (₹)<input autoFocus value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} type="number" min="0.01" step="0.01" placeholder="Enter amount" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Payment method<CustomSelect value={paymentMethod} onChange={setPaymentMethod} className="mt-1" options={[{ value: 'upi', label: 'UPI' }, { value: 'bank-transfer', label: 'Bank transfer' }, { value: 'cash', label: 'Cash' }, { value: 'cheque', label: 'Cheque' }, { value: 'other', label: 'Other' }]} /></label><label className="block text-sm font-medium">Reference <span className="font-normal text-muted-foreground">(optional)</span><input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction / cheque reference" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Notes <span className="font-normal text-muted-foreground">(optional)</span><textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} placeholder="Optional payment note" className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="button" disabled={paymentSaving} onClick={() => void recordPayment()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{paymentSaving ? 'Recording…' : 'Record payment'}</button></div></div></div>}
               <div className="mt-5 border-t pt-4 sm:mt-6 sm:pt-5">
                 <button type="button" onClick={() => setShowSpecialPrices((current) => !current)} className="flex w-full items-center justify-between text-left lg:pointer-events-none">
