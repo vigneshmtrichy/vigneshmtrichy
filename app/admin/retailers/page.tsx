@@ -44,6 +44,12 @@ export default function RetailersPage() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('upi')
+  const [paymentReference, setPaymentReference] = useState('')
+  const [paymentNotes, setPaymentNotes] = useState('')
+  const [paymentSaving, setPaymentSaving] = useState(false)
 
   const load = async () => {
     const { data: retailerRows, error } = await supabase.from('retailers').select('*').order('business_name')
@@ -130,26 +136,37 @@ export default function RetailersPage() {
     setMessage(error ? error.message : 'Retailer-specific prices saved.')
   }
 
+  const openPaymentModal = () => {
+    setPaymentAmount('')
+    setPaymentMethod('upi')
+    setPaymentReference('')
+    setPaymentNotes('')
+    setMessage('')
+    setShowPaymentModal(true)
+  }
+
   const recordPayment = async () => {
     if (!selected) return
-    const raw = window.prompt('Payment received amount (₹)')
-    if (!raw) return
-    const amount = Number(raw)
-    if (!Number.isFinite(amount) || amount <= 0) { setMessage('Enter a valid payment amount.'); return }
-    const method = (window.prompt('Payment method: cash / upi / bank-transfer / cheque / other', 'upi') || 'upi').trim()
-    const reference = window.prompt('Payment reference (optional)') || null
-    const notes = window.prompt('Payment note (optional)') || null
+    const amount = Number(paymentAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setMessage('Enter a valid payment amount.')
+      return
+    }
+    setPaymentSaving(true)
+    setMessage('')
     const { data, error } = await supabase.rpc('record_retailer_payment', {
       p_retailer_id: selected.id,
       p_amount: amount,
-      p_payment_method: method,
-      p_reference: reference,
-      p_notes: notes,
+      p_payment_method: paymentMethod,
+      p_reference: paymentReference.trim() || null,
+      p_notes: paymentNotes.trim() || null,
     })
+    setPaymentSaving(false)
     if (error || !data?.success) {
       setMessage(error?.message || data?.message || 'Unable to record payment.')
       return
     }
+    setShowPaymentModal(false)
     const unapplied = Number(data.unapplied_amount || 0)
     setMessage(unapplied > 0
       ? 'Payment recorded. ₹' + unapplied.toLocaleString('en-IN') + ' remains as unapplied credit.'
@@ -201,7 +218,7 @@ export default function RetailersPage() {
             })}</section>
 
             <aside className="rounded-2xl border bg-background p-5">{selected ? <><div className="flex justify-between gap-3"><div><h2 className="text-xl font-semibold">{selected.business_name}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p></div><button onClick={() => editRetailer(selected)} className="text-sm font-semibold text-primary">Edit</button></div>
-              <div className="mt-5 flex flex-wrap gap-2"><Link href={'/admin/retailer-orders?retailer=' + selected.id} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Create order</Link><button onClick={() => void recordPayment()} className="rounded-lg border px-3 py-2 text-sm font-semibold">Record payment</button></div>
+              <div className="mt-5 flex flex-wrap gap-2"><Link href={'/admin/retailer-orders?retailer=' + selected.id} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Create order</Link><button onClick={openPaymentModal} className="rounded-lg border px-3 py-2 text-sm font-semibold">Record payment</button></div>
               <div className="mt-6 border-t pt-5"><h3 className="font-semibold">Special product prices</h3><p className="mt-1 text-xs text-muted-foreground">Leave empty to use the default retailer price from Product Settings.</p>
               <div className="mt-3 max-h-96 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span>{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 rounded-lg border px-2 text-right" /></label>)}</div>
               <button disabled={saving} onClick={() => void savePrices()} className="mt-4 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button></div>
@@ -209,6 +226,35 @@ export default function RetailersPage() {
           </div>
         </div>
       </main>
+
+      {showPaymentModal && selected && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="record-payment-title">
+        <div className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl">
+          <div className="flex items-start justify-between gap-4">
+            <div><h2 id="record-payment-title" className="text-xl font-semibold">Record payment</h2><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div>
+            <button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-3 py-1.5 text-sm">Close</button>
+          </div>
+          <div className="mt-5 grid gap-4">
+            <label className="text-sm font-medium">Payment amount (₹)
+              <input autoFocus value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} type="number" min="0.01" step="0.01" placeholder="Enter amount" className="mt-1 h-11 w-full rounded-lg border bg-background px-3 text-sm" />
+            </label>
+            <label className="text-sm font-medium">Payment method
+              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="mt-1 h-11 w-full rounded-lg border bg-background px-3 text-sm">
+                <option value="upi">UPI</option><option value="bank-transfer">Bank transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="other">Other</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium">Reference <span className="font-normal text-muted-foreground">(optional)</span>
+              <input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction / cheque reference" className="mt-1 h-11 w-full rounded-lg border bg-background px-3 text-sm" />
+            </label>
+            <label className="text-sm font-medium">Notes <span className="font-normal text-muted-foreground">(optional)</span>
+              <textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} placeholder="Optional payment note" rows={3} className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm" />
+            </label>
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button type="button" disabled={paymentSaving} onClick={() => void recordPayment()} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{paymentSaving ? 'Recording…' : 'Record payment'}</button>
+          </div>
+        </div>
+      </div>}
     </>
   )
 }
