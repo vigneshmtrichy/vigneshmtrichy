@@ -103,6 +103,10 @@ export default function RetailersPage() {
   const [paymentNotes, setPaymentNotes] = useState('')
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [showSpecialPrices, setShowSpecialPrices] = useState(false)
+  const [showStatement, setShowStatement] = useState(false)
+  const [statementLoading, setStatementLoading] = useState(false)
+  const [statementOrders, setStatementOrders] = useState<any[]>([])
+  const [statementPayments, setStatementPayments] = useState<any[]>([])
   const retailerFormRef = useRef<HTMLFormElement>(null)
 
   const load = async () => {
@@ -191,6 +195,22 @@ export default function RetailersPage() {
       : await supabase.from('retailer_product_prices').upsert(rows)
     setSaving(false)
     setMessage(error ? error.message : 'Retailer-specific prices saved.')
+  }
+
+  const loadStatement = async () => {
+    if (!selected) return
+    setStatementLoading(true)
+    const { data: orderRows } = await supabase.from('retailer_orders').select('id, total, payment_status, order_status, due_date, created_at').eq('retailer_id', selected.id).order('created_at', { ascending: false })
+    const ids = (orderRows || []).map((row: any) => row.id)
+    const { data: allocationRows } = ids.length
+      ? await supabase.from('retailer_payment_allocations').select('retailer_order_id, amount').in('retailer_order_id', ids)
+      : { data: [] as any[] }
+    const allocationByOrder: Record<string, number> = {}
+    ;(allocationRows || []).forEach((row: any) => { const key = String(row.retailer_order_id); allocationByOrder[key] = (allocationByOrder[key] || 0) + Number(row.amount || 0) })
+    setStatementOrders((orderRows || []).map((row: any) => ({ ...row, paid: allocationByOrder[String(row.id)] || 0, outstanding: Math.max(Number(row.total || 0) - (allocationByOrder[String(row.id)] || 0), 0) })))
+    const { data: paymentRows } = await supabase.from('retailer_payments').select('id, amount, payment_method, reference, notes, created_at').eq('retailer_id', selected.id).order('created_at', { ascending: false })
+    setStatementPayments(paymentRows || [])
+    setStatementLoading(false)
   }
 
   const recordPayment = async () => {
