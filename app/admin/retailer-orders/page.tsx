@@ -1,7 +1,6 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { ALL_PRODUCTS } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
 import { supabase } from '@/lib/supabase'
@@ -12,8 +11,7 @@ type OrderLine = { product_slug: string; quantity: string }
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
 export default function RetailerOrdersPage() {
-  const searchParams = useSearchParams()
-  const requestedRetailerId = searchParams.get('retailer') || ''
+  const [requestedRetailerId, setRequestedRetailerId] = useState('')
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [orders, setOrders] = useState<any[]>([])
@@ -43,6 +41,11 @@ export default function RetailerOrdersPage() {
       setAuthorized(ok)
       if (ok) void load()
     })
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setRequestedRetailerId(params.get('retailer') || '')
   }, [])
 
   useEffect(() => {
