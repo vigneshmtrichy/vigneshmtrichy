@@ -102,6 +102,7 @@ export default function RetailersPage() {
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentNotes, setPaymentNotes] = useState('')
   const [paymentSaving, setPaymentSaving] = useState(false)
+  const [showSpecialPrices, setShowSpecialPrices] = useState(false)
   const retailerFormRef = useRef<HTMLFormElement>(null)
 
   const load = async () => {
@@ -229,10 +230,10 @@ export default function RetailersPage() {
       <main className="min-h-screen bg-muted/20 px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div><h1 className="text-3xl font-semibold">Retailers</h1><p className="mt-1 text-sm text-muted-foreground">Accounts, credit, price overrides and collections.</p></div>
-            <div className="flex gap-2">
-              <Link href="/admin/retailer-orders" className="rounded-xl border bg-background px-4 py-2.5 text-sm font-semibold">Retailer Orders</Link>
-              <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Add Retailer</button>
+            <div><h1 className="text-3xl font-semibold sm:text-3xl">Retailers</h1><p className="mt-1 text-sm text-muted-foreground">Accounts, credit, price overrides and collections.</p></div>
+            <div className="flex gap-2 sm:flex-row">
+              <Link href="/admin/retailer-orders" className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-center text-sm font-semibold sm:flex-none sm:px-4">Retailer Orders</Link>
+              <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="flex-1 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground sm:flex-none sm:px-4">Add Retailer</button>
             </div>
           </div>
 
@@ -246,36 +247,43 @@ export default function RetailersPage() {
             <div className="sm:col-span-2 flex gap-2"><button disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{saving ? 'Saving…' : 'Save retailer'}</button><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button></div>
           </form>}
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Active retailers</p><p className="mt-1 text-2xl font-semibold">{retailers.filter((r) => r.status === 'active').length}</p></div>
+          <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
+            <div className="rounded-xl border bg-background p-3 sm:rounded-2xl sm:p-4"><p className="text-xs text-muted-foreground">Active retailers</p><p className="mt-1 text-xl font-semibold sm:text-2xl">{retailers.filter((r) => r.status === 'active').length}</p></div>
             <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Total outstanding</p><p className="mt-1 text-2xl font-semibold text-amber-700">{money(Object.values(balances).reduce((sum: number, row: any) => sum + Number(row.outstanding_balance || 0), 0))}</p></div>
             <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Unapplied credit</p><p className="mt-1 text-2xl font-semibold text-emerald-700">{money(Object.values(balances).reduce((sum: number, row: any) => sum + Number(row.unapplied_credit || 0), 0))}</p></div>
             <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Credit approved</p><p className="mt-1 text-2xl font-semibold">{money(retailers.reduce((sum, r) => sum + Number(r.credit_limit || 0), 0))}</p></div>
           </div>
 
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search retailer, person, phone or city…" className="mt-6 h-11 w-full rounded-xl border bg-background px-4 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search retailer, person, phone or city…" className="mt-4 h-10 w-full rounded-xl border bg-background px-3 text-sm sm:mt-6 sm:h-11 sm:px-4" />
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+          <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-[1fr_1.1fr] lg:gap-4">
             <section className="space-y-3">{filtered.map((retailer) => {
               const balance = balances[retailer.id]?.outstanding_balance || 0
               const unappliedCredit = balances[retailer.id]?.unapplied_credit || 0
-              return <button key={retailer.id} onClick={() => void selectRetailer(retailer)} className="w-full rounded-2xl border bg-background p-4 text-left hover:border-primary">
-                <div className="flex justify-between gap-3"><div><p className="font-semibold">{retailer.business_name}</p><p className="mt-1 text-sm text-muted-foreground">{retailer.contact_name || retailer.phone} {retailer.city ? '· ' + retailer.city : ''}</p></div><span className="text-right text-sm font-semibold text-amber-700">{money(balance)}<small className="block font-normal text-muted-foreground">outstanding</small>{unappliedCredit > 0 && <small className="mt-1 block font-semibold text-emerald-700">{money(unappliedCredit)} unapplied credit</small>}</span></div>
-                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground"><span className="rounded-full bg-muted px-2 py-1">{retailer.status}</span><span>{retailer.payment_terms_days} day terms · credit {money(retailer.credit_limit)}</span></div>
+              return <button key={retailer.id} onClick={() => void selectRetailer(retailer)} className="w-full rounded-xl border bg-background p-3 text-left transition hover:border-primary sm:rounded-2xl sm:p-4">
+                <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="truncate font-semibold">{retailer.business_name}</p><p className="mt-0.5 truncate text-xs text-muted-foreground sm:mt-1 sm:text-sm">{retailer.contact_name || retailer.phone} {retailer.city ? '· ' + retailer.city : ''}</p></div><span className="shrink-0 text-right text-sm font-semibold text-amber-700">{money(balance)}<small className="block text-[10px] font-normal text-muted-foreground sm:text-xs">outstanding</small>{unappliedCredit > 0 && <small className="mt-0.5 block text-[10px] font-semibold text-emerald-700 sm:mt-1 sm:text-xs">{money(unappliedCredit)} unapplied credit</small>}</span></div>
+                <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground sm:mt-3 sm:text-xs"><span className="rounded-full bg-muted px-2 py-1">{retailer.status}</span><span className="truncate text-right">{retailer.payment_terms_days} day terms · credit {money(retailer.credit_limit)}</span></div>
               </button>
             })}</section>
 
-            <aside className="rounded-2xl border bg-background p-5">{selected ? <><div className="flex justify-between gap-3"><div><h2 className="text-xl font-semibold">{selected.business_name}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p></div><button onClick={() => editRetailer(selected)} className="text-sm font-semibold text-primary">Edit</button></div>
+            <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3"><div><h2 className="text-xl font-semibold">{selected.business_name}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p></div><button onClick={() => editRetailer(selected)} className="text-sm font-semibold text-primary">Edit</button></div>
               {(() => {
                 const balance = balances[selected.id]
                 const unappliedCredit = Number(balance?.unapplied_credit || 0)
                 return unappliedCredit > 0 ? <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{money(unappliedCredit)} unapplied credit available on this account.</p> : null
               })()}
-              <div className="mt-5 flex flex-wrap gap-2"><Link href={'/admin/retailer-orders?retailer=' + selected.id} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Create order</Link><button onClick={() => setShowPaymentModal(true)} className="rounded-lg border px-3 py-2 text-sm font-semibold">Record payment</button></div>
+              <div className="mt-4 flex gap-2 sm:mt-5 sm:flex-wrap"><Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground sm:flex-none">Create order</Link><button onClick={() => setShowPaymentModal(true)} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold sm:flex-none">Record payment</button></div>
               {showPaymentModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"><div className="flex items-center justify-between"><div><h3 className="text-xl font-semibold">Record payment</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div><div className="mt-5 space-y-4"><label className="block text-sm font-medium">Payment amount (₹)<input autoFocus value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} type="number" min="0.01" step="0.01" placeholder="Enter amount" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Payment method<CustomSelect value={paymentMethod} onChange={setPaymentMethod} className="mt-1" options={[{ value: 'upi', label: 'UPI' }, { value: 'bank-transfer', label: 'Bank transfer' }, { value: 'cash', label: 'Cash' }, { value: 'cheque', label: 'Cheque' }, { value: 'other', label: 'Other' }]} /></label><label className="block text-sm font-medium">Reference <span className="font-normal text-muted-foreground">(optional)</span><input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction / cheque reference" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Notes <span className="font-normal text-muted-foreground">(optional)</span><textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} placeholder="Optional payment note" className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="button" disabled={paymentSaving} onClick={() => void recordPayment()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{paymentSaving ? 'Recording…' : 'Record payment'}</button></div></div></div>}
-              <div className="mt-6 border-t pt-5"><h3 className="font-semibold">Special product prices</h3><p className="mt-1 text-xs text-muted-foreground">Leave empty to use the default retailer price from Product Settings.</p>
-              <div className="mt-3 max-h-96 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span>{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 rounded-lg border px-2 text-right" /></label>)}</div>
-              <button disabled={saving} onClick={() => void savePrices()} className="mt-4 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button></div>
+              <div className="mt-5 border-t pt-4 sm:mt-6 sm:pt-5">
+                <button type="button" onClick={() => setShowSpecialPrices((current) => !current)} className="flex w-full items-center justify-between text-left lg:pointer-events-none">
+                  <span><span className="font-semibold">Special product prices</span><span className="ml-2 text-xs font-normal text-muted-foreground">· {ALL_PRODUCTS.length} products</span><span className="mt-1 block text-xs text-muted-foreground">Empty = default Product Settings price</span></span>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform lg:hidden ${showSpecialPrices ? 'rotate-180' : ''}`} />
+                </button>
+                <div className={`${showSpecialPrices ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
+                  <div className="max-h-80 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate">{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 shrink-0 rounded-lg border px-2 text-right" /></label>)}</div>
+                  <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button>
+                </div>
+              </div>
             </> : <p className="text-sm text-muted-foreground">Select a retailer to manage its prices, payments and orders. Payments are automatically allocated to the oldest outstanding orders.</p>}</aside>
           </div>
         </div>
