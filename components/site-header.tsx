@@ -192,6 +192,22 @@ useEffect(() => {
       Products
     </Link>
 
+    <Link
+      href="/admin/retailers"
+      onClick={() => setAdminOpen(false)}
+      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+    >
+      Retailers
+    </Link>
+
+    <Link
+      href="/admin/retailer-orders"
+      onClick={() => setAdminOpen(false)}
+      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+    >
+      Retailer Orders
+    </Link>
+
     <div className="my-1 border-t border-border/60" />
 
     <button
@@ -502,6 +518,21 @@ useEffect(() => {
               className="flex min-h-10 items-center rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-secondary hover:text-primary"
             >
               Products
+            </Link>
+            <Link
+              href="/admin/retailers"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              Retailers
+            </Link>
+
+            <Link
+              href="/admin/retailer-orders"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              Retailer Orders
             </Link>
           </div>
         )}
