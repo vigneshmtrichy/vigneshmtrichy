@@ -11,6 +11,7 @@ type OrderLine = { product_slug: string; quantity: string }
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
 export default function RetailerOrdersPage() {
+  const [requestedRetailerId, setRequestedRetailerId] = useState('')
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [orders, setOrders] = useState<any[]>([])
@@ -41,6 +42,17 @@ export default function RetailerOrdersPage() {
       if (ok) void load()
     })
   }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setRequestedRetailerId(params.get('retailer') || '')
+  }, [])
+
+  useEffect(() => {
+    if (!retailerId && requestedRetailerId && retailers.some((retailer) => retailer.id === requestedRetailerId)) {
+      setRetailerId(requestedRetailerId)
+    }
+  }, [requestedRetailerId, retailerId, retailers])
 
   useEffect(() => {
     if (!retailerId) { setPrices({}); return }
