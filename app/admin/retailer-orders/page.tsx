@@ -79,7 +79,8 @@ export default function RetailerOrdersPage() {
     void loadPrices()
   }, [retailerId])
 
-  const estimatedTotal = useMemo(() => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0), [lines, prices])
+  const estimatedTaxableTotal = useMemo(() => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0), [lines, prices])
+  const estimatedTotal = Math.round(estimatedTaxableTotal * 1.05 * 100) / 100
   const missingRetailerPrice = lines.some((line) => Number(prices[line.product_slug] || 0) <= 0)
   const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
   const creditRequired = paymentType === 'prepaid' ? 0 : Math.max(estimatedTotal - (paymentType === 'partial' ? Number(initialPayment || 0) : 0) - retailerBalance.unapplied, 0)
