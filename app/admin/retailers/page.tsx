@@ -284,7 +284,7 @@ export default function RetailersPage() {
                   <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button>
                 </div>
               </div>
-            </> : <p className="text-sm text-muted-foreground">Select a retailer to manage its prices, payments and orders. Payments are automatically allocated to the oldest outstanding orders.</p>}</aside>
+            </> : <div className="flex min-h-28 items-center justify-center text-center"><p className="max-w-sm text-sm leading-6 text-muted-foreground"><span className="font-semibold text-foreground">Select a retailer</span> to manage their special prices, payments and orders.</p></div>}</aside>
           </div>
         </div>
       </main>
