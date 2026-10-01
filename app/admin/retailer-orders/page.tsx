@@ -111,6 +111,7 @@ export default function RetailerOrdersPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [statusHistory, setStatusHistory] = useState<Record<string, any[]>>({})
+  const [statusHistoryError, setStatusHistoryError] = useState('')
   const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
   const [cancelOrder, setCancelOrder] = useState<any | null>(null)
   const [cancelReason, setCancelReason] = useState('')
@@ -124,11 +125,17 @@ export default function RetailerOrdersPage() {
     setRetailers((retailerRows || []) as Retailer[])
     setOrders(nextOrders)
     const ids = nextOrders.map((order: any) => order.id)
+    setStatusHistoryError('')
     if (ids.length) {
-      const { data: historyRows } = await supabase.from('retailer_order_status_history').select('retailer_order_id, old_status, new_status, note, changed_by, changed_at').in('retailer_order_id', ids).order('changed_at', { ascending: false })
-      const grouped: Record<string, any[]> = {}
-      ;(historyRows || []).forEach((row: any) => { const key = String(row.retailer_order_id); if (!grouped[key]) grouped[key] = []; grouped[key].push(row) })
-      setStatusHistory(grouped)
+      const { data: historyRows, error: historyError } = await supabase.from('retailer_order_status_history').select('retailer_order_id, old_status, new_status, note, changed_by, changed_at').in('retailer_order_id', ids).order('changed_at', { ascending: false })
+      if (historyError) {
+        setStatusHistory({})
+        setStatusHistoryError(historyError.message)
+      } else {
+        const grouped: Record<string, any[]> = {}
+        ;(historyRows || []).forEach((row: any) => { const key = String(row.retailer_order_id); if (!grouped[key]) grouped[key] = []; grouped[key].push(row) })
+        setStatusHistory(grouped)
+      }
     } else {
       setStatusHistory({})
     }
@@ -307,6 +314,7 @@ export default function RetailerOrdersPage() {
         <CustomSelect value={paymentFilter} onChange={setPaymentFilter} className="w-full" options={[{ value: 'all', label: 'All payment statuses' }, { value: 'paid', label: 'Paid' }, { value: 'partial', label: 'Partial' }, { value: 'unpaid', label: 'Unpaid' }]} />
         <div className="grid grid-cols-2 gap-2"><input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 min-w-0 rounded-lg border bg-background px-2 text-sm" aria-label="From date" /><input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 min-w-0 rounded-lg border bg-background px-2 text-sm" aria-label="To date" /></div>
       </div>
+      {statusHistoryError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">Status history could not be loaded: {statusHistoryError}</p>}
       <div className="mt-4 space-y-3">{filteredOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex flex-wrap items-center gap-2"><a href={`/admin/retailer-orders/invoice/${order.id}`} className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Invoice</a><p className="text-lg font-bold text-primary">{money(order.total)}</p><CustomSelect value={order.order_status} onChange={(value) => void updateStatus(order, value)} className="w-44" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} /></div></div>
         {order.order_status === 'cancelled' && order.notes?.includes('Cancellation reason:') && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{order.notes.split('Cancellation reason:').pop()?.trim()}</p>}
