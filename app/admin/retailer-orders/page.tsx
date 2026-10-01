@@ -105,14 +105,33 @@ export default function RetailerOrdersPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [retailerBalance, setRetailerBalance] = useState({ outstanding: 0, unapplied: 0 })
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [paymentFilter, setPaymentFilter] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [statusHistory, setStatusHistory] = useState<Record<string, any[]>>({})
+  const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
+  const [cancelOrder, setCancelOrder] = useState<any | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
 
   const load = async () => {
     const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
       supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }).limit(50),
     ])
+    const nextOrders = orderRows || []
     setRetailers((retailerRows || []) as Retailer[])
-    setOrders(orderRows || [])
+    setOrders(nextOrders)
+    const ids = nextOrders.map((order: any) => order.id)
+    if (ids.length) {
+      const { data: historyRows } = await supabase.from('retailer_order_status_history').select('retailer_order_id, old_status, new_status, note, changed_by, changed_at').in('retailer_order_id', ids).order('changed_at', { ascending: false })
+      const grouped: Record<string, any[]> = {}
+      ;(historyRows || []).forEach((row: any) => { const key = String(row.retailer_order_id); if (!grouped[key]) grouped[key] = []; grouped[key].push(row) })
+      setStatusHistory(grouped)
+    } else {
+      setStatusHistory({})
+    }
   }
 
   useEffect(() => {
@@ -173,6 +192,21 @@ export default function RetailerOrdersPage() {
   const availableCredit = Math.max(Number(selectedRetailer?.credit_limit || 0) - retailerBalance.outstanding, 0)
   const creditExceeded = Boolean(retailerId && creditRequired > availableCredit)
 
+  const filteredOrders = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return orders.filter((order) => {
+      const retailerName = String(order.retailers?.business_name || '').toLowerCase()
+      const productText = (order.retailer_order_items || []).map((item: any) => item.product_name).join(' ').toLowerCase()
+      const matchesSearch = !query || String(order.id).includes(query) || retailerName.includes(query) || productText.includes(query)
+      const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter
+      const matchesPayment = paymentFilter === 'all' || order.payment_status === paymentFilter
+      const created = new Date(order.created_at).toISOString().slice(0, 10)
+      const matchesFrom = !dateFrom || created >= dateFrom
+      const matchesTo = !dateTo || created <= dateTo
+      return matchesSearch && matchesStatus && matchesPayment && matchesFrom && matchesTo
+    })
+  }, [orders, search, statusFilter, paymentFilter, dateFrom, dateTo])
+
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
     if (!retailerId) { setMessage('Choose a retailer.'); return }
@@ -211,9 +245,31 @@ export default function RetailerOrdersPage() {
   }
 
   const updateStatus = async (order: any, order_status: string) => {
+    if (order_status === 'cancelled') {
+      setCancelOrder(order)
+      setCancelReason('')
+      return
+    }
     const { error } = await supabase.from('retailer_orders').update({ order_status, updated_at: new Date().toISOString() }).eq('id', order.id)
     setMessage(error ? error.message : 'Order status updated.')
     if (!error) await load()
+  }
+
+  const confirmCancellation = async () => {
+    if (!cancelOrder) return
+    const reason = cancelReason.trim()
+    if (!reason) {
+      setMessage('Enter a cancellation reason.')
+      return
+    }
+    const notes = [cancelOrder.notes, 'Cancellation reason: ' + reason].filter(Boolean).join(' · ')
+    const { error } = await supabase.from('retailer_orders').update({ order_status: 'cancelled', notes, updated_at: new Date().toISOString() }).eq('id', cancelOrder.id)
+    setMessage(error ? error.message : 'Order cancelled. Stock and payment allocation have been restored.')
+    if (!error) {
+      setCancelOrder(null)
+      setCancelReason('')
+      await load()
+    }
   }
 
   if (authorized === null) return <><SiteHeader /><main className="p-10 text-center">Loading…</main></>
