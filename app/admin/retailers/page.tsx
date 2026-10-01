@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { ALL_PRODUCTS } from '@/lib/site'
 import { SiteHeader } from '@/components/site-header'
 import { supabase } from '@/lib/supabase'
+import { Check, ChevronDown } from 'lucide-react'
 
 type Retailer = {
   id: string
@@ -31,6 +32,57 @@ const emptyForm = {
 }
 
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
+type SelectOption = { value: string; label: string }
+
+function CustomSelect({ value, onChange, options, className = '', disabled = false }: {
+  value: string
+  onChange: (value: string) => void
+  options: SelectOption[]
+  className?: string
+  disabled?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = options.find((option) => option.value === value)
+
+  useEffect(() => {
+    if (!open) return
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [open])
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button type="button" disabled={disabled} onClick={() => setOpen((current) => !current)}
+        className="flex h-11 w-full items-center justify-between rounded-lg border bg-background px-3 text-left text-sm transition hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-haspopup="listbox" aria-expanded={open}>
+        <span className="truncate text-foreground">{selected?.label || 'Select'}</span>
+        <ChevronDown className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[80] overflow-hidden rounded-xl border bg-background p-1 shadow-lg">
+          <div className="max-h-72 overflow-y-auto" role="listbox">
+            {options.map((option) => {
+              const isSelected = option.value === value
+              return (
+                <button key={option.value} type="button" role="option" aria-selected={isSelected}
+                  onClick={() => { onChange(option.value); setOpen(false) }}
+                  className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted ${isSelected ? 'bg-muted font-semibold' : ''}`}>
+                  <span className="truncate">{option.label}</span>
+                  {isSelected && <Check className="ml-2 h-4 w-4 shrink-0 text-primary" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 export default function RetailersPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
@@ -216,7 +268,7 @@ export default function RetailersPage() {
                 return unappliedCredit > 0 ? <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{money(unappliedCredit)} unapplied credit available on this account.</p> : null
               })()}
               <div className="mt-5 flex flex-wrap gap-2"><Link href={'/admin/retailer-orders?retailer=' + selected.id} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Create order</Link><button onClick={() => setShowPaymentModal(true)} className="rounded-lg border px-3 py-2 text-sm font-semibold">Record payment</button></div>
-              {showPaymentModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"><div className="flex items-center justify-between"><div><h3 className="text-xl font-semibold">Record payment</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div><div className="mt-5 space-y-4"><label className="block text-sm font-medium">Payment amount (₹)<input autoFocus value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} type="number" min="0.01" step="0.01" placeholder="Enter amount" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Payment method<select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="mt-1 h-11 w-full rounded-lg border bg-background px-3"><option value="upi">UPI</option><option value="bank-transfer">Bank transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="other">Other</option></select></label><label className="block text-sm font-medium">Reference <span className="font-normal text-muted-foreground">(optional)</span><input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction / cheque reference" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Notes <span className="font-normal text-muted-foreground">(optional)</span><textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} placeholder="Optional payment note" className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="button" disabled={paymentSaving} onClick={() => void recordPayment()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{paymentSaving ? 'Recording…' : 'Record payment'}</button></div></div></div>}
+              {showPaymentModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-lg rounded-2xl border bg-background p-5 shadow-xl"><div className="flex items-center justify-between"><div><h3 className="text-xl font-semibold">Record payment</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div><div className="mt-5 space-y-4"><label className="block text-sm font-medium">Payment amount (₹)<input autoFocus value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} type="number" min="0.01" step="0.01" placeholder="Enter amount" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Payment method<CustomSelect value={paymentMethod} onChange={setPaymentMethod} className="mt-1" options={[{ value: 'upi', label: 'UPI' }, { value: 'bank-transfer', label: 'Bank transfer' }, { value: 'cash', label: 'Cash' }, { value: 'cheque', label: 'Cheque' }, { value: 'other', label: 'Other' }]} /></label><label className="block text-sm font-medium">Reference <span className="font-normal text-muted-foreground">(optional)</span><input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction / cheque reference" className="mt-1 h-11 w-full rounded-lg border bg-background px-3" /></label><label className="block text-sm font-medium">Notes <span className="font-normal text-muted-foreground">(optional)</span><textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} placeholder="Optional payment note" className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowPaymentModal(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="button" disabled={paymentSaving} onClick={() => void recordPayment()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{paymentSaving ? 'Recording…' : 'Record payment'}</button></div></div></div>}
               <div className="mt-6 border-t pt-5"><h3 className="font-semibold">Special product prices</h3><p className="mt-1 text-xs text-muted-foreground">Leave empty to use the default retailer price from Product Settings.</p>
               <div className="mt-3 max-h-96 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span>{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 rounded-lg border px-2 text-right" /></label>)}</div>
               <button disabled={saving} onClick={() => void savePrices()} className="mt-4 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button></div>
