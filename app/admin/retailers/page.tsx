@@ -102,6 +102,7 @@ export default function RetailersPage() {
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentNotes, setPaymentNotes] = useState('')
   const [paymentSaving, setPaymentSaving] = useState(false)
+  const retailerFormRef = useRef<HTMLFormElement>(null)
 
   const load = async () => {
     const { data: retailerRows, error } = await supabase.from('retailers').select('*').order('business_name')
@@ -164,6 +165,9 @@ export default function RetailersPage() {
       credit_limit: String(retailer.credit_limit || 0), notes: retailer.notes || '',
     })
     setShowForm(true)
+    window.setTimeout(() => {
+      retailerFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
   }
 
   const selectRetailer = async (retailer: Retailer) => {
@@ -234,7 +238,7 @@ export default function RetailersPage() {
 
           {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
 
-          {showForm && <form onSubmit={saveRetailer} className="mt-5 grid gap-3 rounded-2xl border bg-background p-5 sm:grid-cols-2">
+          {showForm && <form ref={retailerFormRef} onSubmit={saveRetailer} className="mt-5 scroll-mt-24 grid gap-3 rounded-2xl border bg-background p-5 sm:grid-cols-2">
             <h2 className="sm:col-span-2 font-semibold">{editing ? 'Edit retailer' : 'New retailer'}</h2>
             {Object.entries(form).map(([key, value]) => <label key={key} className="text-xs font-medium text-muted-foreground">{key.replaceAll('_', ' ')}
               <input required={key === 'business_name' || key === 'phone'} value={value} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground" type={key.includes('limit') || key.includes('days') ? 'number' : 'text'} />
