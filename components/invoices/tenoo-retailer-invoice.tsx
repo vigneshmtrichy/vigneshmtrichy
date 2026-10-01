@@ -115,6 +115,7 @@ export default function TenooRetailerInvoice({ order, payments = [] }: Props) {
                       <th className="px-4 py-3 font-semibold">Product</th>
                       <th className="px-4 py-3 text-center font-semibold">Qty</th>
                       <th className="px-4 py-3 text-right font-semibold">Unit Price</th>
+                      <th className="px-4 py-3 text-center font-semibold">GST</th>
                       <th className="px-4 py-3 text-right font-semibold">Amount</th>
                     </tr>
                   </thead>
@@ -124,6 +125,7 @@ export default function TenooRetailerInvoice({ order, payments = [] }: Props) {
                         <td className="px-4 py-4 font-medium">{item.product_name || 'Product'}</td>
                         <td className="px-4 py-4 text-center">{Number(item.quantity || 0)}</td>
                         <td className="px-4 py-4 text-right">{money(item.unit_price)}</td>
+                        <td className="px-4 py-4 text-center">{Number(item.gst_rate || 0)}%</td>
                         <td className="px-4 py-4 text-right font-semibold">{money(item.line_total)}</td>
                       </tr>
                     ))}
@@ -138,6 +140,7 @@ export default function TenooRetailerInvoice({ order, payments = [] }: Props) {
                     <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                       <div><p className="text-muted-foreground">Qty</p><p className="mt-0.5 font-medium">{Number(item.quantity || 0)}</p></div>
                       <div><p className="text-muted-foreground">Unit Price</p><p className="mt-0.5 font-medium">{money(item.unit_price)}</p></div>
+                      <div><p className="text-muted-foreground">GST</p><p className="mt-0.5 font-medium">{Number(item.gst_rate || 0)}%</p></div>
                       <div className="text-right"><p className="text-muted-foreground">Amount</p><p className="mt-0.5 font-semibold">{money(item.line_total)}</p></div>
                     </div>
                   </div>
