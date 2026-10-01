@@ -22,6 +22,7 @@ type ProductDraft = {
   mrp: string
   price: string
   retailerPrice: string
+  gstRate: string
   offerEnabled: boolean
   offerLabel: string
   featured: boolean
@@ -66,6 +67,7 @@ function buildDefaultDraft(slug: string): ProductDraft {
     mrp: product?.mrp || '',
     price: product?.price || '',
     retailerPrice: product?.retailerPrice || '',
+    gstRate: '5',
     offerEnabled: product?.offerEnabled ?? true,
     offerLabel: product?.offerLabel || '',
     featured: product?.featured ?? false,
@@ -140,7 +142,7 @@ export default function AdminProductSettingsPage() {
       const { data, error } = await supabase
         .from('product_status')
         .select(
-          'product_slug, status, stock_quantity, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg',
+          'product_slug, status, stock_quantity, mrp, price, retailer_price, gst_rate, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg',
         )
 
       if (error) {
@@ -186,6 +188,10 @@ export default function AdminProductSettingsPage() {
             item?.retailer_price === null || item?.retailer_price === undefined
               ? ''
               : String(item.retailer_price),
+          gstRate:
+            item?.gst_rate === null || item?.gst_rate === undefined
+              ? '5'
+              : String(item.gst_rate),
           offerEnabled: item?.offer_enabled !== false,
           offerLabel: item?.offer_label || '',
           featured: Boolean(item?.featured),
@@ -446,6 +452,7 @@ export default function AdminProductSettingsPage() {
     const price = Number(draft.price)
     const retailerPrice =
       draft.retailerPrice.trim() === '' ? null : Number(draft.retailerPrice)
+    const gstRate = Number(draft.gstRate)
     const shippingWeightKg =
       draft.shippingWeightKg.trim() === ''
         ? null
@@ -491,6 +498,11 @@ export default function AdminProductSettingsPage() {
       (!Number.isFinite(retailerPrice) || retailerPrice <= 0)
     ) {
       setMessage('Enter a valid retailer price or leave it empty.')
+      return
+    }
+
+    if (!Number.isFinite(gstRate) || ![0, 5, 12, 18, 28].includes(gstRate)) {
+      setMessage('Select a valid GST rate: 0%, 5%, 12%, 18% or 28%.')
       return
     }
 
@@ -551,6 +563,7 @@ export default function AdminProductSettingsPage() {
               retailerPrice === null
                 ? null
                 : Number(retailerPrice.toFixed(2)),
+            gst_rate: gstRate,
             offer_enabled: draft.offerEnabled,
             offer_label: offerLabel,
             featured: draft.featured,
@@ -591,6 +604,7 @@ export default function AdminProductSettingsPage() {
           price: price.toFixed(2),
           retailerPrice:
             retailerPrice === null ? '' : retailerPrice.toFixed(2),
+          gstRate: String(gstRate),
           offerLabel: offerLabel || '',
           shippingWeightKg:
             shippingWeightKg === null
@@ -1044,29 +1058,47 @@ export default function AdminProductSettingsPage() {
                 <div className="sm:col-span-2">
                   <div className="rounded-xl border bg-muted/20 p-4">
                     <div className="mb-3">
-                      <h3 className="text-sm font-semibold">Retailer Pricing</h3>
+                      <h3 className="text-sm font-semibold">Retailer Pricing & GST</h3>
                       <p className="mt-1 text-[11px] text-muted-foreground">
-                        Enter the retailer price excluding GST. This price is used for retailer orders; 5% GST is added on the retailer bill.
+                        Retailer price is excluding GST. The selected GST rate is used for future retailer orders and is saved into each order line.
                       </p>
                     </div>
 
-                    <div className="max-w-sm">
-                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                        Retailer Price (Excl. GST)
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min="0.01"
-                        step="0.01"
-                        value={draft.retailerPrice}
-                        onChange={(e) =>
-                          updateDraft({ retailerPrice: e.target.value })
-                        }
-                        disabled={saving}
-                        placeholder="Enter retailer price"
-                        className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
-                      />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                          Retailer Price (Excl. GST)
+                        </label>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="0.01"
+                          step="0.01"
+                          value={draft.retailerPrice}
+                          onChange={(e) => updateDraft({ retailerPrice: e.target.value })}
+                          disabled={saving}
+                          placeholder="Enter retailer price"
+                          className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                          GST Rate
+                        </label>
+                        <select
+                          value={draft.gstRate}
+                          onChange={(e) => updateDraft({ gstRate: e.target.value })}
+                          disabled={saving}
+                          className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                        >
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="12">12%</option>
+                          <option value="18">18%</option>
+                          <option value="28">28%</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
