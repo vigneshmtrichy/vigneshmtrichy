@@ -1,6 +1,6 @@
 'use client'
 
-type Props = { order: any }
+type Props = { order: any; payments?: any[] }
 
 const money = (value: unknown, decimals = 2) =>
   '₹' + Number(value || 0).toLocaleString('en-IN', {
@@ -18,7 +18,7 @@ const dateText = (value: string) =>
 const paymentLabel = (value: string) =>
   String(value || '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
-export default function TenooRetailerInvoice({ order }: Props) {
+export default function TenooRetailerInvoice({ order, payments = [] }: Props) {
   const retailer = order.retailers || {}
   const items = Array.isArray(order.retailer_order_items) ? order.retailer_order_items : []
   const taxableValue = Number(order.taxable_value ?? order.subtotal ?? 0)
@@ -27,6 +27,8 @@ export default function TenooRetailerInvoice({ order }: Props) {
   const igst = Number(order.igst || 0)
   const gstTotal = Number(order.gst_total ?? (cgst + sgst + igst))
   const total = Number(order.total || 0)
+  const paidAmount = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const balanceDue = Math.max(total - paidAmount, 0)
 
   return (
     <>
@@ -157,6 +159,29 @@ export default function TenooRetailerInvoice({ order }: Props) {
             </div>
 
             <div className="keep-together mt-6 border-t pt-5 sm:mt-8 sm:pt-6">
+              {payments.length > 0 && (
+                <div className="mb-4 rounded-xl border bg-muted/20 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-sm font-semibold">Payments Received</p>
+                    <p className="text-sm font-bold">{money(paidAmount)}</p>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    {payments.map((payment: any, index: number) => {
+                      const details = payment.retailer_payments || {}
+                      return (
+                        <div key={index} className="flex flex-wrap justify-between gap-3 border-t pt-2 first:border-t-0 first:pt-0">
+                          <span>{details.payment_date ? dateText(details.payment_date) : 'Payment'} · {paymentLabel(details.payment_method)}</span>
+                          <span className="font-semibold">{money(payment.amount)}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3 flex justify-between border-t pt-3 text-sm font-semibold">
+                    <span>Balance Due</span>
+                    <span>{money(balanceDue)}</span>
+                  </div>
+                </div>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border bg-muted/20 px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Payment</p><p className="mt-1 text-sm font-semibold">{paymentLabel(order.payment_type)}</p></div>
                 <div className="rounded-xl border bg-muted/20 px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Payment Status</p><p className="mt-1 text-sm font-semibold capitalize">{order.payment_status}</p></div>
