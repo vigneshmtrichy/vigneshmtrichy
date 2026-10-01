@@ -172,7 +172,7 @@ export default function RetailersPage() {
   }
 
   const selectRetailer = async (retailer: Retailer) => {
-    setSelected(retailer); setMessage('')
+    setSelected(retailer); setShowSpecialPrices(false); setMessage('')
     const { data } = await supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailer.id)
     const next: Record<string, string> = {}
     data?.forEach((row: any) => { next[row.product_slug] = String(row.unit_price) })
