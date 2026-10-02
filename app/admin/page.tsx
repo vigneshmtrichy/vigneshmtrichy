@@ -210,7 +210,7 @@ export default function AdminDashboardPage() {
         value: money(data.monthSales),
       },
       {
-        label: 'Pending orders',
+        label: 'Pending customer orders',
         value: String(data.pendingOrders),
       },
       {
