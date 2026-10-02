@@ -24,13 +24,9 @@ export function IntroAnimation() {
 
     if (internalHome) {
       sessionStorage.setItem('tenoo-intro-shown', '1')
-
-      const internalHomeTimer = window.setTimeout(() => {
-        sessionStorage.removeItem('tenoo-internal-home')
-        setShow(false)
-      }, 1100)
-
-      return () => window.clearTimeout(internalHomeTimer)
+      sessionStorage.removeItem('tenoo-internal-home')
+      setShow(false)
+      return
     }
 
     if (sessionStorage.getItem('tenoo-intro-shown') === '1') {
