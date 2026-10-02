@@ -23,6 +23,7 @@ const getIndiaDateKey = (value: string) =>
 
 type DashboardChannel = {
   ordersToday: number
+  ordersThisMonth: number
   salesToday: number
   salesThisMonth: number
 }
@@ -45,8 +46,8 @@ const EMPTY_DATA: DashboardData = {
   todaySales: 0,
   monthOrders: 0,
   monthSales: 0,
-  online: { ordersToday: 0, salesToday: 0, salesThisMonth: 0 },
-  retailer: { ordersToday: 0, salesToday: 0, salesThisMonth: 0 },
+  online: { ordersToday: 0, ordersThisMonth: 0, salesToday: 0, salesThisMonth: 0 },
+  retailer: { ordersToday: 0, ordersThisMonth: 0, salesToday: 0, salesThisMonth: 0 },
   pendingOrders: 0,
   lowStock: [],
   retailerOutstanding: 0,
@@ -154,11 +155,13 @@ export default function AdminDashboardPage() {
         retailerMonthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
       online: {
         ordersToday: todayOrders.length,
+        ordersThisMonth: monthOrders.length,
         salesToday: todayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
         salesThisMonth: monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
       },
       retailer: {
         ordersToday: retailerTodayOrders.length,
+        ordersThisMonth: retailerMonthOrders.length,
         salesToday: retailerTodayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
         salesThisMonth: retailerMonthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
       },
@@ -297,6 +300,7 @@ export default function AdminDashboardPage() {
                   <tr className="border-b text-left text-xs text-muted-foreground">
                     <th className="pb-3 font-medium">Channel</th>
                     <th className="pb-3 text-right font-medium">Orders today</th>
+                    <th className="pb-3 text-right font-medium">Orders this month</th>
                     <th className="pb-3 text-right font-medium">Sales today</th>
                     <th className="pb-3 text-right font-medium">Sales this month</th>
                   </tr>
@@ -305,18 +309,21 @@ export default function AdminDashboardPage() {
                   <tr className="border-b">
                     <td className="py-3 font-medium">Online</td>
                     <td className="py-3 text-right">{data.online.ordersToday}</td>
+                    <td className="py-3 text-right">{data.online.ordersThisMonth}</td>
                     <td className="py-3 text-right">{money(data.online.salesToday)}</td>
                     <td className="py-3 text-right">{money(data.online.salesThisMonth)}</td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-3 font-medium">Retailer</td>
                     <td className="py-3 text-right">{data.retailer.ordersToday}</td>
+                    <td className="py-3 text-right">{data.retailer.ordersThisMonth}</td>
                     <td className="py-3 text-right">{money(data.retailer.salesToday)}</td>
                     <td className="py-3 text-right">{money(data.retailer.salesThisMonth)}</td>
                   </tr>
                   <tr>
                     <td className="pt-3 font-bold">Total</td>
                     <td className="pt-3 text-right font-bold">{data.todayOrders}</td>
+                    <td className="pt-3 text-right font-bold">{data.monthOrders}</td>
                     <td className="pt-3 text-right font-bold">{money(data.todaySales)}</td>
                     <td className="pt-3 text-right font-bold">{money(data.monthSales)}</td>
                   </tr>
