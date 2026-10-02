@@ -15,6 +15,7 @@ export function IntroAnimation() {
 
     if (isRefresh) {
       sessionStorage.setItem('tenoo-intro-shown', '1')
+      setShow(false)
       return
     }
 
@@ -26,14 +27,16 @@ export function IntroAnimation() {
 
       const internalHomeTimer = window.setTimeout(() => {
         sessionStorage.removeItem('tenoo-internal-home')
-      }, 100)
+        setShow(false)
+      }, 1100)
 
       return () => window.clearTimeout(internalHomeTimer)
     }
 
-    if (sessionStorage.getItem('tenoo-intro-shown') === '1') return
-
-    setShow(true)
+    if (sessionStorage.getItem('tenoo-intro-shown') === '1') {
+      setShow(false)
+      return
+    }
 
     const seenTimer = window.setTimeout(() => {
       sessionStorage.setItem('tenoo-intro-shown', '1')
