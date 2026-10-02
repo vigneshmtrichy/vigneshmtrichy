@@ -116,7 +116,7 @@ export default function RetailersPage() {
     const { data: balanceRows } = await supabase.from('retailer_balances').select('*')
     const { data: overdueRows } = await supabase
       .from('retailer_orders')
-      .select('retailer_id, total, due_date, payment_status, order_status')
+      .select('retailer_id, total, due_date, payment_status, order_status, retailer_payment_allocations(amount)')
       .neq('order_status', 'cancelled')
       .neq('payment_status', 'paid')
       .not('due_date', 'is', null)
@@ -124,9 +124,12 @@ export default function RetailersPage() {
     const nextOverdue: Record<string, { count: number; amount: number }> = {}
     ;(overdueRows || []).forEach((row: any) => {
       if (row.due_date < todayIndia) {
+        const paid = (row.retailer_payment_allocations || []).reduce((sum: number, allocation: any) => sum + Number(allocation.amount || 0), 0)
+        const outstanding = Math.max(Number(row.total || 0) - paid, 0)
+        if (outstanding <= 0) return
         const current = nextOverdue[row.retailer_id] || { count: 0, amount: 0 }
         current.count += 1
-        current.amount += Number(row.total || 0)
+        current.amount += outstanding
         nextOverdue[row.retailer_id] = current
       }
     })

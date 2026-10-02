@@ -205,19 +205,79 @@ export default function RetailerOrdersPage() {
   const [dateTo, setDateTo] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
+  const [totalOrderCount, setTotalOrderCount] = useState(0)
   const [statusHistory, setStatusHistory] = useState<Record<string, any[]>>({})
   const [statusHistoryError, setStatusHistoryError] = useState('')
   const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
   const [cancelOrder, setCancelOrder] = useState<any | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const load = async () => {
-    const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
-      supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
-      supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }),
-    ])
-    const nextOrders = orderRows || []
+    const { data: retailerRows } = await supabase
+      .from('retailers')
+      .select('id, business_name, payment_terms_days, credit_limit')
+      .eq('status', 'active')
+      .order('business_name')
     setRetailers((retailerRows || []) as Retailer[])
+
+    const query = search.trim()
+    let matchingOrderIds: number[] | null = null
+    if (query) {
+      if (/^\d+$/.test(query)) {
+        matchingOrderIds = [Number(query)]
+      } else {
+        const [{ data: retailerMatches }, { data: productMatches }] = await Promise.all([
+          supabase.from('retailers').select('id').ilike('business_name', '%' + query + '%'),
+          supabase.from('retailer_order_items').select('retailer_order_id').ilike('product_name', '%' + query + '%'),
+        ])
+        const retailerIds = (retailerMatches || []).map((row: any) => String(row.id))
+        const productOrderIds = (productMatches || []).map((row: any) => Number(row.retailer_order_id)).filter(Number.isFinite)
+        if (productOrderIds.length) {
+          matchingOrderIds = productOrderIds
+          if (retailerIds.length) {
+            const { data: retailerOrderMatches } = await supabase.from('retailer_orders').select('id').in('retailer_id', retailerIds)
+            matchingOrderIds = Array.from(new Set([...matchingOrderIds, ...(retailerOrderMatches || []).map((row: any) => Number(row.id))]))
+          }
+        } else if (retailerIds.length) {
+          const { data: retailerOrderMatches } = await supabase.from('retailer_orders').select('id').in('retailer_id', retailerIds)
+          matchingOrderIds = (retailerOrderMatches || []).map((row: any) => Number(row.id))
+        } else {
+          matchingOrderIds = []
+        }
+      }
+    }
+
+    let orderQuery = supabase
+      .from('retailer_orders')
+      .select('*, retailers(business_name), retailer_order_items(*)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+
+    if (statusFilter !== 'all') orderQuery = orderQuery.eq('order_status', statusFilter)
+    if (paymentFilter !== 'all') orderQuery = orderQuery.eq('payment_status', paymentFilter)
+    if (dateFrom) orderQuery = orderQuery.gte('created_at', new Date(dateFrom + 'T00:00:00+05:30').toISOString())
+    if (dateTo) orderQuery = orderQuery.lte('created_at', new Date(dateTo + 'T23:59:59.999+05:30').toISOString())
+    if (matchingOrderIds) {
+      if (matchingOrderIds.length === 0) {
+        setOrders([])
+        setTotalOrderCount(0)
+        setStatusHistory({})
+        setStatusHistoryError('')
+        return
+      }
+      orderQuery = orderQuery.in('id', matchingOrderIds)
+    }
+
+    const from = (currentPage - 1) * pageSize
+    const { data: orderRows, count: orderCount, error: orderError } = await orderQuery.range(from, from + pageSize - 1)
+    if (orderError) {
+      setMessage(orderError.message)
+      setOrders([])
+      setTotalOrderCount(0)
+      return
+    }
+
+    const nextOrders = orderRows || []
     setOrders(nextOrders)
+    setTotalOrderCount(orderCount || 0)
     const ids = nextOrders.map((order: any) => order.id)
     setStatusHistoryError('')
     if (ids.length) {
@@ -239,7 +299,6 @@ export default function RetailerOrdersPage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       const ok = user?.email === 'info@tenoo.in'
       setAuthorized(ok)
-      if (ok) void load()
     })
   }, [])
 
@@ -293,26 +352,8 @@ export default function RetailerOrdersPage() {
   const availableCredit = Math.max(Number(selectedRetailer?.credit_limit || 0) - retailerBalance.outstanding, 0)
   const creditExceeded = Boolean(retailerId && creditRequired > availableCredit)
 
-  const filteredOrders = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return orders.filter((order) => {
-      const retailerName = String(order.retailers?.business_name || '').toLowerCase()
-      const productText = (order.retailer_order_items || []).map((item: any) => item.product_name).join(' ').toLowerCase()
-      const matchesSearch = !query || String(order.id).includes(query) || retailerName.includes(query) || productText.includes(query)
-      const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter
-      const matchesPayment = paymentFilter === 'all' || order.payment_status === paymentFilter
-      const created = new Date(order.created_at).toISOString().slice(0, 10)
-      const matchesFrom = !dateFrom || created >= dateFrom
-      const matchesTo = !dateTo || created <= dateTo
-      return matchesSearch && matchesStatus && matchesPayment && matchesFrom && matchesTo
-    })
-  }, [orders, search, statusFilter, paymentFilter, dateFrom, dateTo])
-
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize))
-  const paginatedOrders = useMemo(() => {
-    const start = (currentPage - 1) * pageSize
-    return filteredOrders.slice(start, start + pageSize)
-  }, [filteredOrders, currentPage, pageSize])
+  const totalPages = Math.max(1, Math.ceil(totalOrderCount / pageSize))
+  const paginatedOrders = orders
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages)
@@ -321,6 +362,10 @@ export default function RetailerOrdersPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [search, statusFilter, paymentFilter, dateFrom, dateTo])
+
+  useEffect(() => {
+    if (authorized) void load()
+  }, [authorized, currentPage, pageSize, search, statusFilter, paymentFilter, dateFrom, dateTo])
 
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
@@ -415,7 +460,7 @@ export default function RetailerOrdersPage() {
     </form>
 
     <section className="mt-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Showing all retailer orders with pagination.</p></div><p className="text-sm text-muted-foreground">{filteredOrders.length} shown · Page {currentPage}/{totalPages}</p></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Server-side pagination · filters and search are applied before loading the page.</p></div><p className="text-sm text-muted-foreground">{totalOrderCount} shown · Page {currentPage}/{totalPages}</p></div>
       <div className="mt-4 grid gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-11 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
@@ -431,10 +476,10 @@ export default function RetailerOrdersPage() {
         {order.order_status === 'cancelled' && order.notes?.includes('Cancellation reason:') && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{order.notes.split('Cancellation reason:').pop()?.trim()}</p>}
         {statusHistory[String(order.id)]?.length > 0 && <div className="mt-3"><button type="button" onClick={() => setOpenHistory((current) => ({ ...current, [order.id]: !current[order.id] }))} className="text-xs font-semibold text-primary">{openHistory[order.id] ? 'Hide status history' : 'View status history'}</button>{openHistory[order.id] && <div className="mt-2 rounded-lg border bg-muted/30 p-3 text-xs">{statusHistory[String(order.id)].slice(0, 8).map((entry: any, index: number) => <div key={index} className="flex justify-between gap-3 border-b py-2 last:border-0"><span>{entry.old_status ? entry.old_status + ' → ' : ''}{entry.new_status}</span><span className="text-right text-muted-foreground">{new Date(entry.changed_at).toLocaleString('en-IN')}{entry.note ? ' · ' + entry.note : ''}</span></div>)}</div>}</div>}
       </article>)}</div>
-      {filteredOrders.length === 0 && <div className="mt-4 rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground">No retailer orders match these filters.</div>}      {filteredOrders.length > 0 && totalPages > 1 && (
+      {totalOrderCount === 0 && <div className="mt-4 rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground">No retailer orders match these filters.</div>}      {totalOrderCount > 0 && totalPages > 1 && (
         <div className="mt-5 flex flex-col gap-3 rounded-2xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredOrders.length)} of {filteredOrders.length} orders
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalOrderCount)} of {totalOrderCount} orders
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
