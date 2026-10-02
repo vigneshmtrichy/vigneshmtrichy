@@ -332,7 +332,7 @@ useEffect(() => {
             setOpen((value) => !value)
             setSearchOpen(false)
           }}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-secondary lg:hidden"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-secondary lg:hidden"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
         >
