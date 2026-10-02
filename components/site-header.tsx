@@ -189,7 +189,7 @@ useEffect(() => {
       onClick={() => setAdminOpen(false)}
       className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
     >
-      Orders
+      Online Orders
     </Link>
 
     <Link
