@@ -152,6 +152,16 @@ useEffect(() => {
         </div>
         )}
 
+        {/* Admin shortcut — visible only to the admin account on public pages */}
+        {user?.email === 'info@tenoo.in' && !isAdminPage && (
+          <Link
+            href="/admin"
+            className="hidden items-center rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary lg:inline-flex"
+          >
+            Admin
+          </Link>
+        )}
+
         {/* Desktop Cart */}
         {!isAdminPage && (
           <div className="hidden lg:inline-flex">
@@ -161,7 +171,7 @@ useEffect(() => {
           {/* Desktop Account */}
 {user ? (
   <>
-    {user?.email === 'info@tenoo.in' ? (
+    {user?.email === 'info@tenoo.in' && isAdminPage ? (
       <nav
         className="hidden items-center gap-1 lg:flex"
         aria-label="Admin navigation"
