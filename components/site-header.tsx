@@ -212,7 +212,7 @@ useEffect(() => {
           🚪 Logout
         </button>
       </nav>
-    ) : (
+    ) : user?.email === 'info@tenoo.in' ? null : (
       <div className="relative hidden lg:block">
         <button
           type="button"
