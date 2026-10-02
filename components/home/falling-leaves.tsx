@@ -26,13 +26,20 @@ const leaves = [
 
 export function FallingLeaves() {
   const [show, setShow] = useState(false)
+  const [heroTop, setHeroTop] = useState(0)
   useEffect(() => {
     const internalHome =
       sessionStorage.getItem('tenoo-internal-home') === '1'
 
     if (internalHome) return
 
-    const timer = window.setTimeout(() => setShow(true), 100)
+    const timer = window.setTimeout(() => {
+      const hero = document.getElementById('tenoo-hero')
+      if (!hero) return
+
+      setHeroTop(hero.getBoundingClientRect().top)
+      setShow(true)
+    }, 100)
 
     return () => {
       window.clearTimeout(timer)
@@ -71,6 +78,7 @@ export function FallingLeaves() {
                 left: `${leaf.left}%`,
                 animationDelay: leaf.delay,
                 animationDuration: leaf.duration,
+                '--hero-top': ${heroTop}px,
                 '--leaf-size': leaf.size,
                 '--start-rotation': leaf.rotate,
               } as React.CSSProperties
