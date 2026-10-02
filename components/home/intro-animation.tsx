@@ -40,7 +40,7 @@ export function IntroAnimation() {
 
     const timer = window.setTimeout(() => {
       setShow(false)
-    }, 1550)
+    }, 1100)
 
     return () => {
       window.clearTimeout(seenTimer)
@@ -55,7 +55,7 @@ export function IntroAnimation() {
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fcfcf9] pointer-events-none"
       aria-hidden="true"
     >
-      <div className="flex flex-col items-center">
+      <div className="flex items-center justify-center">
         <div className="tenoo-intro-mark">
           <Image
             src="/tenoo-logo.png"
@@ -66,7 +66,7 @@ export function IntroAnimation() {
             className="tenoo-intro-logo"
           />
         </div>
-
+      </div>
     </div>
   )
 }
