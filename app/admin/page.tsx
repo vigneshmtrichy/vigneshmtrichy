@@ -210,10 +210,6 @@ export default function AdminDashboardPage() {
         value: money(data.monthSales),
       },
       {
-        label: 'Pending customer orders',
-        value: String(data.pendingOrders),
-      },
-      {
         label: 'Retailer outstanding',
         value: money(data.retailerOutstanding),
       },
