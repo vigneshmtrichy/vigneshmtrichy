@@ -37,6 +37,7 @@ type DashboardData = {
   retailer: DashboardChannel
   pendingOrders: number
   lowStock: Array<{ product_slug: string; stock_quantity: number; status: string; stockValue: number }>
+  stockValueTotal: number
   recentActivity: Array<{ channel: string; id: number; status: string; total: number; created_at: string }>
   retailerOutstanding: number
   retailerUnapplied: number
@@ -51,6 +52,7 @@ const EMPTY_DATA: DashboardData = {
   retailer: { ordersToday: 0, ordersThisMonth: 0, salesToday: 0, salesThisMonth: 0 },
   pendingOrders: 0,
   lowStock: [],
+  stockValueTotal: 0,
   recentActivity: [],
   retailerOutstanding: 0,
   retailerUnapplied: 0,
@@ -95,7 +97,6 @@ export default function AdminDashboardPage() {
         .from('product_status')
         .select('product_slug, stock_quantity, status, price')
         .not('stock_quantity', 'is', null)
-        .lte('stock_quantity', 10)
         .order('stock_quantity', { ascending: true }),
       supabase
         .from('retailer_balances')
@@ -154,6 +155,9 @@ export default function AdminDashboardPage() {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 6)
 
+    const stockRows = stockResult.data || []
+    const stockValueTotal = stockRows.reduce((sum: number, row: any) => sum + Number(row.stock_quantity || 0) * Number(row.price || 0), 0)
+
     setData({
       todayOrders: todayOrders.length + retailerTodayOrders.length,
       todaySales:
@@ -178,12 +182,13 @@ export default function AdminDashboardPage() {
       pendingOrders: orders.filter(
         (order: any) => (order.order_status || 'pending') === 'pending',
       ).length,
-      lowStock: (stockResult.data || []).slice(0, 6).map((row: any) => ({
+      lowStock: stockRows.filter((row: any) => Number(row.stock_quantity) <= 10).slice(0, 6).map((row: any) => ({
         product_slug: row.product_slug,
         stock_quantity: Number(row.stock_quantity),
         status: row.status || 'active',
         stockValue: Number(row.stock_quantity || 0) * Number(row.price || 0),
       })),
+      stockValueTotal,
       recentActivity,
       retailerOutstanding: (balanceResult.data || []).reduce(
         (sum: number, row: any) => sum + Number(row.outstanding_balance || 0),
@@ -388,7 +393,7 @@ export default function AdminDashboardPage() {
               )}
               {data.lowStock.length > 0 && (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Total stock value shown: {money(data.lowStock.reduce((sum, product) => sum + product.stockValue, 0))}
+                  Total tracked stock value: {money(data.stockValueTotal)}
                 </p>
               )}
             </div>
