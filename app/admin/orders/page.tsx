@@ -835,8 +835,6 @@ export default function AdminOrdersPage() {
             </a>
           </div>
         </main>
-
-        <SiteFooter />
       </>
     )
   }
