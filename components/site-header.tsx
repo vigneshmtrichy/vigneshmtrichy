@@ -68,7 +68,7 @@ useEffect(() => {
 
   return (
       <>
-    <AnnouncementBar />
+    {!isAdminPage && <AnnouncementBar />}
     <header
       onClickCapture={(event) => {
         const target = event.target as HTMLElement
@@ -153,9 +153,11 @@ useEffect(() => {
         )}
 
         {/* Desktop Cart */}
-        <div className="hidden lg:inline-flex">
-          <CartButton />
-        </div>
+        {!isAdminPage && (
+          <div className="hidden lg:inline-flex">
+            <CartButton />
+          </div>
+        )}
           {/* Desktop Account */}
 {user ? (
   <>
@@ -306,7 +308,7 @@ useEffect(() => {
   </Link>
 )}
         {/* Desktop WhatsApp */}
-        <a
+        {!isAdminPage && <a
           href={WHATSAPP_URL}
           target="_blank"
           rel="noopener noreferrer"
@@ -314,15 +316,17 @@ useEffect(() => {
         >
           <WhatsAppIcon className="h-4 w-4" />
           WhatsApp Us
-        </a>
+        </a>}
 
         {/* =========================================================
             MOBILE CONTROLS
             ========================================================= */}
         {/* Mobile Cart */}
-        <div className="lg:hidden">
-          <CartButton />
-        </div>
+        {!isAdminPage && (
+          <div className="lg:hidden">
+            <CartButton />
+          </div>
+        )}
 
           
 
