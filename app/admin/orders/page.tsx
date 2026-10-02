@@ -416,6 +416,82 @@ export default function AdminOrdersPage() {
     })
   }, [orders, searchQuery, statusFilter])
 
+  const exportCustomerListCsv = () => {
+    const customerMap = new Map<string, {
+      name: string
+      phone: string
+      email: string
+      address: string
+      city: string
+      state: string
+      pincode: string
+      orders: number
+      totalSpent: number
+      lastOrder: string
+    }>()
+
+    orders
+      .filter((order) => (order.order_status || 'pending') !== 'cancelled')
+      .forEach((order) => {
+        const email = String(order.customer_email || '').trim().toLowerCase()
+        const phone = String(order.phone || '').replace(/\D/g, '')
+        const key = email ? `email:${email}` : phone ? `phone:${phone}` : `order:${order.id}`
+        const existing = customerMap.get(key)
+
+        if (existing) {
+          existing.orders += 1
+          existing.totalSpent += Number(order.total || 0)
+          if (new Date(order.created_at).getTime() > new Date(existing.lastOrder).getTime()) {
+            existing.lastOrder = order.created_at
+          }
+          return
+        }
+
+        customerMap.set(key, {
+          name: order.customer_name || '',
+          phone: order.phone || '',
+          email: order.customer_email || '',
+          address: order.address || order.shipping_address || '',
+          city: order.city || '',
+          state: order.state || '',
+          pincode: order.pincode || '',
+          orders: 1,
+          totalSpent: Number(order.total || 0),
+          lastOrder: order.created_at,
+        })
+      })
+
+    if (customerMap.size === 0) {
+      alert('No customers available to export.')
+      return
+    }
+
+    const csvEscape = (value: unknown) => {
+      const text = String(value ?? '').replace(/\r?\n|\r/g, ' ').trim()
+      return `"${text.replace(/"/g, '""')}"`
+    }
+
+    const headers = ['Customer Name', 'Phone', 'Email', 'Address', 'City', 'State', 'Pincode', 'Orders', 'Total Spent', 'Last Order']
+    const rows = Array.from(customerMap.values())
+      .sort((a, b) => new Date(b.lastOrder).getTime() - new Date(a.lastOrder).getTime())
+      .map((customer) => [
+        customer.name, customer.phone, customer.email, customer.address, customer.city,
+        customer.state, customer.pincode, customer.orders, customer.totalSpent.toFixed(2),
+        new Date(customer.lastOrder).toLocaleString('en-IN'),
+      ].map(csvEscape))
+
+    const csv = [headers.map(csvEscape).join(','), ...rows.map((row) => row.join(','))].join('\r\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `tenoo-customer-list-${getIndiaDateKey(new Date().toISOString())}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
   const exportOrdersCsv = () => {
     if (filteredOrders.length === 0) {
       alert('No orders available to export.')
@@ -794,6 +870,12 @@ export default function AdminOrdersPage() {
               className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
               {refreshing ? 'Refreshing...' : '↻ Refresh Orders'}
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={exportCustomerListCsv} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted">
+              Download Customer List
             </button>
           </div>
 
