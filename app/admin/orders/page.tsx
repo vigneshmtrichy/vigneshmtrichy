@@ -807,7 +807,7 @@ export default function AdminOrdersPage() {
           </div>
         </main>
 
-        <SiteFooter />
+  
       </>
     )
   }
@@ -835,8 +835,6 @@ export default function AdminOrdersPage() {
             </a>
           </div>
         </main>
-
-        <SiteFooter />
       </>
     )
   }
@@ -1817,8 +1815,6 @@ Thank you for choosing TENOO.`,
           )}
         </div>
       </main>
-
-      <SiteFooter />
-    </>
+</>
   )
 }
