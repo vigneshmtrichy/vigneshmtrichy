@@ -261,3 +261,61 @@
     animation: none;
   }
 }
+
+
+/* Elegant Tenoo intro — soft reveal, settle, and graceful exit. */
+.tenoo-intro-mark {
+  width: 230px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tenoo-intro-logo {
+  display: block;
+  width: 230px;
+  height: 100px;
+  max-width: none;
+  opacity: 0;
+  filter: blur(2px);
+  transform: translate3d(0, 8px, 0) scale(0.97);
+  animation: tenooElegantIntro 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+@keyframes tenooElegantIntro {
+  0% {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translate3d(0, 8px, 0) scale(0.97);
+  }
+
+  52% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  78% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(0);
+    transform: translate3d(0, -3px, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tenoo-intro-logo {
+    animation: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
