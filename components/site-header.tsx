@@ -88,6 +88,7 @@ useEffect(() => {
         <BrandLogo />
 
         {/* Desktop Search */}
+        {!isAdminPage && (
         <div className="relative ml-auto hidden max-w-2xl flex-1 lg:block">
           <div className="flex h-11 items-center overflow-hidden rounded-full border border-border bg-background">
             <Search className="ml-4 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -149,6 +150,7 @@ useEffect(() => {
             </div>
           )}
         </div>
+        )}
 
         {/* Desktop Cart */}
         <div className="hidden lg:inline-flex">
@@ -324,6 +326,8 @@ useEffect(() => {
 
           
 
+        {!isAdminPage && (
+        <>
         {/* Mobile Search Button */}
         <button
           type="button"
@@ -347,6 +351,8 @@ useEffect(() => {
             <Search className="h-5 w-5" />
           )}
         </button>
+        </>
+        )}
 
         {/* Mobile Menu Button */}
         <button
@@ -370,7 +376,7 @@ useEffect(() => {
       {/* =========================================================
           MOBILE SEARCH
           ========================================================= */}
-      {searchOpen && (
+      {!isAdminPage && searchOpen && (
         <div className="border-t border-border/50 px-4 pb-4 pt-3 lg:hidden">
           <div className="relative">
             <div className="flex h-12 items-center overflow-hidden rounded-full border border-border bg-background">

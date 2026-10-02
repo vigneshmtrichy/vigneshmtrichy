@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { OrderStats } from '@/components/admin/OrderStats'
 import { OrderFilters } from '@/components/admin/OrderFilters'
+import { Search } from 'lucide-react'
 
 const STATUS_FILTERS = [
   'all',
@@ -877,6 +878,35 @@ export default function AdminOrdersPage() {
             <button type="button" onClick={exportCustomerListCsv} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted">
               Download Customer List
             </button>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-border bg-card p-3 shadow-sm">
+            <div className="flex h-11 items-center overflow-hidden rounded-xl border border-border bg-background">
+              <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => {
+                  const value = event.target.value
+                  setSearchQuery(value)
+                  const params = new URLSearchParams(window.location.search)
+                  if (value.trim()) {
+                    params.set('search', value)
+                  } else {
+                    params.delete('search')
+                  }
+                  window.history.replaceState(
+                    null,
+                    '',
+                    `/admin/orders${params.toString() ? `?${params.toString()}` : ''}`,
+                  )
+                  setCurrentPage(1)
+                }}
+                placeholder="Search order ID, name, phone, email or tracking number..."
+                className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                aria-label="Search customer orders"
+              />
+            </div>
           </div>
 
           <OrderStats
