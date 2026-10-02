@@ -216,3 +216,48 @@
     transform-origin: left;
   }
 }
+
+
+/* Subtle light sweep for the hero CTA. */
+.tenoo-products-cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.tenoo-products-cta::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -55%;
+  width: 28%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 35%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0.12) 65%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  animation: tenooCtaShimmer 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tenooCtaShimmer {
+  0%,
+  58% {
+    left: -55%;
+  }
+
+  82%,
+  100% {
+    left: 125%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tenoo-products-cta::after {
+    animation: none;
+  }
+}
