@@ -53,7 +53,7 @@ export function OrderStats({
           )
         })}
       </div>
-/div>
+      </div>
     </>
   )
 }
