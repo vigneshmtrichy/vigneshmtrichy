@@ -68,11 +68,14 @@ export default function AdminDashboardPage() {
 
     setAuthorized(true)
 
-    const [ordersResult, stockResult, balanceResult] = await Promise.all([
+    const [ordersResult, retailerOrdersResult, stockResult, balanceResult] = await Promise.all([
       supabase
         .from('orders')
         .select('id, created_at, total, order_status')
         .order('created_at', { ascending: false }),
+      supabase
+        .from('retailer_orders')
+        .select('id, created_at, total, order_status'),
       supabase
         .from('product_status')
         .select('product_slug, stock_quantity, status')
@@ -86,6 +89,10 @@ export default function AdminDashboardPage() {
 
     if (ordersResult.error) {
       console.error('Failed to load dashboard orders:', ordersResult.error)
+    }
+
+    if (retailerOrdersResult.error) {
+      console.error('Failed to load dashboard retailer orders:', retailerOrdersResult.error)
     }
 
     if (stockResult.error) {
@@ -103,6 +110,9 @@ export default function AdminDashboardPage() {
     const activeOrders = orders.filter(
       (order: any) => order.order_status !== 'cancelled',
     )
+    const retailerOrders = (retailerOrdersResult.data || []).filter(
+      (order: any) => order.order_status !== 'cancelled',
+    )
 
     const todayOrders = activeOrders.filter(
       (order: any) =>
@@ -114,17 +124,21 @@ export default function AdminDashboardPage() {
         order.created_at &&
         getIndiaDateKey(order.created_at).startsWith(monthKey),
     )
+    const retailerTodayOrders = retailerOrders.filter(
+      (order: any) => order.created_at && getIndiaDateKey(order.created_at) === todayKey,
+    )
+    const retailerMonthOrders = retailerOrders.filter(
+      (order: any) => order.created_at && getIndiaDateKey(order.created_at).startsWith(monthKey),
+    )
 
     setData({
-      todayOrders: todayOrders.length,
-      todaySales: todayOrders.reduce(
-        (sum: number, order: any) => sum + Number(order.total || 0),
-        0,
-      ),
-      monthSales: monthOrders.reduce(
-        (sum: number, order: any) => sum + Number(order.total || 0),
-        0,
-      ),
+      todayOrders: todayOrders.length + retailerTodayOrders.length,
+      todaySales:
+        todayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0) +
+        retailerTodayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      monthSales:
+        monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0) +
+        retailerMonthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
       pendingOrders: orders.filter(
         (order: any) => (order.order_status || 'pending') === 'pending',
       ).length,
