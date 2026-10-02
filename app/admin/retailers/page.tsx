@@ -107,12 +107,30 @@ export default function RetailersPage() {
   const [statementLoading, setStatementLoading] = useState(false)
   const [statementOrders, setStatementOrders] = useState<any[]>([])
   const [statementPayments, setStatementPayments] = useState<any[]>([])
+  const [salesStats, setSalesStats] = useState({ ordersToday: 0, salesToday: 0, salesThisMonth: 0 })
   const retailerFormRef = useRef<HTMLFormElement>(null)
 
   const load = async () => {
     const { data: retailerRows, error } = await supabase.from('retailers').select('*').order('business_name')
     if (error) { setMessage('Unable to load retailers.'); return }
-    const { data: balanceRows } = await supabase.from('retailer_balances').select('*')
+    const [{ data: balanceRows }, { data: retailerOrderRows }] = await Promise.all([
+      supabase.from('retailer_balances').select('*'),
+      supabase.from('retailer_orders').select('created_at, total, order_status'),
+    ])
+    const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    const monthKey = todayKey.slice(0, 7)
+    const activeOrders = (retailerOrderRows || []).filter((order: any) => order.order_status !== 'cancelled')
+    const todayOrders = activeOrders.filter((order: any) =>
+      new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === todayKey
+    )
+    const monthOrders = activeOrders.filter((order: any) =>
+      new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }).startsWith(monthKey)
+    )
+    setSalesStats({
+      ordersToday: todayOrders.length,
+      salesToday: todayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      salesThisMonth: monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+    })
     const nextBalances: Record<string, any> = {}
     balanceRows?.forEach((row: any) => { nextBalances[row.retailer_id] = row })
     setBalances(nextBalances)
@@ -266,6 +284,12 @@ export default function RetailersPage() {
             </label>)}
             <div className="sm:col-span-2 flex gap-2"><button disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{saving ? 'Saving…' : 'Save retailer'}</button><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button></div>
           </form>}
+
+          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:mt-6 sm:grid-cols-3 sm:gap-3">
+            <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Orders today</p><p className="mt-1 text-2xl font-semibold">{salesStats.ordersToday}</p></div>
+            <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Sales today</p><p className="mt-1 text-2xl font-semibold">{money(salesStats.salesToday)}</p></div>
+            <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Sales this month</p><p className="mt-1 text-2xl font-semibold">{money(salesStats.salesThisMonth)}</p></div>
+          </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
             <div className="rounded-xl border bg-background p-3 sm:rounded-2xl sm:p-4"><p className="text-xs text-muted-foreground">Active retailers</p><p className="mt-1 text-xl font-semibold sm:text-2xl">{retailers.filter((r) => r.status === 'active').length}</p></div>
