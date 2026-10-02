@@ -265,8 +265,8 @@
 
 /* Elegant Tenoo intro — soft reveal, settle, and graceful exit. */
 .tenoo-intro-mark {
-  width: 230px;
-  height: 100px;
+  width: 190px;
+  height: 83px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -274,8 +274,8 @@
 
 .tenoo-intro-logo {
   display: block;
-  width: 230px;
-  height: 100px;
+  width: 190px;
+  height: 83px;
   max-width: none;
   opacity: 0;
   filter: blur(2px);
@@ -317,5 +317,19 @@
     opacity: 1;
     filter: none;
     transform: none;
+  }
+}
+
+
+/* Smaller Tenoo intro mark on narrow screens. */
+@media (max-width: 639px) {
+  .tenoo-intro-mark {
+    width: 150px;
+    height: 65px;
+  }
+
+  .tenoo-intro-logo {
+    width: 150px;
+    height: 65px;
   }
 }
