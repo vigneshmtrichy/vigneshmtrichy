@@ -57,33 +57,13 @@ export function IntroAnimation() {
     >
       <div className="flex flex-col items-center">
         <div className="tenoo-intro-mark">
-          <div className="tenoo-intro-half tenoo-intro-half-left">
-            <Image
-              src="/tenoo-logo.png"
-              alt=""
-              width={230}
-              height={100}
-              priority
-            />
-          </div>
-
-          <div className="tenoo-intro-half tenoo-intro-half-right">
-            <Image
-              src="/tenoo-logo.png"
-              alt=""
-              width={230}
-              height={100}
-              priority
-            />
-          </div>
-
           <Image
             src="/tenoo-logo.png"
             alt="Tenoo"
             width={230}
             height={100}
             priority
-            className="tenoo-intro-final-logo"
+            className="tenoo-intro-logo"
           />
         </div>
 
