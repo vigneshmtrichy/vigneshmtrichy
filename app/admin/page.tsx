@@ -36,7 +36,9 @@ type DashboardData = {
   online: DashboardChannel
   retailer: DashboardChannel
   pendingOrders: number
-  lowStock: Array<{ product_slug: string; stock_quantity: number; status: string }>
+  lowStock: Array<{ product_slug: string; stock_quantity: number; status: string; stockValue: number }>
+  stockValueTotal: number
+  recentActivity: Array<{ channel: string; id: number; status: string; total: number; created_at: string }>
   retailerOutstanding: number
   retailerUnapplied: number
 }
@@ -50,6 +52,8 @@ const EMPTY_DATA: DashboardData = {
   retailer: { ordersToday: 0, ordersThisMonth: 0, salesToday: 0, salesThisMonth: 0 },
   pendingOrders: 0,
   lowStock: [],
+  stockValueTotal: 0,
+  recentActivity: [],
   retailerOutstanding: 0,
   retailerUnapplied: 0,
 }
@@ -91,9 +95,8 @@ export default function AdminDashboardPage() {
         .select('id, created_at, total, order_status'),
       supabase
         .from('product_status')
-        .select('product_slug, stock_quantity, status')
+        .select('product_slug, stock_quantity, status, price')
         .not('stock_quantity', 'is', null)
-        .lte('stock_quantity', 10)
         .order('stock_quantity', { ascending: true }),
       supabase
         .from('retailer_balances')
@@ -144,6 +147,17 @@ export default function AdminDashboardPage() {
       (order: any) => order.created_at && getIndiaDateKey(order.created_at).startsWith(monthKey),
     )
 
+    const recentActivity = [
+      ...activeOrders.map((order: any) => ({ channel: 'Online', id: Number(order.id), status: order.order_status || 'pending', total: Number(order.total || 0), created_at: order.created_at })),
+      ...retailerOrders.map((order: any) => ({ channel: 'Retailer', id: Number(order.id), status: order.order_status || 'confirmed', total: Number(order.total || 0), created_at: order.created_at })),
+    ]
+      .filter((item) => item.created_at)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 6)
+
+    const stockRows = stockResult.data || []
+    const stockValueTotal = stockRows.reduce((sum: number, row: any) => sum + Number(row.stock_quantity || 0) * Number(row.price || 0), 0)
+
     setData({
       todayOrders: todayOrders.length + retailerTodayOrders.length,
       todaySales:
@@ -168,11 +182,14 @@ export default function AdminDashboardPage() {
       pendingOrders: orders.filter(
         (order: any) => (order.order_status || 'pending') === 'pending',
       ).length,
-      lowStock: (stockResult.data || []).slice(0, 6).map((row: any) => ({
+      lowStock: stockRows.filter((row: any) => Number(row.stock_quantity) <= 10).slice(0, 6).map((row: any) => ({
         product_slug: row.product_slug,
         stock_quantity: Number(row.stock_quantity),
         status: row.status || 'active',
+        stockValue: Number(row.stock_quantity || 0) * Number(row.price || 0),
       })),
+      stockValueTotal,
+      recentActivity,
       retailerOutstanding: (balanceResult.data || []).reduce(
         (sum: number, row: any) => sum + Number(row.outstanding_balance || 0),
         0,
@@ -334,7 +351,7 @@ export default function AdminDashboardPage() {
                 <div>
                   <h2 className="text-lg font-semibold">Low stock</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Products with 10 or fewer tracked units.
+                    Products with 10 or fewer tracked units. Stock value uses current selling price.
                   </p>
                 </div>
                 <Link
@@ -359,7 +376,9 @@ export default function AdminDashboardPage() {
                         className={
                           product.stock_quantity === 0
                             ? 'shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700'
-                            : 'shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700'
+                            : product.stock_quantity <= 3
+                              ? 'shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700'
+                              : 'shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700'
                         }
                       >
                         {product.stock_quantity} left
@@ -371,6 +390,11 @@ export default function AdminDashboardPage() {
                 <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
                   No products are currently at or below 10 tracked units.
                 </div>
+              )}
+              {data.lowStock.length > 0 && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Total tracked stock value: {money(data.stockValueTotal)}
+                </p>
               )}
             </div>
 
@@ -402,6 +426,26 @@ export default function AdminDashboardPage() {
                   Create retailer order
                 </Link>
               </div>
+            </div>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <div>
+              <h2 className="text-lg font-semibold">Recent activity</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Latest customer and retailer orders, excluding cancelled orders.</p>
+            </div>
+            <div className="mt-4 divide-y divide-border rounded-xl border border-border">
+              {data.recentActivity.length === 0 ? (
+                <p className="p-4 text-sm text-muted-foreground">No recent orders.</p>
+              ) : data.recentActivity.map((item) => (
+                <div key={item.channel + '-' + item.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{item.channel} order #{item.id}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('en-IN')} · {item.status}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold">{money(item.total)}</span>
+                </div>
+              ))}
             </div>
           </section>
 

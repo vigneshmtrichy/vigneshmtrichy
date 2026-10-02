@@ -107,15 +107,33 @@ export default function RetailersPage() {
   const [statementLoading, setStatementLoading] = useState(false)
   const [statementOrders, setStatementOrders] = useState<any[]>([])
   const [statementPayments, setStatementPayments] = useState<any[]>([])
+  const [overdueByRetailer, setOverdueByRetailer] = useState<Record<string, { count: number; amount: number }>>({})
   const retailerFormRef = useRef<HTMLFormElement>(null)
 
   const load = async () => {
     const { data: retailerRows, error } = await supabase.from('retailers').select('*').order('business_name')
     if (error) { setMessage('Unable to load retailers.'); return }
     const { data: balanceRows } = await supabase.from('retailer_balances').select('*')
+    const { data: overdueRows } = await supabase
+      .from('retailer_orders')
+      .select('retailer_id, total, due_date, payment_status, order_status')
+      .neq('order_status', 'cancelled')
+      .neq('payment_status', 'paid')
+      .not('due_date', 'is', null)
+    const todayIndia = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
+    const nextOverdue: Record<string, { count: number; amount: number }> = {}
+    ;(overdueRows || []).forEach((row: any) => {
+      if (row.due_date < todayIndia) {
+        const current = nextOverdue[row.retailer_id] || { count: 0, amount: 0 }
+        current.count += 1
+        current.amount += Number(row.total || 0)
+        nextOverdue[row.retailer_id] = current
+      }
+    })
     const nextBalances: Record<string, any> = {}
     balanceRows?.forEach((row: any) => { nextBalances[row.retailer_id] = row })
     setBalances(nextBalances)
+    setOverdueByRetailer(nextOverdue)
     setRetailers((retailerRows || []) as Retailer[])
   }
 
@@ -213,6 +231,50 @@ export default function RetailersPage() {
     setStatementLoading(false)
   }
 
+  const csvEscape = (value: unknown) => {
+    const text = String(value ?? '').replace(/\r?\n|\r/g, ' ').trim()
+    return '"' + text.replace(/"/g, '""') + '"'
+  }
+
+  const exportStatementCsv = () => {
+    if (!selected) return
+    const transactions = [
+      ...statementOrders.filter((o) => o.order_status !== 'cancelled').map((o) => ({
+        date: o.created_at, type: 'Order', reference: 'Order #' + o.id, detail: o.payment_status, debit: Number(o.total || 0), credit: 0, balance: Number(o.outstanding || 0),
+      })),
+      ...statementPayments.map((p) => ({
+        date: p.created_at, type: 'Payment', reference: p.reference || 'Payment #' + p.id, detail: p.payment_method, debit: 0, credit: Number(p.amount || 0), balance: '',
+      })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+    const rows = [
+      ['Date', 'Type', 'Reference', 'Details', 'Debit', 'Credit', 'Outstanding'],
+      ...transactions.map((row) => [new Date(row.date).toLocaleString('en-IN'), row.type, row.reference, row.detail, row.debit, row.credit, row.balance]),
+    ]
+    const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\r\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'tenoo-statement-' + selected.business_name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.csv'
+    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url)
+  }
+
+  const exportPaymentsCsv = () => {
+    if (!selected || statementPayments.length === 0) return
+    const rows = [
+      ['Payment ID', 'Date', 'Amount', 'Method', 'Reference', 'Notes'],
+      ...statementPayments.map((p) => [p.id, new Date(p.created_at).toLocaleString('en-IN'), p.amount, p.payment_method, p.reference || '', p.notes || '']),
+    ]
+    const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\r\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'tenoo-payments-' + selected.business_name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.csv'
+    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url)
+  }
+
   const recordPayment = async () => {
     if (!selected) return
     const amount = Number(paymentAmount)
@@ -281,7 +343,7 @@ export default function RetailersPage() {
               const balance = balances[retailer.id]?.outstanding_balance || 0
               const unappliedCredit = balances[retailer.id]?.unapplied_credit || 0
               return <button key={retailer.id} onClick={() => void selectRetailer(retailer)} className="w-full rounded-xl border bg-background p-3 text-left transition hover:border-primary sm:rounded-2xl sm:p-4">
-                <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="truncate font-semibold">{retailer.business_name}</p><p className="mt-0.5 truncate text-xs text-muted-foreground sm:mt-1 sm:text-sm">{retailer.contact_name || retailer.phone} {retailer.city ? '· ' + retailer.city : ''}</p></div><span className="shrink-0 text-right text-sm font-semibold text-amber-700">{money(balance)}<small className="block text-[10px] font-normal text-muted-foreground sm:text-xs">outstanding</small>{unappliedCredit > 0 && <small className="mt-0.5 block text-[10px] font-semibold text-emerald-700 sm:mt-1 sm:text-xs">{money(unappliedCredit)} unapplied credit</small>}</span></div>
+                <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="truncate font-semibold">{retailer.business_name}</p><p className="mt-0.5 truncate text-xs text-muted-foreground sm:mt-1 sm:text-sm">{retailer.contact_name || retailer.phone} {retailer.city ? '· ' + retailer.city : ''}</p></div><span className="shrink-0 text-right text-sm font-semibold text-amber-700">{money(balance)}<small className="block text-[10px] font-normal text-muted-foreground sm:text-xs">outstanding</small>{unappliedCredit > 0 && <small className="mt-0.5 block text-[10px] font-semibold text-emerald-700 sm:mt-1 sm:text-xs">{money(unappliedCredit)} unapplied credit</small>}{overdueByRetailer[retailer.id]?.count > 0 && <small className="mt-1 block text-[10px] font-semibold text-red-700 sm:text-xs">{overdueByRetailer[retailer.id].count} overdue · {money(overdueByRetailer[retailer.id].amount)}</small>}</span></div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground sm:mt-3 sm:text-xs"><span className="rounded-full bg-muted px-2 py-1">{retailer.status}</span><span className="truncate text-right">{retailer.payment_terms_days} day terms · credit {money(retailer.credit_limit)}</span></div>
               </button>
             })}</section>
@@ -300,7 +362,7 @@ export default function RetailersPage() {
               </div>
               {showStatement && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                 <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-xl">
-                  <div className="flex items-start justify-between gap-3"><div><h3 className="text-xl font-semibold">Retailer statement</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><button type="button" onClick={() => setShowStatement(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div>
+                  <div className="flex items-start justify-between gap-3"><div><h3 className="text-xl font-semibold">Retailer statement</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><div className="flex gap-2"><button type="button" onClick={exportStatementCsv} disabled={statementLoading} className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Export statement</button><button type="button" onClick={exportPaymentsCsv} disabled={statementLoading || statementPayments.length === 0} className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Export payments</button><button type="button" onClick={() => setShowStatement(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div></div>
                   {statementLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading statement…</p> : (() => {
                     const now = new Date()
                     const buckets = { current: 0, d1_15: 0, d16_30: 0, d31_60: 0, d60: 0 }

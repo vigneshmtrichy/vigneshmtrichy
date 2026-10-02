@@ -203,6 +203,8 @@ export default function RetailerOrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
   const [statusHistory, setStatusHistory] = useState<Record<string, any[]>>({})
   const [statusHistoryError, setStatusHistoryError] = useState('')
   const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
@@ -211,7 +213,7 @@ export default function RetailerOrdersPage() {
   const load = async () => {
     const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
-      supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }).limit(50),
+      supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }),
     ])
     const nextOrders = orderRows || []
     setRetailers((retailerRows || []) as Retailer[])
@@ -306,6 +308,20 @@ export default function RetailerOrdersPage() {
     })
   }, [orders, search, statusFilter, paymentFilter, dateFrom, dateTo])
 
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize))
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredOrders.slice(start, start + pageSize)
+  }, [filteredOrders, currentPage, pageSize])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter, paymentFilter, dateFrom, dateTo])
+
   const createOrder = async (event: FormEvent) => {
     event.preventDefault()
     if (!retailerId) { setMessage('Choose a retailer.'); return }
@@ -399,7 +415,7 @@ export default function RetailerOrdersPage() {
     </form>
 
     <section className="mt-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Showing the latest 50 orders.</p></div><p className="text-sm text-muted-foreground">{filteredOrders.length} shown</p></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Showing all retailer orders with pagination.</p></div><p className="text-sm text-muted-foreground">{filteredOrders.length} shown · Page {currentPage}/{totalPages}</p></div>
       <div className="mt-4 grid gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-11 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
@@ -410,12 +426,28 @@ export default function RetailerOrdersPage() {
         </div>
       </div>
       {statusHistoryError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">Status history could not be loaded: {statusHistoryError}</p>}
-      <div className="mt-4 space-y-3">{filteredOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
+      <div className="mt-4 space-y-3">{paginatedOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex flex-wrap items-center gap-2"><a href={`/admin/retailer-orders/invoice/${order.id}`} className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-muted">Invoice</a><p className="text-lg font-bold text-primary">{money(order.total)}</p><CustomSelect value={order.order_status} onChange={(value) => void updateStatus(order, value)} className="w-44" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} /></div></div>
         {order.order_status === 'cancelled' && order.notes?.includes('Cancellation reason:') && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{order.notes.split('Cancellation reason:').pop()?.trim()}</p>}
         {statusHistory[String(order.id)]?.length > 0 && <div className="mt-3"><button type="button" onClick={() => setOpenHistory((current) => ({ ...current, [order.id]: !current[order.id] }))} className="text-xs font-semibold text-primary">{openHistory[order.id] ? 'Hide status history' : 'View status history'}</button>{openHistory[order.id] && <div className="mt-2 rounded-lg border bg-muted/30 p-3 text-xs">{statusHistory[String(order.id)].slice(0, 8).map((entry: any, index: number) => <div key={index} className="flex justify-between gap-3 border-b py-2 last:border-0"><span>{entry.old_status ? entry.old_status + ' → ' : ''}{entry.new_status}</span><span className="text-right text-muted-foreground">{new Date(entry.changed_at).toLocaleString('en-IN')}{entry.note ? ' · ' + entry.note : ''}</span></div>)}</div>}</div>}
       </article>)}</div>
-      {filteredOrders.length === 0 && <div className="mt-4 rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground">No retailer orders match these filters.</div>}
+      {filteredOrders.length === 0 && <div className="mt-4 rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground">No retailer orders match these filters.</div>}      {filteredOrders.length > 0 && totalPages > 1 && (
+        <div className="mt-5 flex flex-col gap-3 rounded-2xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredOrders.length)} of {filteredOrders.length} orders
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Per page
+              <CustomSelect value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setCurrentPage(1) }} className="w-24" options={[{ value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }]} />
+            </label>
+            <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+            <span className="px-1 text-xs font-semibold">Page {currentPage} / {totalPages}</span>
+            <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      )}
+
     </section>
     {cancelOrder && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-xl"><h3 className="text-lg font-semibold">Cancel order #{cancelOrder.id}?</h3><p className="mt-1 text-sm text-muted-foreground">Stock will be restored and allocated payment will become unapplied credit.</p><label className="mt-4 block text-sm font-medium">Cancellation reason<textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" placeholder="Why is this order being cancelled?" autoFocus /></label><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setCancelOrder(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Keep order</button><button type="button" onClick={() => void confirmCancellation()} className="rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground">Cancel order</button></div></div></div>}
   </div></main></>

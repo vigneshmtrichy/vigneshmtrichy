@@ -81,6 +81,8 @@ export default function AdminOrdersPage() {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null)
   const [openStatusOrderId, setOpenStatusOrderId] = useState<number | null>(null)
   const [openShippingOrderId, setOpenShippingOrderId] = useState<number | null>(null)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([])
+  const [bulkUpdating, setBulkUpdating] = useState(false)
 
   const [updatingOrder, setUpdatingOrder] = useState<number | null>(null)
   const [savingShipping, setSavingShipping] = useState<number | null>(null)
@@ -168,6 +170,32 @@ export default function AdminOrdersPage() {
     )
 
     setUpdatingOrder(null)
+  }
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (selectedOrderIds.length === 0) return
+    setBulkUpdating(true)
+    const { error } = await supabase
+      .from('orders')
+      .update({ order_status: newStatus })
+      .in('id', selectedOrderIds)
+
+    if (error) {
+      console.error('Failed to bulk update order status:', error)
+      alert('Failed to update selected orders. Please try again.')
+      setBulkUpdating(false)
+      return
+    }
+
+    setOrders((currentOrders) =>
+      currentOrders.map((order) =>
+        selectedOrderIds.includes(order.id)
+          ? { ...order, order_status: newStatus }
+          : order,
+      ),
+    )
+    setSelectedOrderIds([])
+    setBulkUpdating(false)
   }
 
   const updateLocalOrder = (
@@ -521,6 +549,10 @@ export default function AdminOrdersPage() {
     }
   }
 
+  useEffect(() => {
+    setSelectedOrderIds([])
+  }, [searchQuery, statusFilter, currentPage, pageSize])
+
   const selectStatusFilter = (status: string) => {
     setStatusFilter(status)
     setCurrentPage(1)
@@ -757,6 +789,46 @@ export default function AdminOrdersPage() {
             selectStatusFilter={selectStatusFilter}
             getCountForFilter={getCountForFilter}
           />
+
+          {paginatedOrders.length > 0 && (
+            <div className="mt-5 rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={paginatedOrders.filter((order) => !['delivered', 'cancelled'].includes(order.order_status || 'pending')).length > 0 && paginatedOrders.filter((order) => !['delivered', 'cancelled'].includes(order.order_status || 'pending')).every((order) => selectedOrderIds.includes(order.id))}
+                    onChange={(event) => {
+                      const pageIds = paginatedOrders.filter((order) => !['delivered', 'cancelled'].includes(order.order_status || 'pending')).map((order) => order.id)
+                      setSelectedOrderIds((current) =>
+                        event.target.checked
+                          ? Array.from(new Set([...current, ...pageIds]))
+                          : current.filter((id) => !pageIds.includes(id)),
+                      )
+                    }}
+                    className="h-4 w-4"
+                  />
+                  Select orders on this page
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{selectedOrderIds.length} selected</span>
+                  {['confirmed', 'processing', 'shipped', 'delivered'].map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={bulkUpdating || selectedOrderIds.length === 0}
+                      onClick={() => void bulkUpdateStatus(status)}
+                      className="rounded-lg border px-3 py-2 text-xs font-semibold capitalize hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {bulkUpdating ? 'Updating…' : 'Mark ' + status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Bulk actions do not include cancellation; use the individual order action when an order must be cancelled.
+              </p>
+            </div>
+          )}
 
           {/* ORDER HEADER */}
           <div
