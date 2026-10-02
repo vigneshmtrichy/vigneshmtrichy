@@ -263,6 +263,48 @@ export default function RetailersPage() {
     document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url)
   }
 
+  const exportRetailerListCsv = () => {
+    const rows = [
+      [
+        'Business Name', 'Contact Name', 'Phone', 'WhatsApp', 'Email', 'Billing Name',
+        'Address', 'City', 'State', 'Pincode', 'GSTIN', 'Status', 'Payment Terms (Days)',
+        'Credit Limit', 'Outstanding', 'Unapplied Credit', 'Overdue Orders', 'Overdue Amount', 'Notes',
+      ],
+      ...retailers.map((retailer) => {
+        const balance = balances[retailer.id] || {}
+        const overdue = overdueByRetailer[retailer.id] || { count: 0, amount: 0 }
+        return [
+          retailer.business_name,
+          retailer.contact_name || '',
+          retailer.phone,
+          retailer.whatsapp || '',
+          retailer.email || '',
+          retailer.billing_name || '',
+          retailer.address || '',
+          retailer.city || '',
+          retailer.state || '',
+          retailer.pincode || '',
+          retailer.gstin || '',
+          retailer.status,
+          retailer.payment_terms_days,
+          retailer.credit_limit,
+          Number(balance.outstanding_balance || 0),
+          Number(balance.unapplied_credit || 0),
+          overdue.count,
+          Number(overdue.amount || 0),
+          retailer.notes || '',
+        ]
+      }),
+    ]
+    const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\r\n')
+    const blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'tenoo-retailer-list-' + new Date().toISOString().slice(0, 10) + '.csv'
+    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url)
+  }
+
   const exportPaymentsCsv = () => {
     if (!selected || statementPayments.length === 0) return
     const rows = [
@@ -316,8 +358,9 @@ export default function RetailersPage() {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div><h1 className="text-3xl font-semibold sm:text-3xl">Retailers</h1><p className="mt-1 text-sm text-muted-foreground">Accounts, credit, price overrides and collections.</p></div>
-            <div className="flex gap-2 sm:flex-row">
+            <div className="flex flex-wrap gap-2 sm:flex-row">
               <Link href="/admin/retailer-orders" className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-center text-sm font-semibold sm:flex-none sm:px-4">Retailer Orders</Link>
+              <button onClick={exportRetailerListCsv} disabled={retailers.length === 0} className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:px-4">Download Retailer List</button>
               <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="flex-1 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground sm:flex-none sm:px-4">Add Retailer</button>
             </div>
           </div>
