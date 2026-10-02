@@ -208,12 +208,28 @@ export default function RetailerOrdersPage() {
   const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
   const [cancelOrder, setCancelOrder] = useState<any | null>(null)
   const [cancelReason, setCancelReason] = useState('')
+  const [salesStats, setSalesStats] = useState({ ordersToday: 0, salesToday: 0, salesThisMonth: 0 })
 
   const load = async () => {
-    const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
+    const [{ data: retailerRows }, { data: orderRows }, { data: statsOrderRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
       supabase.from('retailer_orders').select('*, retailers(business_name), retailer_order_items(*)').order('created_at', { ascending: false }).limit(50),
+      supabase.from('retailer_orders').select('created_at, total, order_status'),
     ])
+    const statsOrders = (statsOrderRows || []).filter((order: any) => order.order_status !== 'cancelled')
+    const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    const monthKey = todayKey.slice(0, 7)
+    const todayOrders = statsOrders.filter((order: any) =>
+      new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === todayKey
+    )
+    const monthOrders = statsOrders.filter((order: any) =>
+      new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }).startsWith(monthKey)
+    )
+    setSalesStats({
+      ordersToday: todayOrders.length,
+      salesToday: todayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      salesThisMonth: monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+    })
     const nextOrders = orderRows || []
     setRetailers((retailerRows || []) as Retailer[])
     setOrders(nextOrders)
@@ -378,6 +394,12 @@ export default function RetailerOrdersPage() {
   return <><SiteHeader /><main className="min-h-screen bg-muted/20 px-4 py-8 sm:px-6"><div className="mx-auto max-w-7xl">
     <div><h1 className="text-3xl font-semibold">Retailer Orders</h1><p className="mt-1 text-sm text-muted-foreground">Create trade orders at the retailer’s approved price; stock is reserved immediately.</p></div>
     {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
+
+    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Orders today</p><p className="mt-1 text-2xl font-semibold">{salesStats.ordersToday}</p></div>
+      <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Sales today</p><p className="mt-1 text-2xl font-semibold">{money(salesStats.salesToday)}</p></div>
+      <div className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">Sales this month</p><p className="mt-1 text-2xl font-semibold">{money(salesStats.salesThisMonth)}</p></div>
+    </div>
 
     <form onSubmit={createOrder} className="mt-6 rounded-2xl border bg-background p-5">
       <div className="grid gap-4 sm:grid-cols-3"><label className="text-sm font-medium">Retailer<CustomSelect value={retailerId} onChange={setRetailerId} placeholder="Select retailer" className="mt-1" options={retailers.map((r) => ({ value: r.id, label: r.business_name }))} /></label>
