@@ -51,6 +51,18 @@ const statusLabel = (status?: string) => {
 const getStatusStyle = (status?: string) =>
   STATUS_STYLES[status || 'pending'] || STATUS_STYLES.pending
 
+const STATUS_FLOW: Record<string, string[]> = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['processing', 'cancelled'],
+  processing: ['shipped', 'cancelled'],
+  shipped: ['delivered', 'cancelled'],
+  delivered: [],
+  cancelled: [],
+}
+
+const canTransitionStatus = (current: string, next: string) =>
+  STATUS_FLOW[current || 'pending']?.includes(next) ?? false
+
 const INDIA_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Kolkata',
   year: 'numeric',
@@ -143,7 +155,10 @@ export default function AdminOrdersPage() {
     newStatus: string,
   ) => {
     const previousOrder = orders.find((order) => order.id === orderId)
-    if (!previousOrder) return
+    if (!previousOrder || !canTransitionStatus(previousOrder.order_status || 'pending', newStatus)) {
+      alert('Invalid order status transition.')
+      return
+    }
 
     setUpdatingOrder(orderId)
 
@@ -174,6 +189,11 @@ export default function AdminOrdersPage() {
 
   const bulkUpdateStatus = async (newStatus: string) => {
     if (selectedOrderIds.length === 0) return
+    const selectedOrders = orders.filter((order) => selectedOrderIds.includes(order.id))
+    if (selectedOrders.some((order) => !canTransitionStatus(order.order_status || 'pending', newStatus))) {
+      alert('One or more selected orders cannot move to that status.')
+      return
+    }
     setBulkUpdating(true)
     const { error } = await supabase
       .from('orders')
@@ -813,6 +833,7 @@ export default function AdminOrdersPage() {
                   <span className="text-xs text-muted-foreground">{selectedOrderIds.length} selected</span>
                   {['confirmed', 'processing', 'shipped', 'delivered'].map((status) => (
                     <button
+                      disabled={bulkUpdating || selectedOrderIds.length === 0 || orders.filter((order) => selectedOrderIds.includes(order.id)).some((order) => !canTransitionStatus(order.order_status || 'pending', status))}
                       key={status}
                       type="button"
                       disabled={bulkUpdating || selectedOrderIds.length === 0}
@@ -1029,7 +1050,11 @@ export default function AdminOrdersPage() {
                                     type="button"
                                     disabled={
                                       updatingOrder ===
-                                      order.id
+                                        order.id ||
+                                      !canTransitionStatus(
+                                        status,
+                                        nextStatus,
+                                      )
                                     }
                                     onClick={async () => {
                                       await updateOrderStatus(
