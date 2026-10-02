@@ -27,35 +27,22 @@ const leaves = [
 export function FallingLeaves() {
   const [show, setShow] = useState(false)
   const [heroTop, setHeroTop] = useState(0)
-
   useEffect(() => {
     const internalHome =
       sessionStorage.getItem('tenoo-internal-home') === '1'
 
     if (internalHome) return
 
-    const findHero = () => {
+    const timer = window.setTimeout(() => {
       const hero = document.getElementById('tenoo-hero')
-
       if (!hero) return
 
-      const rect = hero.getBoundingClientRect()
-
-      // Hero's position inside the current viewport
-      setHeroTop(rect.top)
-
+      setHeroTop(hero.getBoundingClientRect().top)
       setShow(true)
-    }
-
-    // Wait until the page has restored its scroll position
-    // and the hero/banner has been laid out.
-    const timer = window.setTimeout(findHero, 100)
-
-    window.addEventListener('resize', findHero)
+    }, 100)
 
     return () => {
       window.clearTimeout(timer)
-      window.removeEventListener('resize', findHero)
     }
   }, [])
 
@@ -65,78 +52,17 @@ export function FallingLeaves() {
     <>
       <style jsx>{`
         @keyframes tenooLeafFall {
-          0% {
-            transform:
-              translate3d(0, -20px, 0)
-              rotate(var(--start-rotation))
-              scale(0.85);
-            opacity: 0;
-          }
-
-          8% {
-            opacity: 0.85;
-          }
-
-          25% {
-            transform:
-              translate3d(35px, 25vh, 0)
-              rotate(calc(var(--start-rotation) + 90deg))
-              scale(1);
-          }
-
-          50% {
-            transform:
-              translate3d(-45px, 52vh, 0)
-              rotate(calc(var(--start-rotation) + 190deg))
-              scale(0.95);
-          }
-
-          75% {
-            transform:
-              translate3d(30px, 78vh, 0)
-              rotate(calc(var(--start-rotation) + 280deg))
-              scale(1.05);
-          }
-
-          90% {
-            opacity: 0.65;
-          }
-
-          100% {
-            transform:
-              translate3d(-25px, 115vh, 0)
-              rotate(calc(var(--start-rotation) + 380deg))
-              scale(0.9);
-            opacity: 0;
-          }
+          0% { transform: translate3d(0, -12vh, 0) rotate(var(--start-rotation)) scale(0.82); opacity: 0; }
+          7% { opacity: 0.9; }
+          22% { transform: translate3d(34px, 22vh, 0) rotate(calc(var(--start-rotation) + 85deg)) scale(1); }
+          45% { transform: translate3d(-42px, 46vh, 0) rotate(calc(var(--start-rotation) + 175deg)) scale(0.96); }
+          68% { transform: translate3d(38px, 72vh, 0) rotate(calc(var(--start-rotation) + 265deg)) scale(1.04); }
+          86% { transform: translate3d(-28px, 96vh, 0) rotate(calc(var(--start-rotation) + 330deg)) scale(0.98); opacity: 0.62; }
+          100% { transform: translate3d(24px, 122vh, 0) rotate(calc(var(--start-rotation) + 405deg)) scale(0.9); opacity: 0; }
         }
-
-        .tenoo-leaf {
-          position: fixed;
-          top: var(--hero-top);
-          z-index: 9998;
-          width: var(--leaf-size);
-          height: var(--leaf-size);
-          pointer-events: none;
-          transform-origin: center;
-          animation-name: tenooLeafFall;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: 1;
-          animation-fill-mode: both;
-          will-change: transform, opacity;
-        }
-
-        .tenoo-leaf img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .tenoo-leaf {
-            display: none;
-          }
-        }
+        .tenoo-leaf { position: fixed; top: 0; z-index: 9998; width: var(--leaf-size); height: var(--leaf-size); pointer-events: none; transform-origin: center; animation-name: tenooLeafFall; animation-timing-function: ease-in-out; animation-iteration-count: 1; animation-fill-mode: both; will-change: transform, opacity; }
+        .tenoo-leaf img { width: 100%; height: 100%; object-fit: contain; }
+        @media (prefers-reduced-motion: reduce) { .tenoo-leaf { display: none; } }
       `}</style>
 
       <div
