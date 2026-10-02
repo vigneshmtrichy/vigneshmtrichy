@@ -268,19 +268,18 @@ export default function AdminDashboardPage() {
 
           <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {cards.map((card) => (
-              <Link
-                key={card.label}
-                href={card.href}
-                className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5"
-              >
-                <p className="text-xs font-medium text-muted-foreground">
-                  {card.label}
-                </p>
-                <p className="mt-2 text-2xl font-bold text-foreground">
-                  {card.value}
-                </p>
-              </Link>
-            ))}
+            <div
+              key={card.label}
+              className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
+            >
+              <p className="text-xs font-medium text-muted-foreground">
+                {card.label}
+              </p>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {card.value}
+              </p>
+            </div>
+          ))}
           </section>
 
           <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
