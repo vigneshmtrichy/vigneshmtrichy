@@ -208,7 +208,6 @@ export default function RetailerOrdersPage() {
   const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
   const [cancelOrder, setCancelOrder] = useState<any | null>(null)
   const [cancelReason, setCancelReason] = useState('')
-
   const load = async () => {
     const [{ data: retailerRows }, { data: orderRows }] = await Promise.all([
       supabase.from('retailers').select('id, business_name, payment_terms_days, credit_limit').eq('status', 'active').order('business_name'),
