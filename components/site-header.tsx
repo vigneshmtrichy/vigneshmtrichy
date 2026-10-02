@@ -162,79 +162,46 @@ useEffect(() => {
 {user ? (
   <>
     {user?.email === 'info@tenoo.in' ? (
-      <div className="relative hidden lg:block">
+      <nav
+        className="hidden items-center gap-1 lg:flex"
+        aria-label="Admin navigation"
+      >
+        {[
+          { href: '/admin', label: 'Dashboard' },
+          { href: '/admin/orders', label: 'Online Orders' },
+          { href: '/admin/products', label: 'Products' },
+          { href: '/admin/retailers', label: 'Retailers' },
+          { href: '/admin/retailer-orders', label: 'Retailer Orders' },
+        ].map((link) => {
+          const active =
+            link.href === '/admin'
+              ? pathname === '/admin'
+              : pathname === link.href || pathname.startsWith(`${link.href}/`)
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary',
+                active
+                  ? 'bg-[#edf3dc] text-[#7fb51b]'
+                  : 'text-foreground/80',
+              )}
+            >
+              {link.label}
+            </Link>
+          )
+        })}
+
         <button
           type="button"
-          onClick={() => setAdminOpen((value) => !value)}
-          className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+          onClick={handleLogout}
+          className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
         >
-          Admin
-
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 transition-transform',
-              adminOpen && 'rotate-180',
-            )}
-          />
+          🚪 Logout
         </button>
-
-        {adminOpen && (
-  <div className="absolute right-0 top-12 z-50 w-48 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl">
-    <Link
-      href="/admin"
-      onClick={() => setAdminOpen(false)}
-      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-    >
-      Dashboard
-    </Link>
-
-    <Link
-      href="/admin/orders"
-      onClick={() => setAdminOpen(false)}
-      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-    >
-      Online Orders
-    </Link>
-
-    <Link
-      href="/admin/products"
-      onClick={() => setAdminOpen(false)}
-      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-    >
-      Products
-    </Link>
-
-    <Link
-      href="/admin/retailers"
-      onClick={() => setAdminOpen(false)}
-      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-    >
-      Retailers
-    </Link>
-
-    <Link
-      href="/admin/retailer-orders"
-      onClick={() => setAdminOpen(false)}
-      className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-    >
-      Retailer Orders
-    </Link>
-
-    <div className="my-1 border-t border-border/60" />
-
-    <button
-      type="button"
-      onClick={async () => {
-        setAdminOpen(false)
-        await handleLogout()
-      }}
-      className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-    >
-      🚪 Logout
-    </button>
-  </div>
-)}
-      </div>
+      </nav>
     ) : (
       <div className="relative hidden lg:block">
         <button
