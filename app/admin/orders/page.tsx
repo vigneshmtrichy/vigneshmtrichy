@@ -833,10 +833,9 @@ export default function AdminOrdersPage() {
                   <span className="text-xs text-muted-foreground">{selectedOrderIds.length} selected</span>
                   {['confirmed', 'processing', 'shipped', 'delivered'].map((status) => (
                     <button
-                      disabled={bulkUpdating || selectedOrderIds.length === 0 || orders.filter((order) => selectedOrderIds.includes(order.id)).some((order) => !canTransitionStatus(order.order_status || 'pending', status))}
                       key={status}
                       type="button"
-                      disabled={bulkUpdating || selectedOrderIds.length === 0}
+                      disabled={bulkUpdating || selectedOrderIds.length === 0 || orders.filter((order) => selectedOrderIds.includes(order.id)).some((order) => !canTransitionStatus(order.order_status || 'pending', status))}
                       onClick={() => void bulkUpdateStatus(status)}
                       className="rounded-lg border px-3 py-2 text-xs font-semibold capitalize hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                     >
