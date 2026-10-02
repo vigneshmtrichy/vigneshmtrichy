@@ -1,8 +1,39 @@
+'use client'
+
 import Image from 'next/image'
+import { useEffect, useRef, useState } from 'react'
 
 export function FamilyBanner() {
+  const sectionRef = useRef<HTMLElement>(null)
+  const [mergeProgress, setMergeProgress] = useState(0)
+
+  useEffect(() => {
+    const updateProgress = () => {
+      const section = sectionRef.current
+      if (!section) return
+
+      const rect = section.getBoundingClientRect()
+      const start = window.innerHeight * 0.92
+      const end = window.innerHeight * 0.42
+      const progress = Math.min(1, Math.max(0, (start - rect.top) / (start - end)))
+      setMergeProgress(progress)
+    }
+
+    updateProgress()
+    window.addEventListener('scroll', updateProgress, { passive: true })
+    window.addEventListener('resize', updateProgress)
+
+    return () => {
+      window.removeEventListener('scroll', updateProgress)
+      window.removeEventListener('resize', updateProgress)
+    }
+  }, [])
+
+  const desktopOffset = (1 - mergeProgress) * 72
+  const desktopScale = 0.985 + mergeProgress * 0.015
+
   return (
-    <section aria-labelledby="family-heading" className="px-4 md:px-8">
+    <section ref={sectionRef} aria-labelledby="family-heading" className="px-4 md:px-8">
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-primary shadow-sm">
 
         {/* =====================================================
@@ -20,7 +51,10 @@ export function FamilyBanner() {
           />
 
           {/* Text */}
-          <div className="relative z-10 flex items-center px-14 py-14 xl:px-16">
+          <div
+            className="relative z-10 flex items-center px-14 py-14 xl:px-16 transition-transform duration-100 ease-out motion-reduce:transform-none"
+            style={{ transform: `translate3d(-${desktopOffset}px, 0, 0) scale(${desktopScale})` }}
+          >
             <div className="absolute left-0 top-1/2 h-28 w-px -translate-y-1/2 bg-lime-400/50" />
 
             <div className="max-w-lg text-primary-foreground">
@@ -47,7 +81,10 @@ export function FamilyBanner() {
           </div>
 
           {/* Family image */}
-          <div className="relative">
+          <div
+            className="relative transition-transform duration-100 ease-out motion-reduce:transform-none"
+            style={{ transform: `translate3d(${desktopOffset}px, 0, 0) scale(${desktopScale})` }}
+          >
             <Image
               src="/lifestyle/family.png"
               alt="Three generations of a family sharing a warm meal together"
