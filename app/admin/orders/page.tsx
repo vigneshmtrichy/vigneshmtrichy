@@ -1815,8 +1815,6 @@ Thank you for choosing TENOO.`,
           )}
         </div>
       </main>
-
-      <SiteFooter />
-    </>
+</>
   )
 }
