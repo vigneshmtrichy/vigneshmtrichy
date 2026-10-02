@@ -30,6 +30,7 @@ type DashboardChannel = {
 type DashboardData = {
   todayOrders: number
   todaySales: number
+  monthOrders: number
   monthSales: number
   online: DashboardChannel
   retailer: DashboardChannel
@@ -42,6 +43,7 @@ type DashboardData = {
 const EMPTY_DATA: DashboardData = {
   todayOrders: 0,
   todaySales: 0,
+  monthOrders: 0,
   monthSales: 0,
   online: { ordersToday: 0, salesToday: 0, salesThisMonth: 0 },
   retailer: { ordersToday: 0, salesToday: 0, salesThisMonth: 0 },
@@ -146,6 +148,7 @@ export default function AdminDashboardPage() {
       todaySales:
         todayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0) +
         retailerTodayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      monthOrders: monthOrders.length + retailerMonthOrders.length,
       monthSales:
         monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0) +
         retailerMonthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
@@ -190,32 +193,30 @@ export default function AdminDashboardPage() {
       {
         label: 'Orders today',
         value: String(data.todayOrders),
-        href: '/admin/orders',
       },
       {
         label: 'Sales today',
         value: money(data.todaySales),
-        href: '/admin/orders',
+      },
+      {
+        label: 'Orders this month',
+        value: String(data.monthOrders),
       },
       {
         label: 'Sales this month',
         value: money(data.monthSales),
-        href: '/admin/orders',
       },
       {
         label: 'Pending orders',
         value: String(data.pendingOrders),
-        href: '/admin/orders?status=pending',
       },
       {
         label: 'Retailer outstanding',
         value: money(data.retailerOutstanding),
-        href: '/admin/retailers',
       },
       {
         label: 'Unapplied retailer credit',
         value: money(data.retailerUnapplied),
-        href: '/admin/retailers',
       },
     ],
     [data],
@@ -266,7 +267,7 @@ export default function AdminDashboardPage() {
             </button>
           </div>
 
-          <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {cards.map((card) => (
             <div
               key={card.label}
