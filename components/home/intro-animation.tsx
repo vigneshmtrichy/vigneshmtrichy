@@ -67,12 +67,6 @@ export function IntroAnimation() {
           />
         </div>
 
-        <p className="mt-2 text-center text-[9px] font-semibold uppercase tracking-[0.34em] text-[#8fbd24] animate-[tenooTaglineReveal_400ms_cubic-bezier(0.22,1,0.36,1)_760ms_both]">
-          Good Food. Made for Every Generation.
-        </p>
-
-        <div className="mt-5 h-px w-[42px] bg-[#8fbd24] animate-[tenooLineReveal_300ms_ease-out_980ms_both]" />
-      </div>
     </div>
   )
 }
