@@ -216,3 +216,89 @@
     transform-origin: left;
   }
 }
+/* Premium intro: two logo panels travel independently and merge cleanly. */
+.tenoo-logo-panel {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  animation: tenooLogoPanelMerge 760ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.tenoo-logo-panel img {
+  position: absolute !important;
+  top: 0;
+  width: 230px !important;
+  height: 100px !important;
+  max-width: none !important;
+}
+
+.tenoo-logo-panel-left {
+  left: 0;
+  animation-name: tenooLogoPanelLeft;
+}
+
+.tenoo-logo-panel-left img {
+  left: 0;
+}
+
+.tenoo-logo-panel-right {
+  right: 0;
+  animation-name: tenooLogoPanelRight;
+}
+
+.tenoo-logo-panel-right img {
+  right: 0;
+}
+
+@keyframes tenooLogoPanelLeft {
+  0% {
+    opacity: 0;
+    transform: translate3d(-86px, 0, 0) scale(0.96);
+  }
+
+  62% {
+    opacity: 1;
+  }
+
+  88% {
+    transform: translate3d(3px, 0, 0) scale(1.012);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes tenooLogoPanelRight {
+  0% {
+    opacity: 0;
+    transform: translate3d(86px, 0, 0) scale(0.96);
+  }
+
+  62% {
+    opacity: 1;
+  }
+
+  88% {
+    transform: translate3d(-3px, 0, 0) scale(1.012);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tenoo-logo-panel {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
