@@ -21,10 +21,18 @@ const INDIA_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
 const getIndiaDateKey = (value: string) =>
   INDIA_DATE_FORMATTER.format(new Date(value))
 
+type DashboardChannel = {
+  ordersToday: number
+  salesToday: number
+  salesThisMonth: number
+}
+
 type DashboardData = {
   todayOrders: number
   todaySales: number
   monthSales: number
+  online: DashboardChannel
+  retailer: DashboardChannel
   pendingOrders: number
   lowStock: Array<{ product_slug: string; stock_quantity: number; status: string }>
   retailerOutstanding: number
@@ -35,6 +43,8 @@ const EMPTY_DATA: DashboardData = {
   todayOrders: 0,
   todaySales: 0,
   monthSales: 0,
+  online: { ordersToday: 0, salesToday: 0, salesThisMonth: 0 },
+  retailer: { ordersToday: 0, salesToday: 0, salesThisMonth: 0 },
   pendingOrders: 0,
   lowStock: [],
   retailerOutstanding: 0,
@@ -139,6 +149,16 @@ export default function AdminDashboardPage() {
       monthSales:
         monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0) +
         retailerMonthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      online: {
+        ordersToday: todayOrders.length,
+        salesToday: todayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+        salesThisMonth: monthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      },
+      retailer: {
+        ordersToday: retailerTodayOrders.length,
+        salesToday: retailerTodayOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+        salesThisMonth: retailerMonthOrders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+      },
       pendingOrders: orders.filter(
         (order: any) => (order.order_status || 'pending') === 'pending',
       ).length,
@@ -261,6 +281,48 @@ export default function AdminDashboardPage() {
                 </p>
               </Link>
             ))}
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <div>
+              <h2 className="text-lg font-semibold">Sales by channel</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Online customer orders and retailer orders, excluding cancelled orders.
+              </p>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[620px] text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="pb-3 font-medium">Channel</th>
+                    <th className="pb-3 text-right font-medium">Orders today</th>
+                    <th className="pb-3 text-right font-medium">Sales today</th>
+                    <th className="pb-3 text-right font-medium">Sales this month</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b">
+                    <td className="py-3 font-medium">Online</td>
+                    <td className="py-3 text-right">{data.online.ordersToday}</td>
+                    <td className="py-3 text-right">{money(data.online.salesToday)}</td>
+                    <td className="py-3 text-right">{money(data.online.salesThisMonth)}</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-3 font-medium">Retailer</td>
+                    <td className="py-3 text-right">{data.retailer.ordersToday}</td>
+                    <td className="py-3 text-right">{money(data.retailer.salesToday)}</td>
+                    <td className="py-3 text-right">{money(data.retailer.salesThisMonth)}</td>
+                  </tr>
+                  <tr>
+                    <td className="pt-3 font-bold">Total</td>
+                    <td className="pt-3 text-right font-bold">{data.todayOrders}</td>
+                    <td className="pt-3 text-right font-bold">{money(data.todaySales)}</td>
+                    <td className="pt-3 text-right font-bold">{money(data.monthSales)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
