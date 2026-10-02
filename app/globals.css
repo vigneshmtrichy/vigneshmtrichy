@@ -324,12 +324,12 @@
 /* Smaller Tenoo intro mark on narrow screens. */
 @media (max-width: 639px) {
   .tenoo-intro-mark {
-    width: 180px;
-    height: 78px;
+    width: 150px;
+    height: 65px;
   }
 
   .tenoo-intro-logo {
-    width: 180px;
-    height: 78px;
+    width: 150px;
+    height: 65px;
   }
 }
