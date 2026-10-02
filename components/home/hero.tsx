@@ -16,7 +16,7 @@ export function Hero() {
 
         <Link
           href="/products"
-         className="tenoo-products-cta absolute left-1/2 bottom-[1%] inline-flex -translate-x-1/2 rounded-full bg-orange-500 px-5 py-2.5 text-xs sm:px-7 sm:py-3 sm:text-sm font-bold text-white shadow-lg transition-transform duration-200 hover:scale-105 md:inline-flex"
+         className="tenoo-products-cta absolute left-1/2 bottom-[1%] inline-flex -translate-x-1/2 rounded-full bg-orange-500 px-4 py-2 text-[11px] sm:px-7 sm:py-3 sm:text-sm whitespace-nowrap font-bold text-white shadow-lg transition-transform duration-200 hover:scale-105 md:inline-flex"
         >
           EXPLORE OUR PRODUCTS
         </Link>
