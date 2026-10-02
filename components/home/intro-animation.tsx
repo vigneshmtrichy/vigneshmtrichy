@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 export function IntroAnimation() {
-  const [show, setShow] = useState(false)
+  // Render the cover on the first server paint so the homepage never flashes underneath it.\n  const [show, setShow] = useState(true)
 
   useEffect(() => {
     const navigationEntry = performance.getEntriesByType(
