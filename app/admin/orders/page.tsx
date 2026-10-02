@@ -549,6 +549,10 @@ export default function AdminOrdersPage() {
     }
   }
 
+  useEffect(() => {
+    setSelectedOrderIds([])
+  }, [searchQuery, statusFilter, currentPage, pageSize])
+
   const selectStatusFilter = (status: string) => {
     setStatusFilter(status)
     setCurrentPage(1)
@@ -792,9 +796,9 @@ export default function AdminOrdersPage() {
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <input
                     type="checkbox"
-                    checked={paginatedOrders.length > 0 && paginatedOrders.every((order) => selectedOrderIds.includes(order.id))}
+                    checked={paginatedOrders.filter((order) => !['delivered', 'cancelled'].includes(order.order_status || 'pending')).length > 0 && paginatedOrders.filter((order) => !['delivered', 'cancelled'].includes(order.order_status || 'pending')).every((order) => selectedOrderIds.includes(order.id))}
                     onChange={(event) => {
-                      const pageIds = paginatedOrders.map((order) => order.id)
+                      const pageIds = paginatedOrders.filter((order) => !['delivered', 'cancelled'].includes(order.order_status || 'pending')).map((order) => order.id)
                       setSelectedOrderIds((current) =>
                         event.target.checked
                           ? Array.from(new Set([...current, ...pageIds]))
