@@ -222,7 +222,7 @@ export default function RetailerOrdersPage() {
     const query = search.trim()
     let matchingOrderIds: number[] | null = null
     if (query) {
-      if (/^\\d+$/.test(query)) {
+      if (/^\d+$/.test(query)) {
         matchingOrderIds = [Number(query)]
       } else {
         const [{ data: retailerMatches }, { data: productMatches }] = await Promise.all([
@@ -299,7 +299,6 @@ export default function RetailerOrdersPage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       const ok = user?.email === 'info@tenoo.in'
       setAuthorized(ok)
-      if (ok) void load()
     })
   }, [])
 
