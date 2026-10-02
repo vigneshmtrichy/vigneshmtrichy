@@ -15,7 +15,8 @@ export function FamilyBanner() {
       const rect = section.getBoundingClientRect()
       const start = window.innerHeight * 0.92
       const end = window.innerHeight * 0.42
-      const progress = Math.min(1, Math.max(0, (start - rect.top) / (start - end)))
+      const rawProgress = Math.min(1, Math.max(0, (start - rect.top) / (start - end)))
+      const progress = 1 - Math.pow(1 - rawProgress, 3)
       setMergeProgress(progress)
     }
 
@@ -29,8 +30,8 @@ export function FamilyBanner() {
     }
   }, [])
 
-  const desktopOffset = (1 - mergeProgress) * 72
-  const desktopScale = 0.985 + mergeProgress * 0.015
+  const desktopOffset = (1 - mergeProgress) * 150
+  const desktopScale = 0.96 + mergeProgress * 0.04
 
   return (
     <section ref={sectionRef} aria-labelledby="family-heading" className="px-4 md:px-8">
@@ -52,7 +53,7 @@ export function FamilyBanner() {
 
           {/* Text */}
           <div
-            className="relative z-10 flex items-center px-14 py-14 xl:px-16 transition-transform duration-100 ease-out motion-reduce:transform-none"
+            className="relative z-10 flex items-center px-14 py-14 xl:px-16 motion-reduce:transform-none"
             style={{ transform: `translate3d(-${desktopOffset}px, 0, 0) scale(${desktopScale})` }}
           >
             <div className="absolute left-0 top-1/2 h-28 w-px -translate-y-1/2 bg-lime-400/50" />
@@ -82,7 +83,7 @@ export function FamilyBanner() {
 
           {/* Family image */}
           <div
-            className="relative transition-transform duration-100 ease-out motion-reduce:transform-none"
+            className="relative motion-reduce:transform-none"
             style={{ transform: `translate3d(${desktopOffset}px, 0, 0) scale(${desktopScale})` }}
           >
             <Image
