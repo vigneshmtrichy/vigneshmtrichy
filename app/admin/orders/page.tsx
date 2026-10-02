@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { SalesOverview } from '@/components/admin/SalesOverview'
 import { OrderStats } from '@/components/admin/OrderStats'
 import { OrderFilters } from '@/components/admin/OrderFilters'
 
@@ -326,48 +325,6 @@ export default function AdminOrdersPage() {
       shipped: count('shipped'),
       delivered: count('delivered'),
       cancelled: count('cancelled'),
-      sales: orders
-        .filter(
-          (order) =>
-            order.order_status !== 'cancelled',
-        )
-        .reduce(
-          (total, order) =>
-            total + Number(order.total || 0),
-          0,
-        ),
-    }
-  }, [orders])
-
-  const periodCounts = useMemo(() => {
-    const todayKey = getIndiaDateKey(new Date().toISOString())
-    const monthKey = todayKey.slice(0, 7)
-
-    const nonCancelledOrders = orders.filter(
-      (order) => order.order_status !== 'cancelled',
-    )
-    const todayOrders = nonCancelledOrders.filter(
-      (order) =>
-        order.created_at &&
-        getIndiaDateKey(order.created_at) === todayKey,
-    )
-    const monthOrders = nonCancelledOrders.filter(
-      (order) =>
-        order.created_at &&
-        getIndiaDateKey(order.created_at).startsWith(monthKey),
-    )
-
-    return {
-      todayOrderCount: todayOrders.length,
-      todaySales: todayOrders.reduce(
-        (total, order) => total + Number(order.total || 0),
-        0,
-      ),
-      monthOrderCount: monthOrders.length,
-      monthSales: monthOrders.reduce(
-        (total, order) => total + Number(order.total || 0),
-        0,
-      ),
     }
   }, [orders])
 
@@ -788,19 +745,10 @@ export default function AdminOrdersPage() {
             </button>
           </div>
 
-          <SalesOverview
-            todayOrderCount={periodCounts.todayOrderCount}
-            todaySales={periodCounts.todaySales}
-            monthOrderCount={periodCounts.monthOrderCount}
-            monthSales={periodCounts.monthSales}
-            money={money}
-          />
-
           <OrderStats
             counts={counts}
             statusFilter={statusFilter}
             selectStatusFilter={selectStatusFilter}
-            money={money}
           />
 
           <OrderFilters
