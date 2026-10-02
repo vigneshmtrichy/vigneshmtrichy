@@ -7,18 +7,15 @@ type OrderStatsProps = {
     shipped: number
     delivered: number
     cancelled: number
-    sales: number
   }
   statusFilter: string
   selectStatusFilter: (status: string) => void
-  money: (value: any) => string
 }
 
 export function OrderStats({
   counts,
   statusFilter,
   selectStatusFilter,
-  money,
 }: OrderStatsProps) {
   return (
     <>
@@ -56,43 +53,7 @@ export function OrderStats({
           )
         })}
       </div>
-
-      <div className="mt-3 grid gap-3 sm:mt-4 lg:grid-cols-[1fr_2fr]">
-        <button
-          type="button"
-          onClick={() => selectStatusFilter('cancelled')}
-          className={[
-            'rounded-2xl border bg-card p-5 text-left shadow-sm transition hover:shadow-md',
-            statusFilter === 'cancelled'
-              ? 'border-foreground ring-1 ring-foreground/10'
-              : 'border-border',
-          ].join(' ')}
-        >
-          <p className="text-sm font-medium text-muted-foreground">
-            Cancelled
-          </p>
-
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {counts.cancelled}
-          </p>
-        </button>
-
-        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              Total Sales
-            </p>
-
-            <p className="mt-1 text-3xl font-bold tracking-tight text-primary">
-              {money(counts.sales)}
-            </p>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Excludes cancelled orders
-          </p>
-        </div>
-      </div>
+/div>
     </>
   )
 }
