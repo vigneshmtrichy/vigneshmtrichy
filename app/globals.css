@@ -220,7 +220,7 @@
 
 /* Subtle light sweep for the hero CTA. */
 .tenoo-products-cta {
-  position: relative;
+  position: absolute;
   overflow: hidden;
 }
 
@@ -229,8 +229,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -55%;
-  width: 28%;
+  left: -35%;
+  width: 24%;
   background: linear-gradient(
     105deg,
     transparent 0%,
@@ -247,12 +247,12 @@
 @keyframes tenooCtaShimmer {
   0%,
   58% {
-    left: -55%;
+    left: -35%;
   }
 
   82%,
   100% {
-    left: 125%;
+    left: 115%;
   }
 }
 
