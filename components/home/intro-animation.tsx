@@ -40,7 +40,7 @@ export function IntroAnimation() {
 
     const timer = window.setTimeout(() => {
       setShow(false)
-    }, 1100)
+    }, 1200)
 
     return () => {
       window.clearTimeout(seenTimer)
