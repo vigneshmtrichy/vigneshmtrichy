@@ -78,7 +78,7 @@ export function FallingLeaves() {
                 left: `${leaf.left}%`,
                 animationDelay: leaf.delay,
                 animationDuration: leaf.duration,
-                '--hero-top': ${heroTop}px,
+                '--hero-top': `${heroTop}px`,
                 '--leaf-size': leaf.size,
                 '--start-rotation': leaf.rotate,
               } as React.CSSProperties
