@@ -64,6 +64,35 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
+  useEffect(() => {
+    if (authorized !== true) return
+
+    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+    const logoutForInactivity = async () => {
+      await supabase.auth.signOut()
+      localStorage.removeItem('tenoo-cart')
+      window.location.href = '/login'
+    }
+
+    const resetInactivityTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        void logoutForInactivity()
+      }, INACTIVITY_LIMIT_MS)
+    }
+
+    const activityEvents = ['click', 'keydown', 'mousemove', 'mousedown', 'scroll', 'touchstart'] as const
+    activityEvents.forEach((event) => window.addEventListener(event, resetInactivityTimer, { passive: true }))
+    resetInactivityTimer()
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      activityEvents.forEach((event) => window.removeEventListener(event, resetInactivityTimer))
+    }
+  }, [authorized])
+
   const loadDashboard = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true)
 
@@ -273,14 +302,27 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void loadDashboard(true)}
-              disabled={refreshing}
-              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50"
-            >
-              {refreshing ? 'Refreshing…' : 'Refresh'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void loadDashboard(true)}
+                disabled={refreshing}
+                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50"
+              >
+                {refreshing ? 'Refreshing…' : 'Refresh'}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  localStorage.removeItem('tenoo-cart')
+                  window.location.href = '/login'
+                }}
+                className="rounded-xl border border-red-200 bg-background px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+              >
+                🚪 Logout
+              </button>
+            </div>
           </div>
 
           <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
