@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Mulish } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/components/cart/cart-context'
+import { AdminInactivityTimeout } from '@/components/admin-inactivity-timeout'
 const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-display',
@@ -134,7 +135,8 @@ export default function RootLayout({
            }}
 />
         <CartProvider>
-         {children}
+          <AdminInactivityTimeout />
+          {children}
         </CartProvider>
 
         {process.env.NODE_ENV === 'production' && <Analytics />}
