@@ -64,35 +64,6 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    if (authorized !== true) return
-
-    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-    const logoutForInactivity = async () => {
-      await supabase.auth.signOut()
-      localStorage.removeItem('tenoo-cart')
-      window.location.href = '/login'
-    }
-
-    const resetInactivityTimer = () => {
-      if (timeoutId) clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        void logoutForInactivity()
-      }, INACTIVITY_LIMIT_MS)
-    }
-
-    const activityEvents = ['click', 'keydown', 'mousemove', 'mousedown', 'scroll', 'touchstart'] as const
-    activityEvents.forEach((event) => window.addEventListener(event, resetInactivityTimer, { passive: true }))
-    resetInactivityTimer()
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId)
-      activityEvents.forEach((event) => window.removeEventListener(event, resetInactivityTimer))
-    }
-  }, [authorized])
-
   const loadDashboard = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true)
 
