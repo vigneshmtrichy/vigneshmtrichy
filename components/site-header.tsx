@@ -163,62 +163,63 @@ useEffect(() => {
   <>
     {user?.email === 'info@tenoo.in' ? (
       isAdminPage ? (
-      <nav
-        className="hidden items-center gap-1 lg:flex"
-        aria-label="Admin navigation"
-      >
-        {[
-          { href: '/admin', label: 'Dashboard' },
-          { href: '/admin/orders', label: 'Online Orders' },
-          { href: '/admin/products', label: 'Products' },
-          { href: '/admin/retailers', label: 'Retailers' },
-          { href: '/admin/retailer-orders', label: 'Retailer Orders' },
-        ].map((link) => {
-          const active =
-            link.href === '/admin'
-              ? pathname === '/admin'
-              : pathname === link.href || pathname.startsWith(`${link.href}/`)
-
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary',
-                active
-                  ? 'bg-[#edf3dc] text-[#7fb51b]'
-                  : 'text-foreground/80',
-              )}
-            >
-              {link.label}
-            </Link>
-          )
-        })}
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+        <nav
+          className="hidden items-center gap-1 lg:flex"
+          aria-label="Admin navigation"
         >
-          🚪 Logout
-        </button>
-      </nav>
+          {[
+            { href: '/admin', label: 'Dashboard' },
+            { href: '/admin/orders', label: 'Online Orders' },
+            { href: '/admin/products', label: 'Products' },
+            { href: '/admin/retailers', label: 'Retailers' },
+            { href: '/admin/retailer-orders', label: 'Retailer Orders' },
+          ].map((link) => {
+            const active =
+              link.href === '/admin'
+                ? pathname === '/admin'
+                : pathname === link.href || pathname.startsWith(`${link.href}/`)
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary',
+                  active
+                    ? 'bg-[#edf3dc] text-[#7fb51b]'
+                    : 'text-foreground/80',
+                )}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+          >
+            🚪 Logout
+          </button>
+        </nav>
       ) : (
-      <div className="hidden items-center gap-2 lg:flex">
-        <Link
-          href="/admin"
-          className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-        >
-          Admin
-        </Link>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-        >
-          🚪 Logout
-        </button>
-      </div>
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link
+            href="/admin"
+            className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+          >
+            Admin
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+          >
+            🚪 Logout
+          </button>
+        </div>
+      )
     ) : (
       <div className="relative hidden lg:block">
         <button
@@ -241,7 +242,6 @@ useEffect(() => {
 
         {accountOpen && (
           <div className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl">
-
             <Link
               href="/account/orders"
               onClick={() => setAccountOpen(false)}
@@ -249,24 +249,21 @@ useEffect(() => {
             >
               📦 My Orders
             </Link>
-
-           <Link
-  href="/account/profile"
-  onClick={() => setAccountOpen(false)}
-  className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
->
-  👤 My Account
-</Link>
-          <Link
-  href="/account/help"
-  onClick={() => setAccountOpen(false)}
-  className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
->
-  💬 Help & Support
-</Link>
-
+            <Link
+              href="/account/profile"
+              onClick={() => setAccountOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              👤 My Account
+            </Link>
+            <Link
+              href="/account/help"
+              onClick={() => setAccountOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              💬 Help & Support
+            </Link>
             <div className="my-1 border-t border-border/60" />
-
             <button
               type="button"
               onClick={async () => {
