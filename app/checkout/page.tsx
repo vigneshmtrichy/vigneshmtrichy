@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/components/cart/cart-context'
@@ -70,19 +70,23 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [pincodeState, setPincodeState] = useState('')
+  const pincodeRequestRef = useRef(0)
 
   const lookupPincode = async (cleanPincode: string) => {
+    const requestId = ++pincodeRequestRef.current
     try {
       const response = await fetch(
         `https://api.postalpincode.in/pincode/${cleanPincode}`,
       )
 
       if (!response.ok) {
-        setPincodeStatus('error')
+        if (requestId === pincodeRequestRef.current) setPincodeStatus('error')
         return false
       }
 
       const data = await response.json()
+
+      if (requestId !== pincodeRequestRef.current) return false
 
       if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.length) {
         const postOffice = data[0].PostOffice[0]
@@ -93,13 +97,21 @@ export default function CheckoutPage() {
         return true
       }
 
+      if (data?.[0]?.Status === 'Error') {
+        setPincodeState('')
+        setPincodeStatus('invalid')
+        return false
+      }
+
       setPincodeState('')
-      setPincodeStatus('invalid')
+      setPincodeStatus('error')
       return false
     } catch (error) {
       console.error('Pincode lookup failed:', error)
-      setPincodeState('')
-      setPincodeStatus('error')
+      if (requestId === pincodeRequestRef.current) {
+        setPincodeState('')
+        setPincodeStatus('error')
+      }
       return false
     }
   }
