@@ -49,6 +49,56 @@ function roundCurrency(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100
 }
 
+async function verifyPincode(pincode: string): Promise<
+  | { status: 'valid'; state: string }
+  | { status: 'invalid' }
+  | { status: 'error' }
+> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 5000)
+
+  try {
+    const response = await fetch(
+      `https://api.postalpincode.in/pincode/${pincode}`,
+      {
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      },
+    )
+
+    if (!response.ok) {
+      return { status: 'error' }
+    }
+
+    const data = await response.json()
+
+    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.length) {
+      const verifiedState = data[0].PostOffice[0]?.State
+
+      if (typeof verifiedState === 'string' && verifiedState.trim()) {
+        return {
+          status: 'valid',
+          state: verifiedState.trim(),
+        }
+      }
+    }
+
+    if (data?.[0]?.Status === 'Error') {
+      return { status: 'invalid' }
+    }
+
+    return { status: 'invalid' }
+  } catch (error) {
+    console.error('Pincode verification failed:', error)
+    return { status: 'error' }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabaseAdmin = getSupabaseAdmin()
@@ -105,6 +155,39 @@ export async function POST(request: Request) {
         { status: 400 },
       )
     }
+
+    const pincodeVerification = await verifyPincode(pincode)
+
+    if (pincodeVerification.status === 'error') {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Unable to verify pincode right now. Please try again.',
+        },
+        { status: 503 },
+      )
+    }
+
+    if (pincodeVerification.status === 'invalid') {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Please enter a valid pincode.',
+        },
+        { status: 400 },
+      )
+    }
+
+    if (state !== pincodeVerification.state) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'State does not match the pincode.',
+        },
+        { status: 400 },
+      )
+    }
+
 
     if (!Array.isArray(body?.items) || body.items.length === 0 || body.items.length > MAX_ITEMS) {
       return NextResponse.json(
