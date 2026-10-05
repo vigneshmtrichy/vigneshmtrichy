@@ -22,7 +22,9 @@ export default function CashfreePaymentPage(){
         if(data?.status==='paid'){setOrderId(Number(data.order_id));setState('paid');return}
         if(data?.status==='failed'){setState('failed');return}
       }catch{}
-      if(attempts<6) timer=setTimeout(verify,2000)
+      // Cashfree may take a few seconds to publish the transaction result
+      // after the customer exits checkout. Keep checking before showing pending.
+      if(attempts<15) timer=setTimeout(verify,2000)
       else setState('pending')
     }
     verify()
