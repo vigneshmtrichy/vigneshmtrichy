@@ -543,6 +543,18 @@ useEffect(() => {
             </Link>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={async () => {
+            setAdminOpen(false)
+            setOpen(false)
+            await handleLogout()
+          }}
+          className="mt-2 flex min-h-10 w-full items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+        >
+          🚪 Logout
+        </button>
       </div>
     ) : (
       <div>
