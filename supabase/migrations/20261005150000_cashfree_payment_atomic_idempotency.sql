@@ -128,7 +128,9 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.create_paid_order_with_stock(bigint) FROM PUBLIC, anon, authenticated;
+-- Remove the old non-atomic signature so there is only one payment finalization path.
+DROP FUNCTION IF EXISTS public.create_paid_order_with_stock(bigint);
+
 REVOKE ALL ON FUNCTION public.create_paid_order_with_stock(bigint, text, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_paid_order_with_stock(bigint, text, text) TO service_role;
 
