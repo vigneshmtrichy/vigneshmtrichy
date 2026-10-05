@@ -226,7 +226,7 @@ export async function POST(request: Request) {
 
       const unitPrice = Number(product.price)
       const mrp = Number(product.mrp || product.price)
-      const gstRate = Number(product.gstRate || 0)
+      let gstRate = Number(product.gstRate || 0)
 
       if (
         !Number.isFinite(unitPrice) ||
@@ -259,7 +259,7 @@ export async function POST(request: Request) {
     const supabasePublic = getSupabasePublic()
     const { data: statuses, error: statusError } = await supabasePublic
       .from('product_status')
-      .select('product_slug, status, stock_quantity, mrp, price')
+      .select('product_slug, status, stock_quantity, mrp, price, gst_rate')
       .in('product_slug', [...seenSlugs])
 
     if (statusError) {
@@ -277,12 +277,38 @@ export async function POST(request: Request) {
     for (const item of orderItems) {
       const managedPricing = statusBySlug.get(item.product_slug)
 
-      if (managedPricing?.price !== null && managedPricing?.price !== undefined) {
+      if (!managedPricing) {
+        return NextResponse.json(
+          { success: false, message: 'A product in your cart could not be verified. Please refresh and try again.' },
+          { status: 409 },
+        )
+      }
+
+      if (managedPricing.price !== null && managedPricing.price !== undefined) {
         item.unit_price = Number(managedPricing.price)
       }
 
-      if (managedPricing?.mrp !== null && managedPricing?.mrp !== undefined) {
+      if (managedPricing.mrp !== null && managedPricing.mrp !== undefined) {
         item.mrp = Number(managedPricing.mrp)
+      }
+
+      if (managedPricing.gst_rate !== null && managedPricing.gst_rate !== undefined) {
+        item.gst_rate = Number(managedPricing.gst_rate)
+      }
+
+      if (
+        !Number.isFinite(item.unit_price) ||
+        item.unit_price <= 0 ||
+        !Number.isFinite(item.mrp) ||
+        item.mrp < item.unit_price ||
+        !Number.isFinite(item.gst_rate) ||
+        item.gst_rate < 0 ||
+        item.gst_rate > 100
+      ) {
+        return NextResponse.json(
+          { success: false, message: 'A product in your cart has invalid pricing. Please try again.' },
+          { status: 409 },
+        )
       }
     }
 
