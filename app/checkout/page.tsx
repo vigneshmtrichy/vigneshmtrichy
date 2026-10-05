@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Script from 'next/script'
 import { useCart } from '@/components/cart/cart-context'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -169,6 +170,7 @@ setCustomerEmail(user.email || '')
   }
   const [error, setError] = useState('')
   const [whatsappOrderUrl, setWhatsappOrderUrl] = useState('')
+  const [paymentLoading, setPaymentLoading] = useState(false)
 
  const shippingCharge =
   cartTotal >= FREE_SHIPPING_THRESHOLD
@@ -204,7 +206,7 @@ const sgst = isTamilNadu ? totalGST / 2 : 0
 const igst = isTamilNadu ? 0 : totalGST
 
   
-const handleWhatsAppOrder = async () => {
+const handleCashfreePayment = async () => {
     if (!customerName.trim()) {
       setError('Please enter your name.')
       return
@@ -251,161 +253,87 @@ const handleWhatsAppOrder = async () => {
 }
 
     setError('')
+    
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const {
-  data: { user },
-} = await supabase.auth.getUser()
+    if (user) {
+      const { error: profileError } = await supabase
+        .from('customer_profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            name: customerName.trim(),
+            phone,
+            address: address.trim(),
+            pincode,
+            city,
+            state,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        )
 
-if (user) {
-  const { error: profileError } = await supabase
-    .from('customer_profiles')
-    .upsert(
-      {
-        user_id: user.id,
-        name: customerName.trim(),
-        phone,
-        address: address.trim(),
-        pincode,
-        city: city.trim(),
-        state,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'user_id',
-      },
-    )
+      if (profileError) console.error('Failed to save customer profile:', profileError)
+    }
 
-  if (profileError) {
-    console.error(
-      'Failed to save customer profile:',
-      profileError,
-    )
-  }
-}
+    const { data: { session } } = await supabase.auth.getSession()
+    setPaymentLoading(true)
 
-const {
-  data: { session },
-} = await supabase.auth.getSession()
+    try {
+      const response = await fetch('/api/cashfree/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token
+            ? { Authorization: 'Bearer ' + session.access_token }
+            : {}),
+        },
+        body: JSON.stringify({
+          customer_name: customerName.trim(),
+          customer_email: customerEmail.trim(),
+          phone,
+          address: address.trim(),
+          pincode,
+          city: city.trim(),
+          state,
+          items: items.map((item) => ({
+            product_slug: item.product.slug,
+            quantity: item.quantity,
+          })),
+        }),
+      })
 
-let orderResponse: Response
+      const result = await response.json().catch(() => null)
 
-try {
-  orderResponse = await fetch('/api/orders', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(session?.access_token
-        ? { Authorization: `Bearer ${session.access_token}` }
-        : {}),
-    },
-    body: JSON.stringify({
-      customer_name: customerName.trim(),
-      customer_email: customerEmail.trim(),
-      phone,
-      address: address.trim(),
-      pincode,
-      city: city.trim(),
-      state,
-      items: items.map((item) => ({
-        product_slug: item.product.slug,
-        quantity: item.quantity,
-      })),
-    }),
-  })
-} catch {
-  setError('Unable to place your order. Please try again.')
-  return
-}
+      if (!response.ok || !result?.success || !result?.payment_session_id) {
+        setError(result?.message || 'Unable to start payment. Please try again.')
+        return
+      }
 
-const orderResult = await orderResponse.json().catch(() => null)
+      const cashfreeFactory = (window as any).Cashfree
+      if (typeof cashfreeFactory !== 'function') {
+        setError('Payment gateway is still loading. Please try again.')
+        return
+      }
 
-if (!orderResponse.ok || !orderResult?.success || !orderResult?.order) {
-  setError(orderResult?.message || 'Unable to place your order. Please try again.')
-  return
-}
+      const cashfree = cashfreeFactory({ mode: 'sandbox' })
+      const checkoutResult = await cashfree.checkout({
+        paymentSessionId: result.payment_session_id,
+        redirectTarget: '_self',
+      })
 
-clearCart()
-
-const savedOrder = orderResult.order
-const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_total)
-
-    const message = [
-      '🌿 TENOO ORDER',
-      '',
-      'Customer Details',
-      `Name: ${customerName}`,
-      `Mobile: ${phone}`,
-      `Address: ${address}`,
-      `Pincode: ${pincode}`,
-      `City: ${city}`,
-      `State: ${state}`,
-      '',
-      'Order Details',
-      ...savedOrder.items.map(
-        (item: {
-          product_name: string
-          quantity: number
-          unit_price: number
-        }) =>
-          `${item.product_name} × ${item.quantity} — ₹${Number(item.unit_price) * item.quantity}`,
-      ),
-      '',
-      `MRP Total: ₹${Number(savedOrder.mrp_total).toFixed(2)}`,
-      `Product Price (Incl. GST): ₹${Number(savedOrder.product_total).toFixed(2)}`,
-      `Taxable Value / Price Excl. GST: ₹${Number(savedOrder.taxable_value).toFixed(2)}`,
-      ...(state === 'Tamil Nadu'
-        ? [
-            `CGST: ₹${Number(savedOrder.cgst).toFixed(2)}`,
-            `SGST: ₹${Number(savedOrder.sgst).toFixed(2)}`,
-          ]
-        : [`IGST: ₹${Number(savedOrder.igst).toFixed(2)}`]),
-      `You Save: ₹${savedSavings.toFixed(2)}`,
-      `Delivery: ${Number(savedOrder.delivery_charge) === 0 ? 'FREE' : `₹${savedOrder.delivery_charge}`}`,
-      `Total: ₹${Number(savedOrder.total).toFixed(2)}`,
-    ].join('\n')
-
-    setWhatsappOrderUrl(
-      `https://wa.me/919585808590?text=${encodeURIComponent(message)}`,
-    )
+      if (checkoutResult?.error) {
+        setError(checkoutResult.error.message || 'Unable to open payment checkout.')
+      }
+    } catch (error) {
+      console.error('Cashfree checkout failed:', error)
+      setError('Unable to start payment. Please try again.')
+    } finally {
+      setPaymentLoading(false)
+    }
   }
 
-  if (whatsappOrderUrl) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SiteHeader />
-        <main className="mx-auto flex max-w-2xl justify-center px-4 py-12 sm:px-5 md:py-20">
-          <section className="w-full rounded-3xl border border-border bg-card p-6 text-center shadow-sm sm:p-10">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-2xl text-primary" aria-hidden="true">
-              ✓
-            </div>
-            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-              ORDER SAVED
-            </p>
-            <h1 className="mt-2 font-serif text-3xl font-bold text-primary">
-              Your order is ready
-            </h1>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-              Your order has been saved. Continue to WhatsApp to confirm it with our team.
-            </p>
-            <a
-              href={whatsappOrderUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-all hover:opacity-90 sm:w-auto"
-            >
-              Continue to WhatsApp
-            </a>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Your cart is now clear.
-            </p>
-          </section>
-        </main>
-        <SiteFooter />
-      </div>
-    )
-  }
-
-  if (items.length === 0) {
+if (items.length === 0) {
     return (
       <>
         <SiteHeader />
@@ -430,6 +358,7 @@ const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_to
 
   return (
     <div className="min-h-screen bg-background">
+      <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="afterInteractive" />
       <SiteHeader />
 
       <main className="mx-auto max-w-2xl px-4 py-5 sm:px-5 sm:py-8 md:py-14">
@@ -664,10 +593,11 @@ const savedSavings = Number(savedOrder.mrp_total) - Number(savedOrder.product_to
 
           <button
             type="button"
-            onClick={handleWhatsAppOrder}
+            onClick={handleCashfreePayment}
+            disabled={paymentLoading}
             className="mt-6 flex h-13 w-full items-center justify-center rounded-full bg-primary px-4 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-sm transition-all active:scale-[0.97]"
           >
-            CONFIRM ORDER ON WHATSAPP
+            {paymentLoading ? 'OPENING PAYMENT...' : 'PROCEED TO PAY'}
           </button>
 
          <p className="mt-3 text-center text-[10px] leading-relaxed text-muted-foreground">
