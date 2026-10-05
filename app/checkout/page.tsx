@@ -61,6 +61,49 @@ export default function CheckoutPage() {
 
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
+  const [pincodeStatus, setPincodeStatus] = useState<
+    'idle' | 'valid' | 'invalid' | 'error'
+  >('idle')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [pincode, setPincode] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [pincodeState, setPincodeState] = useState('')
+
+  const lookupPincode = async (cleanPincode: string) => {
+    try {
+      const response = await fetch(
+        `https://api.postalpincode.in/pincode/${cleanPincode}`,
+      )
+
+      if (!response.ok) {
+        setPincodeStatus('error')
+        return false
+      }
+
+      const data = await response.json()
+
+      if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.length) {
+        const postOffice = data[0].PostOffice[0]
+        setCity(postOffice.District)
+        setState(postOffice.State)
+        setPincodeState(postOffice.State)
+        setPincodeStatus('valid')
+        return true
+      }
+
+      setPincodeState('')
+      setPincodeStatus('invalid')
+      return false
+    } catch (error) {
+      console.error('Pincode lookup failed:', error)
+      setPincodeState('')
+      setPincodeStatus('error')
+      return false
+    }
+  }
+
   useEffect(() => {
   const loadCustomerProfile = async () => {
    const {
@@ -90,43 +133,28 @@ setCustomerEmail(user.email || '')
     setPincode(data.pincode || '')
     setCity(data.city || '')
     setState(data.state || '')
-    setPincodeState(data.state || '')
+    setPincodeState('')
+    setPincodeStatus('idle')
+
+    if (/^\d{6}$/.test(data.pincode || '')) {
+      await lookupPincode(data.pincode)
+    }
   }
 
   loadCustomerProfile()
 }, [])
-  const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
-  const [pincode, setPincode] = useState('')
-  const [city, setCity] = useState('')
-  const [state, setState] = useState('')
-  const [pincodeState, setPincodeState] = useState('')
+
   const handlePincodeChange = async (value: string) => {
-  const cleanPincode = value.replace(/\D/g, '').slice(0, 6)
+    const cleanPincode = value.replace(/\D/g, '').slice(0, 6)
 
-  setPincode(cleanPincode)
+    setPincode(cleanPincode)
+    setPincodeState('')
+    setPincodeStatus('idle')
 
-  if (cleanPincode.length !== 6) return
+    if (cleanPincode.length !== 6) return
 
-  try {
-    const response = await fetch(
-      `https://api.postalpincode.in/pincode/${cleanPincode}`,
-    )
-
-    const data = await response.json()
-    console.log('Pincode API:', data)
-
-    if (data?.[0]?.Status === 'Success' && data?.[0]?.PostOffice?.length) {
-      const postOffice = data[0].PostOffice[0]
-
-     setCity(postOffice.District)
-setState(postOffice.State)
-setPincodeState(postOffice.State)
-    }
-  } catch (error) {
-    console.error('Pincode lookup failed:', error)
+    await lookupPincode(cleanPincode)
   }
-}
   const [error, setError] = useState('')
   const [whatsappOrderUrl, setWhatsappOrderUrl] = useState('')
 
@@ -187,6 +215,21 @@ const handleWhatsAppOrder = async () => {
 
     if (!city.trim()) {
       setError('Please enter your city.')
+      return
+    }
+
+    if (pincodeStatus === 'invalid') {
+      setError('Please enter a valid pincode.')
+      return
+    }
+
+    if (pincodeStatus === 'error') {
+      setError('Unable to verify pincode. Please try again.')
+      return
+    }
+
+    if (pincodeStatus !== 'valid') {
+      setError('Please enter and verify your pincode.')
       return
     }
 
