@@ -100,24 +100,42 @@ export async function finalizeCashfreePayment(cashfreeOrderId: string) {
 
   const order = await getCashfreeOrder(cashfreeOrderId)
   const payments = await getCashfreePayments(cashfreeOrderId)
-  const success = Array.isArray(payments)
-    ? payments.find((p: any) => p?.payment_status === 'SUCCESS')
-    : null
+  const paymentList = Array.isArray(payments) ? payments : []
+  const success = paymentList.find((p: any) => p?.payment_status === 'SUCCESS')
+  const pending = paymentList.find((p: any) => p?.payment_status === 'PENDING')
+
+  // Cashfree documents the final classification as:
+  // SUCCESS -> Success, PENDING -> Pending, otherwise -> Failure.
+  // This correctly treats USER_DROPPED and transaction failures as failed.
+  if (!success) {
+    const status = pending ? 'pending' : 'failed'
+    const paymentStatus =
+      pending?.payment_status ||
+      paymentList[0]?.payment_status ||
+      order?.order_status ||
+      null
+
+    await db.from('cashfree_payment_intents').update({
+      status,
+      cashfree_payment_status: paymentStatus,
+      updated_at: new Date().toISOString(),
+    }).eq('id', intent.id)
+
+    return { status, orderId: null }
+  }
 
   const amountMatches =
+    order?.order_status === 'PAID' &&
     Number(order?.order_amount) === Number(intent.total) &&
     Number(success?.payment_amount) === Number(intent.total)
 
-  if (order?.order_status !== 'PAID' || !success || !amountMatches) {
-    const status = order?.order_status === 'EXPIRED' || order?.order_status === 'TERMINATED'
-      ? 'failed'
-      : 'pending'
+  if (!amountMatches) {
     await db.from('cashfree_payment_intents').update({
-      status,
-      cashfree_payment_status: success?.payment_status || order?.order_status || null,
+      status: 'failed',
+      cashfree_payment_status: success.payment_status,
       updated_at: new Date().toISOString(),
     }).eq('id', intent.id)
-    return { status, orderId: null }
+    return { status: 'failed', orderId: null }
   }
 
   const { data: result, error: rpcError } = await db.rpc(
