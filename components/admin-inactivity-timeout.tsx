@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const ADMIN_EMAIL = 'info@tenoo.in'
-const INACTIVITY_LIMIT_MS = 20* 1000
-const WARNING_BEFORE_LOGOUT_MS = 10* 1000
+const INACTIVITY_LIMIT_MS = 10 * 60 * 1000
+const WARNING_BEFORE_LOGOUT_MS = 2 * 60 * 1000
 
 export function AdminInactivityTimeout() {
   const [showWarning, setShowWarning] = useState(false)
