@@ -319,8 +319,15 @@ const handleCashfreePayment = async () => {
       const cashfree = cashfreeFactory({ mode: 'sandbox' })
       const checkoutResult = await cashfree.checkout({
         paymentSessionId: result.payment_session_id,
-        redirectTarget: '_self',
+        redirectTarget: '_modal',
       })
+
+      if (checkoutResult?.paymentDetails) {
+        // Cashfree invokes this callback after a payment attempt, including
+        // failed/user-dropped transactions. Verify the final status server-side.
+        window.location.href = '/checkout/payment?order_id=' + encodeURIComponent(result.order_id)
+        return
+      }
 
       if (checkoutResult?.error) {
         setError(checkoutResult.error.message || 'Unable to open payment checkout.')
