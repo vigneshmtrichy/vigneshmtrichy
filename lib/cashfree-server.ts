@@ -122,20 +122,16 @@ export async function finalizeCashfreePayment(cashfreeOrderId: string) {
 
   const { data: result, error: rpcError } = await db.rpc(
     'create_paid_order_with_stock',
-    { p_payment_intent_id: intent.id },
+    {
+      p_payment_intent_id: intent.id,
+      p_cashfree_payment_id: String(success.cf_payment_id || ''),
+      p_cashfree_payment_status: success.payment_status,
+    },
   )
   if (rpcError) throw rpcError
   if (!result?.success || !result?.order_id) {
     throw new Error(result?.message || 'Unable to create the paid order')
   }
-
-  await db.from('cashfree_payment_intents').update({
-    status: 'paid',
-    order_id: result.order_id,
-    cashfree_payment_id: String(success.cf_payment_id || ''),
-    cashfree_payment_status: success.payment_status,
-    updated_at: new Date().toISOString(),
-  }).eq('id', intent.id).is('order_id', null)
 
   return { status: 'paid', orderId: result.order_id }
 }
