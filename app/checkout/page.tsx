@@ -322,15 +322,18 @@ const handleCashfreePayment = async () => {
         redirectTarget: '_modal',
       })
 
-      if (checkoutResult?.paymentDetails) {
-        // Cashfree invokes this callback after a payment attempt, including
-        // failed/user-dropped transactions. Verify the final status server-side.
+      if (checkoutResult?.paymentDetails || checkoutResult?.error) {
+        // Cashfree's callback is only a signal that the checkout attempt ended.
+        // Always verify the transaction server-side; SUCCESS/USER_DROPPED/etc.
+        // must never be trusted from the browser.
         window.location.href = '/checkout/payment?order_id=' + encodeURIComponent(result.order_id)
         return
       }
 
-      if (checkoutResult?.error) {
-        setError(checkoutResult.error.message || 'Unable to open payment checkout.')
+      if (checkoutResult?.redirect) {
+        // In an in-app browser Cashfree may redirect separately. The return URL
+        // will perform the same server-side verification.
+        return
       }
     } catch (error) {
       console.error('Cashfree checkout failed:', error)
