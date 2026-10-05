@@ -6,58 +6,72 @@ import { supabase } from '@/lib/supabase'
 const ADMIN_EMAIL = 'info@tenoo.in'
 const INACTIVITY_LIMIT_MS = 10 * 60 * 1000
 const WARNING_BEFORE_LOGOUT_MS = 2 * 60 * 1000
+const ACTIVITY_CHECK_INTERVAL_MS = 1000
 
 export function AdminInactivityTimeout() {
   const [showWarning, setShowWarning] = useState(false)
 
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastActivityRef = useRef<number>(Date.now())
   const isAdminRef = useRef(false)
+  const logoutInProgressRef = useRef(false)
 
   useEffect(() => {
-    const clearTimers = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
-      }
-
-      if (warningTimeoutRef.current) {
-        clearTimeout(warningTimeoutRef.current)
-        warningTimeoutRef.current = null
+    const clearCheckInterval = () => {
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current)
+        checkIntervalRef.current = null
       }
     }
 
     const logoutForInactivity = async () => {
-      clearTimers()
+      if (logoutInProgressRef.current) return
+
+      logoutInProgressRef.current = true
+      clearCheckInterval()
+      setShowWarning(false)
+
       await supabase.auth.signOut()
       localStorage.removeItem('tenoo-cart')
       window.location.href = '/login'
     }
 
-    const resetInactivityTimer = () => {
-      if (!isAdminRef.current) return
+    const checkInactivity = () => {
+      if (!isAdminRef.current || logoutInProgressRef.current) return
 
-      clearTimers()
-      setShowWarning(false)
+      const inactiveFor = Date.now() - lastActivityRef.current
 
-      warningTimeoutRef.current = setTimeout(() => {
-        setShowWarning(true)
-      }, INACTIVITY_LIMIT_MS - WARNING_BEFORE_LOGOUT_MS)
-
-      timeoutRef.current = setTimeout(() => {
+      if (inactiveFor >= INACTIVITY_LIMIT_MS) {
         void logoutForInactivity()
-      }, INACTIVITY_LIMIT_MS)
+        return
+      }
+
+      setShowWarning(
+        inactiveFor >= INACTIVITY_LIMIT_MS - WARNING_BEFORE_LOGOUT_MS,
+      )
+    }
+
+    const resetInactivityTimer = () => {
+      if (!isAdminRef.current || logoutInProgressRef.current) return
+
+      lastActivityRef.current = Date.now()
+      setShowWarning(false)
     }
 
     const startForCurrentUser = (user: any) => {
       const isAdmin = user?.email === ADMIN_EMAIL
       isAdminRef.current = isAdmin
+      logoutInProgressRef.current = false
+
+      clearCheckInterval()
+      setShowWarning(false)
 
       if (isAdmin) {
-        resetInactivityTimer()
-      } else {
-        clearTimers()
-        setShowWarning(false)
+        lastActivityRef.current = Date.now()
+        checkIntervalRef.current = setInterval(
+          checkInactivity,
+          ACTIVITY_CHECK_INTERVAL_MS,
+        )
       }
     }
 
@@ -91,13 +105,23 @@ export function AdminInactivityTimeout() {
       window.addEventListener(event, resetInactivityTimer, { passive: true })
     })
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkInactivity()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
-      clearTimers()
+      clearCheckInterval()
       subscription.unsubscribe()
 
       activityEvents.forEach((event) => {
         window.removeEventListener(event, resetInactivityTimer)
       })
+
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 
