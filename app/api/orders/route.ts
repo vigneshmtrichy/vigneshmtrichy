@@ -90,7 +90,7 @@ async function verifyPincode(pincode: string): Promise<
       return { status: 'invalid' }
     }
 
-    return { status: 'invalid' }
+    return { status: 'error' }
   } catch (error) {
     console.error('Pincode verification failed:', error)
     return { status: 'error' }
