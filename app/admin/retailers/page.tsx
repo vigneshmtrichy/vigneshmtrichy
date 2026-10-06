@@ -450,8 +450,8 @@ export default function RetailersPage() {
                 const unappliedCredit = Number(balance?.unapplied_credit || 0)
                 return unappliedCredit > 0 ? <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{money(unappliedCredit)} unapplied credit available on this account.</p> : null
               })()}
-              <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
-                <div className="flex-1 sm:flex-none">
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:flex sm:flex-wrap">
+                <div className="min-w-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -462,19 +462,19 @@ export default function RetailersPage() {
                       setCreateOrderError('')
                       window.location.href = '/admin/retailer-orders?retailer=' + selected.id
                     }}
-                    className="w-full rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]"
+                    className="w-full min-h-12 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold leading-tight text-primary-foreground transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]"
                   >
                     Create order
                   </button>
                   {createOrderError && selected.status !== 'active' && (
-                    <p className="mt-2 max-w-xs rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium leading-5 text-red-700">
+                    <p className="col-span-2 mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium leading-5 text-red-700 sm:max-w-xs">
                       {createOrderError}
                     </p>
                   )}
                 </div>
-                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">View orders</Link>
-                <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">Record payment</button>
-                <button onClick={() => { setShowStatement(true); void loadStatement() }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">Statement</button>
+                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex min-h-12 items-center justify-center rounded-lg border px-3 py-2 text-center text-sm font-semibold leading-tight transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm">View orders</Link>
+                <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="min-h-12 rounded-lg border px-3 py-2 text-center text-sm font-semibold leading-tight transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm">Record payment</button>
+                <button onClick={() => { setShowStatement(true); void loadStatement() }} className="min-h-12 rounded-lg border px-3 py-2 text-center text-sm font-semibold leading-tight transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm">Statement</button>
               </div>
               {showStatement && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                 <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-xl">
