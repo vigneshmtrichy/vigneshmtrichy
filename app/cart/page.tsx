@@ -233,18 +233,25 @@ return (
                       key={item.product.slug}
                       className="flex gap-4 rounded-2xl border border-border bg-card p-4"
                     >
-                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-background">
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-background"
+                        aria-label={`View ${item.product.name}`}
+                      >
                         <img
                           src={cartImage}
                           alt={item.product.name}
-                          className="h-full w-full object-contain p-2"
+                          className="h-full w-full object-contain p-2 transition-transform duration-200 hover:scale-105"
                         />
-                      </div>
+                      </Link>
 
                       <div className="min-w-0 flex-1">
-                        <h2 className="font-serif text-lg font-bold text-primary">
+                        <Link
+                          href={`/products/${item.product.slug}`}
+                          className="block font-serif text-lg font-bold text-primary transition-colors hover:text-accent"
+                        >
                           {item.product.name}
-                        </h2>
+                        </Link>
 
                         <p className="mt-1 text-xs text-muted-foreground">
                           {item.product.packSize}
