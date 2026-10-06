@@ -314,16 +314,6 @@ export default function CreateRetailerOrderPage() {
             <a href="/admin/retailer-orders" className="rounded-lg border px-4 py-2.5 text-center text-sm font-semibold transition hover:bg-muted">View Trade Orders</a>
           </div>
 
-          {message && (
-            <p className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${
-              message.startsWith('Retailer order #')
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                : 'border-red-200 bg-red-50 text-red-800'
-            }`}>
-              {message}
-            </p>
-          )}
-
           <form onSubmit={createOrder} className="mt-6 rounded-2xl border bg-background p-4 sm:p-6">
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="text-sm font-medium">
@@ -425,6 +415,13 @@ export default function CreateRetailerOrderPage() {
                   <span className="block text-lg font-bold">Estimated {money(estimatedTotal)}</span>
                   <span className="block text-xs font-normal text-muted-foreground">Taxable {money(estimatedTaxableTotal)} · GST {money(estimatedGstTotal)}</span>
                 </span>
+                {message && (
+                  <p className={`w-full rounded-xl border px-4 py-3 text-sm font-medium ${message.startsWith('Retailer order #')
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                    : 'border-red-200 bg-red-50 text-red-800'}`}>
+                    {message}
+                  </p>
+                )}
                 <button type="submit" disabled={saving || creditExceeded || missingRetailerPrice || !retailerId} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50">
                   {saving ? 'Creating…' : 'Confirm order'}
                 </button>
