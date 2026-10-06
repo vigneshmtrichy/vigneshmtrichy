@@ -490,7 +490,7 @@ export default function RetailerOrdersPage() {
           <DateFilter label="To date" value={dateTo} onChange={setDateTo} />
         </div>
       </div>
-      {totalOrderCount > 0 && totalPages > 1 && (
+      {totalOrderCount > 0 && (
         <div className="mt-4 flex flex-col gap-3 rounded-2xl border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
             Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalOrderCount)} of {totalOrderCount} orders
@@ -500,9 +500,11 @@ export default function RetailerOrdersPage() {
               Per page
               <CustomSelect value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setCurrentPage(1) }} className="w-24" options={[{ value: '10', label: '10' }, { value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }]} />
             </label>
-            <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button>
-            <span className="px-1 text-xs font-semibold">Page {currentPage} / {totalPages}</span>
-            <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button>
+            {totalPages > 1 && <>
+              <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+              <span className="px-1 text-xs font-semibold">Page {currentPage} / {totalPages}</span>
+              <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button>
+            </>}
           </div>
         </div>
       )}
@@ -512,6 +514,24 @@ export default function RetailerOrdersPage() {
         {order.order_status === 'cancelled' && order.notes?.includes('Cancellation reason:') && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{order.notes.split('Cancellation reason:').pop()?.trim()}</p>}
         {statusHistory[String(order.id)]?.length > 0 && <div className="mt-3"><button type="button" onClick={() => setOpenHistory((current) => ({ ...current, [order.id]: !current[order.id] }))} className="text-xs font-semibold text-primary">{openHistory[order.id] ? 'Hide status history' : 'View status history'}</button>{openHistory[order.id] && <div className="mt-2 rounded-lg border bg-muted/30 p-3 text-xs">{statusHistory[String(order.id)].slice(0, 8).map((entry: any, index: number) => <div key={index} className="flex justify-between gap-3 border-b py-2 last:border-0"><span>{entry.old_status ? entry.old_status + ' → ' : ''}{entry.new_status}</span><span className="text-right text-muted-foreground">{new Date(entry.changed_at).toLocaleString('en-IN')}{entry.note ? ' · ' + entry.note : ''}</span></div>)}</div>}</div>}
       </article>)}</div>
+      {totalOrderCount > 0 && (
+        <div className="mt-5 flex flex-col gap-3 rounded-2xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalOrderCount)} of {totalOrderCount} orders
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Per page
+              <CustomSelect value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setCurrentPage(1) }} className="w-24" options={[{ value: '10', label: '10' }, { value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }]} />
+            </label>
+            {totalPages > 1 && <>
+              <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button>
+              <span className="px-1 text-xs font-semibold">Page {currentPage} / {totalPages}</span>
+              <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button>
+            </>}
+          </div>
+        </div>
+      )}
       {totalOrderCount === 0 && <div className="mt-4 rounded-2xl border bg-background p-8 text-center text-sm text-muted-foreground">No retailer orders match these filters.</div>}</section>
     {cancelOrder && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-xl"><h3 className="text-lg font-semibold">Cancel order #{cancelOrder.id}?</h3><p className="mt-1 text-sm text-muted-foreground">Stock will be restored and allocated payment will become unapplied credit.</p><label className="mt-4 block text-sm font-medium">Cancellation reason<textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} className="mt-1 min-h-24 w-full rounded-lg border bg-background px-3 py-2" placeholder="Why is this order being cancelled?" autoFocus /></label><div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setCancelOrder(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold">Keep order</button><button type="button" onClick={() => void confirmCancellation()} className="rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground">Cancel order</button></div></div></div>}
   </div></main></>
