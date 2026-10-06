@@ -118,7 +118,7 @@ useEffect(() => {
 
         {/* Desktop Search */}
         {!isAdminPage && (
-        <div className="relative ml-auto hidden max-w-2xl flex-1 lg:block">
+        <div className="relative z-50 ml-auto hidden max-w-2xl flex-1 lg:block">
           <div className="flex h-11 items-center overflow-hidden rounded-full border border-border bg-background">
             <Search className="ml-4 h-4 w-4 shrink-0 text-muted-foreground" />
 
@@ -155,7 +155,7 @@ useEffect(() => {
           </div>
 
           {showSearchSuggestions && (
-            <div className="absolute left-0 right-0 top-13 overflow-hidden rounded-2xl border border-border bg-background shadow-xl">
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-background shadow-xl">
               {searchResults.length > 0 ? (
                 <div className="py-2">
                   {!search.trim() && (
@@ -170,9 +170,8 @@ useEffect(() => {
                       onClick={() => {
                         setSearch('')
                         setSearchFocused(false)
-                        window.location.href = `/products/${product.slug}`
                       }}
-                      className="block px-5 py-3 transition-colors hover:bg-secondary"
+                      className="block cursor-pointer px-5 py-3 transition-colors hover:bg-secondary"
                     >
                       <p className="text-sm font-semibold text-primary">
                         {product.name}
@@ -425,9 +424,8 @@ useEffect(() => {
                         onClick={() => {
                           setSearch('')
                           setSearchOpen(false)
-                          window.location.href = `/products/${product.slug}`
                         }}
-                        className="block px-4 py-3.5 transition-colors hover:bg-secondary"
+                        className="block cursor-pointer px-4 py-3.5 transition-colors hover:bg-secondary"
                       >
                         <p className="text-sm font-semibold text-primary">
                           {product.name}
