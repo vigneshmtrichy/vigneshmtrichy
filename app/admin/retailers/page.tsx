@@ -359,9 +359,9 @@ export default function RetailersPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div><h1 className="text-3xl font-semibold sm:text-3xl">Retailers</h1><p className="mt-1 text-sm text-muted-foreground">Accounts, credit, price overrides and collections.</p></div>
             <div className="flex flex-wrap gap-2 sm:flex-row">
-              <Link href="/admin/retailer-orders" className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-center text-sm font-semibold sm:flex-none sm:px-4">Retailer Orders</Link>
-              <button onClick={exportRetailerListCsv} disabled={retailers.length === 0} className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:px-4">Download Retailer List</button>
-              <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="flex-1 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground sm:flex-none sm:px-4">Add Retailer</button>
+              <Link href="/admin/retailer-orders" className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-center text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] sm:flex-none sm:px-4">Retailer Orders</Link>
+              <button onClick={exportRetailerListCsv} disabled={retailers.length === 0} className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:px-4">Download Retailer List</button>
+              <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="flex-1 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] sm:flex-none sm:px-4">Add Retailer</button>
             </div>
           </div>
 
