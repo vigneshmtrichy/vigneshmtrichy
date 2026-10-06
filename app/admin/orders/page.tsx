@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useSearchParams } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { OrderStats } from '@/components/admin/OrderStats'
@@ -74,8 +73,6 @@ const getIndiaDateKey = (value: string) =>
   INDIA_DATE_FORMATTER.format(new Date(value))
 
 export default function AdminOrdersPage() {
-  const searchParams = useSearchParams()
-
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -144,8 +141,9 @@ export default function AdminOrdersPage() {
 
   // Sync the global admin header search with this page's existing search.
   useEffect(() => {
-    const searchParam = searchParams.get('search') || ''
-    const orderParam = searchParams.get('order') || ''
+    const params = new URLSearchParams(window.location.search)
+    const searchParam = params.get('search') || ''
+    const orderParam = params.get('order') || ''
     const orderId = Number(orderParam)
 
     setSearchQuery(searchParam || orderParam)
@@ -154,7 +152,7 @@ export default function AdminOrdersPage() {
     if (Number.isFinite(orderId) && orderId > 0) {
       setExpandedOrderId(orderId)
     }
-  }, [searchParams])
+  }, [])
 
   const updateOrderStatus = async (
     orderId: number,
