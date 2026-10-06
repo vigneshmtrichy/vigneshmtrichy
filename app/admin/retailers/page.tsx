@@ -239,7 +239,9 @@ export default function RetailersPage() {
       return
     }
 
-    setSaving(true); setMessage('')
+    setSaving(true)
+    setMessage('')
+
     const payload = {
       business_name: form.business_name.trim() || null,
       contact_name: form.contact_name.trim() || null,
@@ -254,6 +256,29 @@ export default function RetailersPage() {
       gstin: form.gstin.trim().toUpperCase() || null,
       payment_terms_days: Number(form.payment_terms_days || 0),
       credit_limit: Number(form.credit_limit || 0),
+      notes: form.notes.trim() || null,
+      updated_at: new Date().toISOString(),
+    }
+
+    const result = editing
+      ? await supabase.from('retailers').update(payload).eq('id', editing.id)
+      : await supabase.from('retailers').insert(payload)
+
+    setSaving(false)
+
+    if (result.error) {
+      setMessage(result.error.message)
+      return
+    }
+
+    setForm(emptyForm)
+    setFieldErrors({})
+    setEditing(null)
+    setShowForm(false)
+    setMessage('Retailer saved.')
+    await load()
+  }
+
   const editRetailer = (retailer: Retailer) => {
     setEditing(retailer)
     setFieldErrors({})
