@@ -29,10 +29,15 @@ export function FallingLeaves() {
   const [heroTop, setHeroTop] = useState(0)
 
   useEffect(() => {
+    const hasSeenHomeLeaves =
+      sessionStorage.getItem('tenoo-home-leaves-shown') === '1'
+
     const internalHome =
       sessionStorage.getItem('tenoo-internal-home') === '1'
 
-    if (internalHome) return
+    if (internalHome || hasSeenHomeLeaves) return
+
+    sessionStorage.setItem('tenoo-home-leaves-shown', '1')
 
     const findHero = () => {
       const hero = document.getElementById('tenoo-hero')
