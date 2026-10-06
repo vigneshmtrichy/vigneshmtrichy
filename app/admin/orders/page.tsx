@@ -644,7 +644,9 @@ export default function AdminOrdersPage() {
     setSearchQuery('')
     setCurrentPage(1)
 
-    if (searchParams.get('search')) {
+    const params = new URLSearchParams(window.location.search)
+
+    if (params.get('search')) {
       window.history.replaceState({}, '', '/admin/orders')
     }
   }
