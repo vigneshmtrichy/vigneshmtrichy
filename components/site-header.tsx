@@ -167,6 +167,11 @@ useEffect(() => {
                     <a
                       key={product.slug}
                       href={`/products/${product.slug}`}
+                      onPointerDown={(event) => {
+                        if (event.button === 0) {
+                          window.location.assign(`/products/${product.slug}`)
+                        }
+                      }}
                       className="block cursor-pointer px-5 py-3 transition-colors hover:bg-secondary"
                     >
                       <p className="text-sm font-semibold text-primary">
@@ -417,6 +422,11 @@ useEffect(() => {
                       <a
                         key={product.slug}
                         href={`/products/${product.slug}`}
+                      onPointerDown={(event) => {
+                        if (event.button === 0) {
+                          window.location.assign(`/products/${product.slug}`)
+                        }
+                      }}
                         className="block cursor-pointer px-4 py-3.5 transition-colors hover:bg-secondary"
                       >
                         <p className="text-sm font-semibold text-primary">
