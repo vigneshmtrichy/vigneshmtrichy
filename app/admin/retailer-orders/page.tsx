@@ -379,7 +379,16 @@ export default function RetailerOrdersPage() {
     {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
 
     <section className="mt-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Server-side pagination · filters and search are applied before loading the page.</p></div><p className="text-sm text-muted-foreground">{totalOrderCount} total orders</p></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Retailer orders</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Server-side pagination · filters and search are applied before loading the page.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">{totalOrderCount} total orders</p>
+          <a href="/admin/retailer-orders/create" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:scale-[1.02]">Create Trade Order</a>
+        </div>
+      </div>
       <div className="mt-4 grid gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-11 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
