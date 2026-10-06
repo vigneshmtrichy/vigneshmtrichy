@@ -10,7 +10,6 @@ import { Search } from 'lucide-react'
 
 const STATUS_FILTERS = [
   'all',
-  'pending',
   'confirmed',
   'processing',
   'shipped',
@@ -53,7 +52,6 @@ const getStatusStyle = (status?: string) =>
   STATUS_STYLES[status || 'pending'] || STATUS_STYLES.pending
 
 const STATUS_FLOW: Record<string, string[]> = {
-  pending: ['confirmed', 'cancelled'],
   confirmed: ['processing', 'cancelled'],
   processing: ['shipped', 'cancelled'],
   shipped: ['delivered', 'cancelled'],
