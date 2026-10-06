@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   CheckCircle2,
@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   Search,
   Settings2,
+  Check,
+  ChevronDown,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ALL_PRODUCTS } from '@/lib/site'
@@ -38,6 +40,82 @@ const STATUS_STYLES: Record<ProductStatus, string> = {
   'coming-soon': 'bg-amber-50 text-amber-700 border-amber-200',
   'out-of-stock': 'bg-red-50 text-red-700 border-red-200',
   hidden: 'bg-gray-100 text-gray-600 border-gray-200',
+}
+
+type SelectOption = { value: string; label: string }
+
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  className = '',
+}: {
+  value: string
+  onChange: (value: string) => void
+  options: SelectOption[]
+  className?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = options.find((option) => option.value === value)
+
+  useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [open])
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex h-12 w-full items-center justify-between rounded-xl border bg-background px-4 text-left text-sm outline-none transition hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/10"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate text-foreground">
+          {selected?.label || 'All Statuses'}
+        </span>
+        <ChevronDown
+          className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[80] overflow-hidden rounded-xl border bg-background p-1 shadow-lg">
+          <div className="max-h-72 overflow-y-auto" role="listbox">
+            {options.map((option) => {
+              const isSelected = option.value === value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(option.value)
+                    setOpen(false)
+                  }}
+                  className={`flex min-h-10 w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted ${isSelected ? 'bg-muted font-semibold' : ''}`}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {isSelected && (
+                    <Check className="ml-2 h-4 w-4 shrink-0 text-primary" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function getStatusLabel(status: ProductStatus) {
@@ -366,18 +444,15 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              <select
+              <CustomSelect
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                className="h-12 rounded-xl border bg-background px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 sm:w-52"
-              >
-                <option value="all">All Statuses</option>
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setStatusFilter(value as StatusFilter)}
+                className="sm:w-52"
+                options={[
+                  { value: 'all', label: 'All Statuses' },
+                  ...STATUS_OPTIONS,
+                ]}
+              />
             </div>
           </div>
 
