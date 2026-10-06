@@ -217,6 +217,7 @@ export default function RetailerOrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([])
   const [bulkStatus, setBulkStatus] = useState('packing')
   const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
   const load = async () => {
     const query = search.trim()
     let matchingOrderIds: number[] | null = null
@@ -326,8 +327,14 @@ export default function RetailerOrdersPage() {
     setSelectedOrderIds((current) => visibleIds.every((id) => current.includes(id)) ? current.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...current, ...visibleIds])))
   }
 
+  const requestBulkStatusUpdate = () => {
+    if (!selectedOrderIds.length || bulkStatus === 'cancelled' || bulkUpdating) return
+    setBulkConfirmOpen(true)
+  }
+
   const bulkUpdateStatus = async () => {
     if (!selectedOrderIds.length || bulkStatus === 'cancelled') return
+    setBulkConfirmOpen(false)
     setBulkUpdating(true)
     const { error } = await supabase
       .from('retailer_orders')
@@ -425,9 +432,28 @@ export default function RetailerOrdersPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Change status to</span>
             <CustomSelect value={bulkStatus} onChange={setBulkStatus} className="w-40" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }]} />
-            <button type="button" disabled={bulkUpdating} onClick={() => void bulkUpdateStatus()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            <button type="button" disabled={bulkUpdating} onClick={requestBulkStatusUpdate} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
               {bulkUpdating ? 'Updating…' : 'Apply status'}
             </button>
+          </div>
+        </div>
+      )}
+      {bulkConfirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-labelledby="bulk-status-confirm-title">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 id="bulk-status-confirm-title" className="text-lg font-semibold">Confirm bulk status update</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to change <span className="font-semibold text-foreground">{selectedOrderIds.length} order{selectedOrderIds.length === 1 ? '' : 's'}</span> to <span className="font-semibold text-foreground">{bulkStatus}</span>?
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">This will update all selected orders at once.</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBulkConfirmOpen(false)} disabled={bulkUpdating} className="rounded-lg border px-4 py-2.5 text-sm font-semibold transition hover:bg-muted disabled:opacity-50">
+                No, go back
+              </button>
+              <button type="button" onClick={() => void bulkUpdateStatus()} disabled={bulkUpdating} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+                {bulkUpdating ? 'Updating…' : 'Yes, update orders'}
+              </button>
+            </div>
           </div>
         </div>
       )}
