@@ -283,7 +283,7 @@ useEffect(() => {
 ) : (
   <Link
     href="/login"
-    className="hidden items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary lg:inline-flex"
+    className="hidden items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-secondary hover:shadow-md active:scale-[0.98] lg:inline-flex"
   >
     <User className="h-4 w-4" />
     Login
