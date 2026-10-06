@@ -4,10 +4,12 @@ import { useEffect,useState } from 'react'
 import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { useCart } from '@/components/cart/cart-context'
 
 export default function CashfreePaymentPage(){
   const [state,setState]=useState<'loading'|'paid'|'pending'|'failed'>('loading')
   const [orderId,setOrderId]=useState<number|null>(null)
+  const { clearCart } = useCart()
 
   useEffect(()=>{
     const cfId=new URLSearchParams(window.location.search).get('order_id')
@@ -19,7 +21,7 @@ export default function CashfreePaymentPage(){
       try{
         const r=await fetch('/api/cashfree/verify?order_id='+encodeURIComponent(cfId),{cache:'no-store'})
         const data=await r.json()
-        if(data?.status==='paid'){setOrderId(Number(data.order_id));setState('paid');return}
+        if(data?.status==='paid'){clearCart();setOrderId(Number(data.order_id));setState('paid');return}
         if(data?.status==='failed'){setState('failed');return}
       }catch{}
       // Cashfree may take a few seconds to publish the transaction result
