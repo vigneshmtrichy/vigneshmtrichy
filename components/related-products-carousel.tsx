@@ -7,16 +7,6 @@ import { PRODUCT_STATUS } from '@/lib/site'
 import type { Product, ProductStatus } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
 
-const GALLERY_FOLDERS: Record<string, string> = {
-  'millet-abc': 'Meltiva-Nutrimix',
-  'pink-abc': 'Rubyblend-Nutrimix',
-  'cotton-milk-mix': 'Paruthipaal-mix',
-  'pirandai-rice-mix': 'Pirandai-rice-mix',
-  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
-  'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
-  'black-rice-milk-mix': 'blacko-cocoa-mix',
-}
-
 type RelatedProductsCarouselProps = {
   products: Product[]
 }
@@ -35,7 +25,7 @@ useEffect(() => {
 
     const { data, error } = await supabase
       .from('product_status')
-      .select('product_slug, status')
+      .select('product_slug, status, image_url, image_urls')
 
     if (error) {
       console.error(
@@ -51,6 +41,19 @@ useEffect(() => {
           item.product_slug,
           item.status as ProductStatus,
         ]),
+      ),
+    )
+
+    setProductImages(
+      Object.fromEntries(
+        (data || [])
+          .map((item) => {
+            const imageUrl =
+              item.image_url ||
+              (Array.isArray(item.image_urls) ? item.image_urls[0] : null)
+            return imageUrl ? [item.product_slug, String(imageUrl)] : null
+          })
+          .filter((entry): entry is [string, string] => Boolean(entry)),
       ),
     )
   }
@@ -114,9 +117,7 @@ useEffect(() => {
               <div className="relative aspect-square overflow-hidden bg-background">
                 <Image
                   src={
-                    GALLERY_FOLDERS[item.slug]
-                      ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
-                      : item.image || '/placeholder.svg'
+                    productImages[item.slug] || '/placeholder.svg'
                   }
                   alt={`${item.name} product`}
                   fill
@@ -232,9 +233,7 @@ useEffect(() => {
                           <div className="relative aspect-square overflow-hidden bg-background">
                             <Image
                               src={
-                                GALLERY_FOLDERS[item.slug]
-                                  ? `/products/${GALLERY_FOLDERS[item.slug]}/1.png`
-                                  : item.image || '/placeholder.svg'
+                                productImages[item.slug] || '/placeholder.svg'
                               }
                               alt={`${item.name} product`}
                               fill
