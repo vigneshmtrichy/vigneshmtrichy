@@ -198,7 +198,7 @@ useEffect(() => {
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-red-50 hover:shadow-md active:scale-[0.98]"
           >
             🚪 Logout
           </button>
@@ -207,7 +207,7 @@ useEffect(() => {
         <div className="hidden items-center gap-2 lg:flex">
           <Link
             href="/admin"
-            className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-secondary hover:shadow-md active:scale-[0.98]"
           >
             Admin
           </Link>
