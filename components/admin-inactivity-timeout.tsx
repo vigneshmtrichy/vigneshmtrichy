@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 const ADMIN_EMAIL = 'info@tenoo.in'
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000
 const WARNING_BEFORE_LOGOUT_MS = 2 * 60 * 1000
-const ACTIVITY_CHECK_INTERVAL_MS = 1000
+const ACTIVITY_CHECK_INTERVAL_MS = 1000 
 
 export function AdminInactivityTimeout() {
   const [showWarning, setShowWarning] = useState(false)
