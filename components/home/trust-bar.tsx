@@ -1,5 +1,4 @@
-import { Truck, MapPin } from 'lucide-react'
-import { WhatsAppIcon } from '@/components/whatsapp-icon'
+import { Truck, MapPin, ShieldCheck } from 'lucide-react'
 
 const ITEMS = [
   {
@@ -8,9 +7,9 @@ const ITEMS = [
     desc: 'On orders above ₹699',
   },
   {
-    icon: WhatsAppIcon,
-    title: 'Easy WhatsApp Orders',
-    desc: 'Simple & convenient ordering',
+    icon: ShieldCheck,
+    title: 'Secure Payments',
+    desc: 'Safe & secure online checkout',
   },
   {
     icon: MapPin,
