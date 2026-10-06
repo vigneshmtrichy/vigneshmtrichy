@@ -90,6 +90,7 @@ export default function RetailersPage() {
   const [balances, setBalances] = useState<Record<string, any>>({})
   const [prices, setPrices] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
+  const [retailerPage, setRetailerPage] = useState(1)
   const [form, setForm] = useState(emptyForm)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState<Retailer | null>(null)
@@ -112,6 +113,7 @@ export default function RetailersPage() {
   const [statementPayments, setStatementPayments] = useState<any[]>([])
   const [overdueByRetailer, setOverdueByRetailer] = useState<Record<string, { count: number; amount: number }>>({})
   const retailerFormRef = useRef<HTMLFormElement>(null)
+  const retailerDetailsRef = useRef<HTMLElement>(null)
 
   const load = async () => {
     const { data: retailerRows, error } = await supabase.from('retailers').select('*').order('business_name')
@@ -157,6 +159,29 @@ export default function RetailersPage() {
       [retailer.business_name, retailer.contact_name, retailer.phone, retailer.city]
         .some((value) => String(value || '').toLowerCase().includes(query)))
   }, [retailers, search])
+
+  const retailerPageSize = 10
+  const retailerPageCount = Math.max(1, Math.ceil(filtered.length / retailerPageSize))
+  const paginatedRetailers = useMemo(() => {
+    const start = (retailerPage - 1) * retailerPageSize
+    return filtered.slice(start, start + retailerPageSize)
+  }, [filtered, retailerPage])
+
+  useEffect(() => {
+    setRetailerPage(1)
+  }, [search])
+
+  useEffect(() => {
+    if (!selected || typeof window === 'undefined' || window.innerWidth >= 1024) return
+    const timer = window.setTimeout(() => {
+      retailerDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+    return () => window.clearTimeout(timer)
+  }, [selected])
+
+  useEffect(() => {
+    if (retailerPage > retailerPageCount) setRetailerPage(retailerPageCount)
+  }, [retailerPage, retailerPageCount])
 
   const validateRetailerField = (key: string, rawValue: string) => {
     const value = rawValue.trim()
@@ -559,7 +584,7 @@ export default function RetailersPage() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search retailer, person, phone or city…" className="mt-4 h-10 w-full rounded-xl border bg-background px-3 text-sm sm:mt-6 sm:h-11 sm:px-4" />
 
           <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-[1fr_1.1fr] lg:gap-4">
-            <section className="space-y-3">{filtered.map((retailer) => {
+            <section className="space-y-3">{paginatedRetailers.map((retailer) => {
               const balance = balances[retailer.id]?.outstanding_balance || 0
               const unappliedCredit = balances[retailer.id]?.unapplied_credit || 0
               return <button key={retailer.id} onClick={() => void selectRetailer(retailer)} className="w-full rounded-xl border bg-background p-3 text-left transition hover:border-primary sm:rounded-2xl sm:p-4">
