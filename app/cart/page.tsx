@@ -215,7 +215,7 @@ return (
 
               <Link
                 href="/products"
-                className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
+                className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-transform duration-200 ease-out hover:scale-105 hover:shadow-md active:scale-[0.98]"
               >
                 EXPLORE PRODUCTS
               </Link>
