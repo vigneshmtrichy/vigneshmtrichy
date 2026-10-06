@@ -196,6 +196,35 @@ export default function RetailersPage() {
     }, 0)
   }
 
+  const toggleRetailerStatus = async (retailer: Retailer) => {
+    const nextStatus = retailer.status === 'active' ? 'inactive' : 'active'
+    const action = nextStatus === 'inactive' ? 'block' : 'reactivate'
+
+    if (!window.confirm(
+      nextStatus === 'inactive'
+        ? `Block ${retailer.business_name}? They will remain in your records but should not receive new orders.`
+        : `Reactivate ${retailer.business_name}?`
+    )) return
+
+    setMessage('')
+    const { error } = await supabase
+      .from('retailers')
+      .update({ status: nextStatus, updated_at: new Date().toISOString() })
+      .eq('id', retailer.id)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    const updatedRetailer = { ...retailer, status: nextStatus as Retailer['status'] }
+    setRetailers((current) =>
+      current.map((item) => item.id === retailer.id ? updatedRetailer : item)
+    )
+    if (selected?.id === retailer.id) setSelected(updatedRetailer)
+    setMessage(action === 'block' ? 'Retailer blocked.' : 'Retailer reactivated.')
+  }
+
   const selectRetailer = async (retailer: Retailer) => {
     setSelected(retailer); setShowSpecialPrices(false); setMessage('')
     const { data } = await supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailer.id)
@@ -394,7 +423,24 @@ export default function RetailersPage() {
               </button>
             })}</section>
 
-            <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3"><div><h2 className="text-xl font-semibold">{selected.business_name}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p></div><button onClick={() => editRetailer(selected)} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-all duration-200 ease-out hover:bg-primary/10 hover:text-primary hover:shadow-sm">Edit</button></div>
+            <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold">{selected.business_name}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => editRetailer(selected)} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-all duration-200 ease-out hover:bg-primary/10 hover:text-primary hover:shadow-sm">Edit</button>
+                  <button
+                    type="button"
+                    onClick={() => void toggleRetailerStatus(selected)}
+                    className={selected.status === 'active'
+                      ? "rounded-lg px-2 py-1 text-sm font-semibold text-red-600 transition-all duration-200 ease-out hover:bg-red-50 hover:text-red-700 hover:shadow-sm"
+                      : "rounded-lg px-2 py-1 text-sm font-semibold text-emerald-700 transition-all duration-200 ease-out hover:bg-emerald-50 hover:text-emerald-800 hover:shadow-sm"}
+                  >
+                    {selected.status === 'active' ? 'Block Retailer' : 'Reactivate'}
+                  </button>
+                </div>
+              </div>
               {(() => {
                 const balance = balances[selected.id]
                 const unappliedCredit = Number(balance?.unapplied_credit || 0)
