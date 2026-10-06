@@ -9,6 +9,7 @@ import {
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
+import { unstable_cache } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,8 @@ export const metadata: Metadata = {
   },
 }
 
-async function getProductStatuses() {
+const getProductStatuses = unstable_cache(
+  async () => {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -32,12 +34,12 @@ async function getProductStatuses() {
     .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg')
 
   if (error) {
-    console.error('Failed to load product statuses:', error)
-    return {}
-  }
+      console.error('Failed to load product statuses:', error)
+      return {}
+    }
 
-  return Object.fromEntries(
-    (data || []).map((item) => [
+    return Object.fromEntries(
+      (data || []).map((item) => [
       item.product_slug,
       {
         status: item.status,
@@ -53,10 +55,13 @@ async function getProductStatuses() {
         image_url: item.image_url,
         image_urls: item.image_urls,
         shipping_weight_kg: item.shipping_weight_kg,
-      },
-    ]),
-  )
-}
+        },
+      ]),
+    )
+  },
+  ['products-page-statuses'],
+  { revalidate: 60 },
+)
 
 export default async function ProductsPage() {
   const productStatuses = await getProductStatuses()
