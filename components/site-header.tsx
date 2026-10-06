@@ -167,7 +167,12 @@ useEffect(() => {
                     <Link
                       key={product.slug}
                       href={`/products/${product.slug}`}
-                      onClick={() => setSearch('')}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        setSearch('')
+                        setSearchFocused(false)
+                        router.push(`/products/${product.slug}`)
+                      }}
                       className="block px-5 py-3 transition-colors hover:bg-secondary"
                     >
                       <p className="text-sm font-semibold text-primary">
@@ -418,9 +423,11 @@ useEffect(() => {
                       <Link
                         key={product.slug}
                         href={`/products/${product.slug}`}
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.preventDefault()
                           setSearch('')
                           setSearchOpen(false)
+                          router.push(`/products/${product.slug}`)
                         }}
                         className="block px-4 py-3.5 transition-colors hover:bg-secondary"
                       >
