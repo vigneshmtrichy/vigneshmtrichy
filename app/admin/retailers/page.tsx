@@ -297,7 +297,9 @@ export default function RetailersPage() {
     setEditing(retailer)
     setFieldErrors({})
     setForm({
-      business_name: retailer.business_name, contact_name: retailer.contact_name || '', phone: retailer.phone,
+      // If business_name equals contact_name, it may be the database fallback used when no business name was entered.
+      business_name: retailer.business_name === (retailer.contact_name || '') ? '' : retailer.business_name,
+      contact_name: retailer.contact_name || '', phone: retailer.phone,
       whatsapp: retailer.whatsapp || '', email: retailer.email || '', billing_name: retailer.billing_name || '',
       address: retailer.address || '', city: retailer.city || '', state: retailer.state || '', pincode: retailer.pincode || '',
       gstin: retailer.gstin || '', payment_terms_days: String(retailer.payment_terms_days || 0),
@@ -514,7 +516,7 @@ export default function RetailersPage() {
           {showForm && <form ref={retailerFormRef} onSubmit={saveRetailer} className="mt-5 scroll-mt-24 grid gap-3 rounded-2xl border bg-background p-5 sm:grid-cols-2">
             <h2 className="sm:col-span-2 font-semibold">{editing ? 'Edit retailer' : 'New retailer'}</h2>
             <p className="sm:col-span-2 rounded-xl border bg-muted/40 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
-              <span className="font-semibold text-foreground">Required:</span> Business Name & Phone Number or WhatsApp Number.
+              <span className="font-semibold text-foreground">Required:</span> Business Name or Contact Name · Phone Number or WhatsApp Number.
               <span className="ml-1">All other details are optional and can be updated later.</span>
             </p>
             {Object.entries(form).map(([key, value]) => {
