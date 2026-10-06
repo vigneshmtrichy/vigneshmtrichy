@@ -184,7 +184,7 @@ useEffect(() => {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  'inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary',
+                  'inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-secondary hover:shadow-md active:scale-[0.98]',
                   active
                     ? 'bg-[#edf3dc] text-[#7fb51b]'
                     : 'text-foreground/80',
@@ -214,7 +214,7 @@ useEffect(() => {
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            className="inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-red-50 hover:shadow-md active:scale-[0.98]"
           >
             🚪 Logout
           </button>
