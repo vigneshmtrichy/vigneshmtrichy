@@ -161,12 +161,17 @@ export default function AdminProductSettingsPage() {
             item?.display_name === null || item?.display_name === undefined
               ? product.name
               : String(item.display_name),
-          imageUrls:
-            Array.isArray(item?.image_urls)
-              ? item.image_urls.map((image) => String(image))
-              : item?.image_url
-                ? [String(item.image_url)]
-                : product.imageUrls || [],
+          imageUrls: (() => {
+            const managedImages = Array.isArray(item?.image_urls)
+              ? item.image_urls.map((image) => String(image)).filter(Boolean)
+              : []
+            const primaryImage = item?.image_url
+              ? String(item.image_url)
+              : null
+            return primaryImage
+              ? [primaryImage, ...managedImages.filter((image) => image !== primaryImage)]
+              : managedImages
+          })(),
           badges: Array.isArray(item?.badges)
             ? item.badges.join(', ')
             : product.badges.join(', '),
@@ -761,7 +766,7 @@ export default function AdminProductSettingsPage() {
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border bg-muted">
                     <img
-                      src={selectedProduct.image}
+                      src={draft.imageUrls[0] || '/placeholder.svg'}
                       alt={selectedProduct.name}
                       className="h-full w-full object-contain"
                     />
