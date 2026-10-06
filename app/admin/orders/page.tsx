@@ -145,8 +145,16 @@ export default function AdminOrdersPage() {
 
   // Sync the global admin header search with this page's existing search.
   useEffect(() => {
-    setSearchQuery(searchParams.get('search') || '')
+    const searchParam = searchParams.get('search') || ''
+    const orderParam = searchParams.get('order') || ''
+    const orderId = Number(orderParam)
+
+    setSearchQuery(searchParam || orderParam)
     setCurrentPage(1)
+
+    if (Number.isFinite(orderId) && orderId > 0) {
+      setExpandedOrderId(orderId)
+    }
   }, [searchParams])
 
   const updateOrderStatus = async (
