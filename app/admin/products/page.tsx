@@ -447,7 +447,7 @@ export default function AdminProductsPage() {
                         '/admin/products/settings?product=' +
                         encodeURIComponent(product.slug)
                       }
-                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-muted"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]"
                     >
                       Manage Settings
                       <ArrowRight className="h-4 w-4" />
