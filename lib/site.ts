@@ -53,7 +53,7 @@ export const KIDS_PRODUCTS: Product[] = [
   name: 'Meltiva Nutrimix',
   tagline: 'Nuts, Seeds & Millets For Growing You',
   descLines: ['Nuts, Seeds & Millets', 'For Growing You'],
-  image: '/products/Meltiva-Nutrimix/1.png',
+  image: '/placeholder.svg',
   category: 'kids',
   badges: [],
   description:
@@ -90,7 +90,7 @@ manufacturedBy:
     name: 'Rubyblend Nutrimix',
     tagline: 'Nuts, Seeds & Beetroot Mix For Stronger You',
     descLines: ['Nuts, Seeds & Beetroot Mix', 'For Stronger You'],
-    image: '/products/Rubyblend-Nutrimix/1.png',
+    image: '/placeholder.svg',
     category: 'kids',
     badges: [...PRODUCT_BADGES],
 
@@ -135,7 +135,7 @@ gstRate: 5,
 
   descLines: ['Natural & Creamy', 'For Everyday Energy'],
 
-  image: '/products/blacko-cocoa-mix/1.png',
+  image: '/placeholder.svg',
 
   category: 'kids',
 
@@ -181,7 +181,7 @@ gstRate: 5,
     name: 'Cotton Seed Milk Mix',
     tagline: 'Natural & Nutritious For Everyday Wellness',
     descLines: ['Natural & Nutritious', 'For Everyday Wellness'],
-    image: '/products/Paruthipaal-mix/1.png',
+    image: '/placeholder.svg',
     category: 'kids',
     badges: [...PRODUCT_BADGES],
 
@@ -227,7 +227,7 @@ export const ADULT_PRODUCTS: Product[] = [
   name: 'Nutaura',
   tagline: 'Good Nutrition, Brighter Days..!',
   descLines: ['Good Nutrition', 'Brighter Days..!'],
-  image: '/products/Nutaura/1.png',
+  image: '/placeholder.svg',
   category: 'adults',
   badges: ['Rich in Protein', 'Good Source of Healthy Fats', 'Naturally Nutritious'],
 
@@ -272,7 +272,7 @@ export const ADULT_PRODUCTS: Product[] = [
   name: 'Pirandai Rice Mix',
   tagline: 'Traditional Taste. Modern Convenience.',
   descLines: ['Traditional Taste', 'Modern Convenience'],
-  image: '/products/Pirandai-rice-mix/1.png',
+  image: '/placeholder.svg',
   category: 'adults',
   badges: [...PRODUCT_BADGES],
 
@@ -316,7 +316,7 @@ gstRate: 5,
   name: 'Mudavaatukaal Rice Mix',
   tagline: 'Traditional Taste. Simple & Convenient.',
   descLines: ['Traditional Taste', 'Simple & Convenient'],
-  image: '/products/Mudavaatukaal-rice-mix/1.png',
+  image: '/placeholder.svg',
   category: 'adults',
   badges: [...PRODUCT_BADGES],
 
@@ -359,7 +359,7 @@ price: '399',
      name: 'Mudavaatukaal Soup Mix',
      tagline: 'Traditional & Wholesome Soup For Everyday Wellness',
      descLines: ['Traditional & Wholesome Soup', 'For Everyday Wellness'],
-     image: '/products/Mudavaatukaal-soup-mix/1.png',
+     image: '/placeholder.svg',
      category: 'adults',
      badges: [...PRODUCT_BADGES],
 
