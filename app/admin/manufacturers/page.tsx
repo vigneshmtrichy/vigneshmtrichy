@@ -261,7 +261,7 @@ export default function AdminManufacturersPage() {
           <button
             type="button"
             onClick={openNew}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]"
           >
             <Plus className="h-4 w-4" />
             Add Manufacturer
@@ -407,7 +407,7 @@ export default function AdminManufacturersPage() {
                                 <button
                                   type="button"
                                   onClick={() => void remove(code)}
-                                  className="rounded-full p-0.5 text-red-500 hover:bg-red-50"
+                                  className="rounded-full p-0.5 text-red-500 shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] hover:bg-red-50"
                                   aria-label={`Delete ${code}`}
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -421,7 +421,7 @@ export default function AdminManufacturersPage() {
                           <button
                             type="button"
                             onClick={() => openAddCode(group)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             Add Code
@@ -429,7 +429,7 @@ export default function AdminManufacturersPage() {
                           <button
                             type="button"
                             onClick={() => openEdit(group)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-muted"
+                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] hover:bg-muted"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             Edit
