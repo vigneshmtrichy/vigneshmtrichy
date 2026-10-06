@@ -28,6 +28,7 @@ export default function AdminManufacturersPage() {
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -92,11 +93,35 @@ export default function AdminManufacturersPage() {
     return Array.from(map.values())
   }, [rows])
 
+  const validateField = (key: keyof typeof EMPTY, rawValue: string) => {
+    const value = rawValue.trim()
+    if (!value) {
+      if (key === 'manufacturer') return 'Manufacturer name is required.'
+      if (key === 'address') return 'Address is required.'
+      if (key === 'fssai') return 'FSSAI Licence No. is required.'
+      if (key === 'code' && (mode === 'new' || mode === 'add-code')) return 'Batch code is required.'
+      return ''
+    }
+    if (key === 'code') return /^[A-Z]{2,3}$/.test(value) ? '' : 'Batch code must be 2 or 3 letters.'
+    if (key === 'manufacturer') return /^[A-Za-z0-9][A-Za-z0-9 .&'()\-]{1,99}$/.test(value) ? '' : 'Enter a valid manufacturer name.'
+    if (key === 'address') return value.length >= 5 ? '' : 'Address must be at least 5 characters.'
+    if (key === 'fssai') return /^\d{14}$/.test(value) ? '' : 'FSSAI Licence No. must be exactly 14 digits.'
+    return ''
+  }
+
+  const handleFieldChange = (key: keyof typeof EMPTY, rawValue: string) => {
+    let value = rawValue
+    if (key === 'code') value = value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3)
+    if (key === 'fssai') value = value.replace(/\D/g, '').slice(0, 14)
+    setForm(current => ({ ...current, [key]: value }))
+    setFieldErrors(current => ({ ...current, [key]: validateField(key, value) }))
+  }
   const closeForm = () => {
     setFormOpen(false)
     setMode('new')
     setEditingGroup(null)
     setForm(EMPTY)
+    setFieldErrors({})
     setMessage('')
   }
 
@@ -104,6 +129,7 @@ export default function AdminManufacturersPage() {
     setMode('new')
     setEditingGroup(null)
     setForm(EMPTY)
+    setFieldErrors({})
     setFormOpen(true)
     setMessage('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -118,6 +144,7 @@ export default function AdminManufacturersPage() {
       address: group.address.join('\n'),
       fssai: group.fssai,
     })
+    setFieldErrors({})
     setFormOpen(true)
     setMessage('')
     setOpenGroup(group.key)
@@ -145,15 +172,14 @@ export default function AdminManufacturersPage() {
     const address = form.address.split('\n').map(x => x.trim()).filter(Boolean)
     const fssai = form.fssai.trim()
 
-    if (mode === 'new' || mode === 'add-code') {
-      if (code.length < 2 || code.length > 3) {
-        setMessage('Batch code must be 2 or 3 letters.')
-        return
-      }
-    }
-
-    if (!manufacturer || !address.length || !fssai) {
-      setMessage('Please fill all manufacturer details.')
+    const errors: Record<string, string> = {}
+    ;(['code', 'manufacturer', 'address', 'fssai'] as (keyof typeof EMPTY)[]).forEach((key) => {
+      const error = validateField(key, form[key])
+      if (error) errors[key] = error
+    })
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      setMessage('Please correct the highlighted fields before saving.')
       return
     }
 
@@ -301,10 +327,7 @@ export default function AdminManufacturersPage() {
                   <input
                     value={form.code}
                     maxLength={3}
-                    onChange={e => setForm(x => ({
-                      ...x,
-                      code: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3),
-                    }))}
+                    onChange={e => handleFieldChange('code', e.target.value)}
                     placeholder="e.g. ABC"
                     className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary"
                   />
@@ -316,7 +339,7 @@ export default function AdminManufacturersPage() {
                 <input
                   value={form.manufacturer}
                   disabled={mode === 'add-code'}
-                  onChange={e => setForm(x => ({ ...x, manufacturer: e.target.value }))}
+                  onChange={e => handleFieldChange('manufacturer', e.target.value)}
                   placeholder="e.g. Your Manufacturer Name"
                   className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40"
                 />
@@ -328,7 +351,7 @@ export default function AdminManufacturersPage() {
                   rows={4}
                   value={form.address}
                   disabled={mode === 'add-code'}
-                  onChange={e => setForm(x => ({ ...x, address: e.target.value }))}
+                  onChange={e => handleFieldChange('address', e.target.value)}
                   placeholder={'e.g. 123, Main Street\nCity, Tamil Nadu'}
                   className="mt-2 w-full rounded-xl border bg-background px-3 py-3 outline-none focus:border-primary disabled:bg-muted/40"
                 />
@@ -339,7 +362,7 @@ export default function AdminManufacturersPage() {
                 <input
                   value={form.fssai}
                   disabled={mode === 'add-code'}
-                  onChange={e => setForm(x => ({ ...x, fssai: e.target.value }))}
+                  onChange={e => handleFieldChange('fssai', e.target.value)}
                   placeholder="e.g. 12345678901234"
                   className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40"
                 />
