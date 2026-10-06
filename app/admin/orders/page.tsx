@@ -183,6 +183,10 @@ export default function AdminOrdersPage() {
     const previousOrder = orders.find((order) => order.id === orderId)
     if (!previousOrder) return
     const currentStatus = previousOrder.order_status || 'pending'
+    if (currentStatus === 'cancelled') {
+      setMessage('Cancelled orders cannot be moved to another status.')
+      return
+    }
     if (newStatus === 'cancelled') {
       if (currentStatus === 'delivered' || currentStatus === 'cancelled') {
         setMessage('Delivered or cancelled orders cannot be cancelled.')
@@ -845,64 +849,6 @@ export default function AdminOrdersPage() {
             <div className="h-28 rounded-2xl bg-card" />
             <div className="h-32 rounded-2xl bg-card" />
           </div>
-        {backwardStatusChange && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
-            <h2 className="text-lg font-semibold">Move order backward?</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Order #{backwardStatusChange.order.id} is currently <span className="font-semibold text-foreground">{statusLabel(backwardStatusChange.order.order_status)}</span>. Do you really want to move it back to <span className="font-semibold text-foreground">{statusLabel(backwardStatusChange.nextStatus)}</span>?</p>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setBackwardStatusChange(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep current status</button>
-              <button type="button" onClick={() => void confirmBackwardStatusChange()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, move backward</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {cancelOrder && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
-            <h2 className="text-lg font-semibold">Cancel order?</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Are you sure you want to cancel Order #{cancelOrder.id}?</p>
-            <textarea value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Cancellation reason (optional)" className="mt-4 min-h-24 w-full rounded-xl border bg-background p-3 text-sm outline-none focus:border-primary" />
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => { setCancelOrder(null); setCancelReason('') }} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep order</button>
-              <button type="button" onClick={() => void confirmCancellation()} className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white">Yes, cancel order</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {bulkBackwardConfirmOpen && (
-        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
-            <h2 className="text-lg font-semibold">Some orders will move backward</h2>
-            <p className="mt-2 text-sm text-muted-foreground">You selected orders with different statuses. Changing all of them to <span className="font-semibold text-foreground">{statusLabel(bulkTargetStatus)}</span> will move some orders backward.</p>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setBulkBackwardConfirmOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, go back</button>
-              <button type="button" onClick={() => void bulkUpdateStatus(bulkTargetStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, update orders</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {bulkConfirmOpen && (
-        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
-            <h2 className="text-lg font-semibold">Confirm bulk status update</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Are you sure you want to change {selectedOrderIds.length} orders to <span className="font-semibold text-foreground">{statusLabel(bulkTargetStatus)}</span>?</p>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setBulkConfirmOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, go back</button>
-              <button type="button" onClick={() => void bulkUpdateStatus(bulkTargetStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, update orders</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {message && (
-        <div className="fixed inset-x-4 bottom-5 z-[120] flex justify-center pointer-events-none sm:inset-x-auto sm:right-6 sm:left-auto sm:bottom-6">
-          <div className="max-w-md rounded-xl border border-border bg-foreground px-4 py-3 text-sm font-semibold text-background shadow-xl">{message}</div>
-        </div>
-      )}
       </main>
 
   
@@ -1896,6 +1842,65 @@ Thank you for choosing TENOO.`,
             </>
           )}
         </div>
+        {backwardStatusChange && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Move order backward?</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Order #{backwardStatusChange.order.id} is currently <span className="font-semibold text-foreground">{statusLabel(backwardStatusChange.order.order_status)}</span>. Do you really want to move it back to <span className="font-semibold text-foreground">{statusLabel(backwardStatusChange.nextStatus)}</span>?</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBackwardStatusChange(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep current status</button>
+              <button type="button" onClick={() => void confirmBackwardStatusChange()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, move backward</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelOrder && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Cancel order?</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Are you sure you want to cancel Order #{cancelOrder.id}?</p>
+            <textarea value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Cancellation reason (optional)" className="mt-4 min-h-24 w-full rounded-xl border bg-background p-3 text-sm outline-none focus:border-primary" />
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => { setCancelOrder(null); setCancelReason('') }} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep order</button>
+              <button type="button" onClick={() => void confirmCancellation()} className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white">Yes, cancel order</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkBackwardConfirmOpen && (
+        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Some orders will move backward</h2>
+            <p className="mt-2 text-sm text-muted-foreground">You selected orders with different statuses. Changing all of them to <span className="font-semibold text-foreground">{statusLabel(bulkTargetStatus)}</span> will move some orders backward.</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBulkBackwardConfirmOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, go back</button>
+              <button type="button" onClick={() => void bulkUpdateStatus(bulkTargetStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, update orders</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkConfirmOpen && (
+        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Confirm bulk status update</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Are you sure you want to change {selectedOrderIds.length} orders to <span className="font-semibold text-foreground">{statusLabel(bulkTargetStatus)}</span>?</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBulkConfirmOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, go back</button>
+              <button type="button" onClick={() => void bulkUpdateStatus(bulkTargetStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, update orders</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {message && (
+        <div className="fixed inset-x-4 bottom-5 z-[120] flex justify-center pointer-events-none sm:inset-x-auto sm:right-6 sm:left-auto sm:bottom-6">
+          <div className="max-w-md rounded-xl border border-border bg-foreground px-4 py-3 text-sm font-semibold text-background shadow-xl">{message}</div>
+        </div>
+      )}
+
       </main>
 </>
   )
