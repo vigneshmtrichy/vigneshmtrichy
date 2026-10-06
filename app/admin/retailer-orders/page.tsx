@@ -219,6 +219,7 @@ export default function RetailerOrdersPage() {
   const [bulkStatus, setBulkStatus] = useState('packing')
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [backwardStatusChange, setBackwardStatusChange] = useState<{ order: any; nextStatus: string } | null>(null)
   const load = async () => {
     const query = search.trim()
     let matchingOrderIds: number[] | null = null
@@ -359,6 +360,8 @@ export default function RetailerOrdersPage() {
     await load()
   }
 
+  const statusRank: Record<string, number> = { confirmed: 1, packing: 2, dispatched: 3, delivered: 4 }
+
   const updateStatus = async (order: any, order_status: string) => {
     if (order_status === 'cancelled') {
       if (order.order_status === 'delivered' || order.order_status === 'cancelled') {
@@ -370,8 +373,22 @@ export default function RetailerOrdersPage() {
       return
     }
 
+    if ((statusRank[order_status] || 0) < (statusRank[order.order_status] || 0)) {
+      setBackwardStatusChange({ order, nextStatus: order_status })
+      return
+    }
+
     const { error } = await supabase.from('retailer_orders').update({ order_status, updated_at: new Date().toISOString() }).eq('id', order.id)
     setMessage(error ? error.message : 'Order status updated.')
+    if (!error) await load()
+  }
+
+  const confirmBackwardStatusChange = async () => {
+    if (!backwardStatusChange) return
+    const { order, nextStatus } = backwardStatusChange
+    setBackwardStatusChange(null)
+    const { error } = await supabase.from('retailer_orders').update({ order_status: nextStatus, updated_at: new Date().toISOString() }).eq('id', order.id)
+    setMessage(error ? error.message : 'Order status moved backward.')
     if (!error) await load()
   }
 
@@ -472,6 +489,21 @@ export default function RetailerOrdersPage() {
             <button type="button" disabled={bulkUpdating} onClick={requestBulkStatusUpdate} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
               {bulkUpdating ? 'Updating…' : 'Apply status'}
             </button>
+          </div>
+        </div>
+      )}
+      {backwardStatusChange && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-labelledby="backward-status-title">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 id="backward-status-title" className="text-lg font-semibold">Move order backward?</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This order is currently <span className="font-semibold text-foreground">{backwardStatusChange.order.order_status}</span>. Do you really want to move it back to <span className="font-semibold text-foreground">{backwardStatusChange.nextStatus}</span>?
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">This is useful if the previous status was selected by mistake.</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBackwardStatusChange(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep current status</button>
+              <button type="button" onClick={() => void confirmBackwardStatusChange()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, move backward</button>
+            </div>
           </div>
         </div>
       )}
