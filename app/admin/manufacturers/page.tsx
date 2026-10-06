@@ -362,8 +362,9 @@ export default function AdminManufacturersPage() {
                   disabled={mode === 'add-code'}
                   onChange={e => handleFieldChange('manufacturer', e.target.value)}
                   placeholder="e.g. Your Manufacturer Name"
-                  className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40"
+                  className={`mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40 ${fieldErrors.manufacturer ? 'border-red-500' : ''}`}
                 />
+                {fieldErrors.manufacturer && <span className="mt-1 block text-xs font-medium text-red-600">{fieldErrors.manufacturer}</span>}
               </label>
 
               <label className="text-sm font-medium md:col-span-2">
@@ -386,8 +387,9 @@ export default function AdminManufacturersPage() {
                   disabled={mode === 'add-code'}
                   onChange={e => handleFieldChange('fssai', e.target.value)}
                   placeholder="e.g. 12345678901234"
-                  className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40"
+                  className={`mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40 ${fieldErrors.fssai ? 'border-red-500' : ''}`}
                 />
+                {fieldErrors.fssai && <span className="mt-1 block text-xs font-medium text-red-600">{fieldErrors.fssai}</span>}
               </label>
             </div>
 
