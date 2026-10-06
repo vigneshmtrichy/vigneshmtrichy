@@ -175,6 +175,28 @@ export default function RetailersPage() {
     if (retailerPage > retailerPageCount) setRetailerPage(retailerPageCount)
   }, [retailerPage, retailerPageCount])
 
+  useEffect(() => {
+    if (!selected || typeof window === 'undefined' || window.innerWidth >= 1024) return
+    let timer1: number | undefined
+    let timer2: number | undefined
+    const scrollToDetails = () => {
+      const panel = document.getElementById('retailer-details-panel')
+      if (!panel) return
+      const top = panel.getBoundingClientRect().top + window.scrollY - 92
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    }
+    timer1 = window.setTimeout(() => {
+      window.requestAnimationFrame(() => {
+        scrollToDetails()
+        timer2 = window.setTimeout(scrollToDetails, 350)
+      })
+    }, 50)
+    return () => {
+      if (timer1) window.clearTimeout(timer1)
+      if (timer2) window.clearTimeout(timer2)
+    }
+  }, [selected?.id])
+
   const renderRetailerPagination = () => retailerPageCount > 1 ? (
     <div className="flex items-center justify-between gap-2 rounded-xl border bg-background p-2.5 sm:rounded-2xl sm:p-3">
       <button
@@ -387,15 +409,6 @@ export default function RetailersPage() {
   }
   const selectRetailer = async (retailer: Retailer) => {
     setSelected(retailer); setShowSpecialPrices(false); setMessage('')
-    // On mobile, bring the selected retailer's action panel into view immediately.
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      window.setTimeout(() => {
-        const panel = retailerDetailsRef.current
-        if (!panel) return
-        const top = panel.getBoundingClientRect().top + window.scrollY - 82
-        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
-      }, 150)
-    }
     const { data } = await supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailer.id)
     const next: Record<string, string> = {}
     data?.forEach((row: any) => { next[row.product_slug] = String(row.unit_price) })
@@ -622,7 +635,7 @@ export default function RetailersPage() {
               {renderRetailerPagination()}
             </section>
 
-            <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3">
+            <aside id="retailer-details-panel" tabIndex={-1} className="scroll-mt-24 rounded-xl border bg-background p-4 outline-none sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-semibold">{selected.business_name}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p>
