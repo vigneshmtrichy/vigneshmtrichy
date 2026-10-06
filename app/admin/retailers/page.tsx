@@ -113,6 +113,7 @@ export default function RetailersPage() {
   const [statementOrders, setStatementOrders] = useState<any[]>([])
   const [statementPayments, setStatementPayments] = useState<any[]>([])
   const [statementTransactionFilter, setStatementTransactionFilter] = useState('all')
+  const [specialPriceMessage, setSpecialPriceMessage] = useState('')
   const [overdueByRetailer, setOverdueByRetailer] = useState<Record<string, { count: number; amount: number }>>({})
   const retailerFormRef = useRef<HTMLFormElement>(null)
   const retailerDetailsRef = useRef<HTMLElement>(null)
@@ -419,7 +420,7 @@ export default function RetailersPage() {
 
   const savePrices = async () => {
     if (!selected) return
-    setSaving(true); setMessage('')
+    setSaving(true); setMessage(''); setSpecialPriceMessage('')
     const rows = Object.entries(prices)
       .filter(([, value]) => value.trim() !== '')
       .map(([product_slug, value]) => ({ retailer_id: selected.id, product_slug, unit_price: Number(value), updated_at: new Date().toISOString() }))
@@ -428,7 +429,12 @@ export default function RetailersPage() {
       ? { error: deleteError }
       : await supabase.from('retailer_product_prices').upsert(rows)
     setSaving(false)
-    setMessage(error ? error.message : 'Retailer-specific prices saved.')
+    if (error) {
+      setSpecialPriceMessage(error.message)
+    } else {
+      setSpecialPriceMessage('Retailer-specific prices saved successfully.')
+      window.setTimeout(() => setSpecialPriceMessage(''), 3500)
+    }
   }
 
   const loadStatement = async () => {
@@ -788,6 +794,15 @@ export default function RetailersPage() {
           </div>
         </div>
       </main>
+      {specialPriceMessage && (
+        <div className="fixed inset-x-4 bottom-5 z-[120] flex justify-center pointer-events-none sm:inset-x-auto sm:right-6 sm:left-auto sm:bottom-6">
+          <div className={specialPriceMessage.includes('successfully')
+            ? "max-w-md rounded-xl border border-emerald-200 bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-xl"
+            : "max-w-md rounded-xl border border-red-200 bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-xl"}>
+            {specialPriceMessage}
+          </div>
+        </div>
+      )}
       {retailerStatusTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 backdrop-blur-[2px]" role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-2xl">
