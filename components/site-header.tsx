@@ -147,7 +147,9 @@ useEffect(() => {
               }
               className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
               onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
+              onBlur={() => {
+                window.setTimeout(() => setSearchFocused(false), 150)
+              }}
               aria-label={isAdminPage ? 'Search orders' : 'Search products'}
             />
           </div>
