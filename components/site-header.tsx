@@ -17,7 +17,6 @@ export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
-  const [searchHovered, setSearchHovered] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -55,7 +54,7 @@ useEffect(() => {
       : ALL_PRODUCTS.slice(0, 5)
 
   const showSearchSuggestions =
-    !isAdminPage && (searchFocused || searchHovered)
+    !isAdminPage && searchFocused
 
 
   const closeMobileMenu = () => {
@@ -93,11 +92,7 @@ useEffect(() => {
 
         {/* Desktop Search */}
         {!isAdminPage && (
-        <div
-          className="relative ml-auto hidden max-w-2xl flex-1 lg:block"
-          onMouseEnter={() => setSearchHovered(true)}
-          onMouseLeave={() => setSearchHovered(false)}
-        >
+        <div className="relative ml-auto hidden max-w-2xl flex-1 lg:block">
           <div className="flex h-11 items-center overflow-hidden rounded-full border border-border bg-background">
             <Search className="ml-4 h-4 w-4 shrink-0 text-muted-foreground" />
 
