@@ -235,6 +235,26 @@ export default function AdminManufacturersPage() {
     }
   }
 
+  const removeManufacturer = async (group: Group) => {
+    if (!window.confirm('Delete manufacturer "' + group.manufacturer + '" and all batch codes (' + group.codes.join(', ') + ')?')) return
+
+    setMessage('')
+    const { error } = await supabase
+      .from('manufacturer_verification')
+      .delete()
+      .in('code', group.codes)
+
+    if (error) {
+      console.error(error)
+      setMessage('Unable to delete this manufacturer.')
+      return
+    }
+
+    setMessage('Manufacturer "' + group.manufacturer + '" deleted.')
+    if (openGroup === group.key) setOpenGroup(null)
+    await load()
+  }
+
   const remove = async (code: string) => {
     if (!window.confirm(`Delete batch code "${code}"?`)) return
 
@@ -329,8 +349,9 @@ export default function AdminManufacturersPage() {
                     maxLength={3}
                     onChange={e => handleFieldChange('code', e.target.value)}
                     placeholder="e.g. ABC"
-                    className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary"
+                    className={`mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary ${fieldErrors.code ? 'border-red-500' : ''}`}
                   />
+                  {fieldErrors.code && <span className="mt-1 block text-xs font-medium text-red-600">{fieldErrors.code}</span>}
                 </label>
               )}
 
@@ -353,8 +374,9 @@ export default function AdminManufacturersPage() {
                   disabled={mode === 'add-code'}
                   onChange={e => handleFieldChange('address', e.target.value)}
                   placeholder={'e.g. 123, Main Street\nCity, Tamil Nadu'}
-                  className="mt-2 w-full rounded-xl border bg-background px-3 py-3 outline-none focus:border-primary disabled:bg-muted/40"
+                  className={`mt-2 w-full rounded-xl border bg-background px-3 py-3 outline-none focus:border-primary disabled:bg-muted/40 ${fieldErrors.address ? 'border-red-500' : ''}`}
                 />
+                {fieldErrors.address && <span className="mt-1 block text-xs font-medium text-red-600">{fieldErrors.address}</span>}
               </label>
 
               <label className="text-sm font-medium">
@@ -456,6 +478,14 @@ export default function AdminManufacturersPage() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void removeManufacturer(group)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </button>
                         </div>
                       </div>
