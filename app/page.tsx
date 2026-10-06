@@ -11,8 +11,6 @@ import { Story } from '@/components/home/story'
 import { CtaBanner } from '@/components/home/cta-banner'
 import { TrustBar } from '@/components/home/trust-bar'
 
- export const dynamic = 'force-dynamic'
-
 export default function HomePage() {
   return (
     <>
@@ -23,39 +21,32 @@ export default function HomePage() {
         <SiteHeader />
 
         <main>
-          {/* Hero */}
-<ScrollReveal duration={700} distance={20}>
-  <div className="mx-auto w-full max-w-7xl overflow-hidden">
-    <Hero />
-  </div>
-</ScrollReveal>
+          <ScrollReveal duration={700} distance={20}>
+            <div className="mx-auto w-full max-w-7xl overflow-hidden">
+              <Hero />
+            </div>
+          </ScrollReveal>
 
-          {/* Brand Features */}
           <ScrollReveal delay={50}>
             <FeatureStrip />
           </ScrollReveal>
 
-          {/* Products for Every Generation */}
           <ScrollReveal delay={50}>
             <Generations />
           </ScrollReveal>
 
-          {/* Family Banner */}
           <ScrollReveal duration={750} distance={28}>
             <FamilyBanner />
           </ScrollReveal>
 
-          {/* Our Story */}
           <ScrollReveal>
             <Story />
           </ScrollReveal>
 
-          {/* WhatsApp CTA */}
           <ScrollReveal delay={50} distance={20}>
             <CtaBanner />
           </ScrollReveal>
 
-          {/* Trust / Closing Section */}
           <ScrollReveal delay={50}>
             <TrustBar />
           </ScrollReveal>
