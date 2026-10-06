@@ -414,7 +414,7 @@ useEffect(() => {
               />
             </div>
 
-            {!isAdminPage && search.trim() && (
+            {!isAdminPage && (
               <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
                 {searchResults.length > 0 ? (
                   <div className="py-2">
