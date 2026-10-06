@@ -159,19 +159,53 @@ export default function RetailersPage() {
 
   const saveRetailer = async (event: FormEvent) => {
     event.preventDefault()
-    if (!form.business_name.trim() || !form.phone.trim()) {
-      setMessage('Business name and phone are required.')
-      return
+
+    const businessName = form.business_name.trim()
+    const contactName = form.contact_name.trim()
+    const phone = form.phone.trim()
+    const whatsapp = form.whatsapp.trim()
+    const email = form.email.trim()
+    const billingName = form.billing_name.trim()
+    const address = form.address.trim()
+    const city = form.city.trim()
+    const state = form.state.trim()
+    const pincode = form.pincode.trim()
+    const gstin = form.gstin.trim().toUpperCase()
+    const paymentTerms = form.payment_terms_days.trim()
+    const creditLimit = form.credit_limit.trim()
+
+    const namePattern = /^[A-Za-z][A-Za-z .&'-]*$/
+    const statePattern = /^[A-Za-z][A-Za-z .&'()-]*$/
+    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/
+    const gstinPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
+
+    if (!businessName) return setMessage('Business name is required.')
+    if (businessName.length < 2 || !namePattern.test(businessName)) {
+      return setMessage('Enter a valid business name. Numbers-only or invalid characters are not allowed.')
     }
+    if (!contactName) return setMessage('Contact name is required.')
+    if (!namePattern.test(contactName)) return setMessage('Enter a valid contact name. Use letters, spaces or . & - only.')
+    if (!/^\\d{10}$/.test(phone)) return setMessage('Phone number must contain exactly 10 digits.')
+    if (whatsapp && !/^\\d{10}$/.test(whatsapp)) return setMessage('WhatsApp number must contain exactly 10 digits.')
+    if (email && !emailPattern.test(email)) return setMessage('Enter a valid email address.')
+    if (billingName && !namePattern.test(billingName)) return setMessage('Enter a valid billing name.')
+    if (!address || address.length < 5) return setMessage('Enter a valid address.')
+    if (!city || !namePattern.test(city)) return setMessage('Enter a valid city name.')
+    if (!state || !statePattern.test(state)) return setMessage('Enter a valid state name.')
+    if (!/^\\d{6}$/.test(pincode)) return setMessage('Pincode must contain exactly 6 digits.')
+    if (gstin && !gstinPattern.test(gstin)) return setMessage('Enter a valid 15-character GSTIN or leave it blank.')
+    if (!/^\\d+$/.test(paymentTerms) || Number(paymentTerms) < 0) return setMessage('Payment terms must be a valid number of days.')
+    if (!/^\\d+(?:\\.\\d{1,2})?$/.test(creditLimit) || Number(creditLimit) < 0) return setMessage('Credit limit must be a valid amount.')
+    
     setSaving(true); setMessage('')
     const payload = {
-      business_name: form.business_name.trim(), contact_name: form.contact_name.trim() || null,
-      phone: form.phone.trim(), whatsapp: form.whatsapp.trim() || null, email: form.email.trim() || null,
-      billing_name: form.billing_name.trim() || null, address: form.address.trim() || null,
-      city: form.city.trim() || null, state: form.state.trim() || null, pincode: form.pincode.trim() || null,
-      gstin: form.gstin.trim() || null,
-      payment_terms_days: Number(form.payment_terms_days || 0),
-      credit_limit: Number(form.credit_limit || 0), notes: form.notes.trim() || null,
+      business_name: businessName, contact_name: contactName || null,
+      phone, whatsapp: whatsapp || null, email: email || null,
+      billing_name: billingName || null, address: address || null,
+      city: city || null, state: state || null, pincode: pincode || null,
+      gstin: gstin || null,
+      payment_terms_days: Number(paymentTerms || 0),
+      credit_limit: Number(creditLimit || 0), notes: form.notes.trim() || null,
       updated_at: new Date().toISOString(),
     }
     const result = editing
@@ -402,9 +436,36 @@ export default function RetailersPage() {
 
           {showForm && <form ref={retailerFormRef} onSubmit={saveRetailer} className="mt-5 scroll-mt-24 grid gap-3 rounded-2xl border bg-background p-5 sm:grid-cols-2">
             <h2 className="sm:col-span-2 font-semibold">{editing ? 'Edit retailer' : 'New retailer'}</h2>
-            {Object.entries(form).map(([key, value]) => <label key={key} className="text-xs font-medium text-muted-foreground">{key.replaceAll('_', ' ')}
-              <input required={key === 'business_name' || key === 'phone'} value={value} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground" type={key.includes('limit') || key.includes('days') ? 'number' : 'text'} />
-            </label>)}
+            {Object.entries(form).map(([key, value]) => {
+              const required = ['business_name', 'contact_name', 'phone', 'address', 'city', 'state', 'pincode'].includes(key)
+              const numeric = key === 'payment_terms_days' || key === 'credit_limit'
+              const tel = key === 'phone' || key === 'whatsapp' || key === 'pincode'
+              const emailField = key === 'email'
+              const gstField = key === 'gstin'
+              const maxLength = key === 'phone' || key === 'whatsapp' ? 10 : key === 'pincode' ? 6 : gstField ? 15 : undefined
+
+              return (
+                <label key={key} className="text-xs font-medium text-muted-foreground">
+                  {key.replaceAll('_', ' ')}
+                  <input
+                    required={required}
+                    value={value}
+                    maxLength={maxLength}
+                    inputMode={numeric || tel ? 'numeric' : emailField ? 'email' : undefined}
+                    autoCapitalize={gstField ? 'characters' : 'words'}
+                    onChange={(e) => {
+                      let next = e.target.value
+                      if (gstField) next = next.toUpperCase()
+                      setForm({ ...form, [key]: next })
+                    }}
+                    className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"
+                    type={numeric ? 'number' : tel ? 'tel' : emailField ? 'email' : 'text'}
+                    min={numeric ? '0' : undefined}
+                    step={key === 'credit_limit' ? '0.01' : undefined}
+                  />
+                </label>
+              )
+            })}
             <div className="sm:col-span-2 flex gap-2"><button disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{saving ? 'Saving…' : 'Save retailer'}</button><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button></div>
           </form>}
 
