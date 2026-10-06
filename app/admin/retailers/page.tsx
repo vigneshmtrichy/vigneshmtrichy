@@ -162,7 +162,7 @@ export default function RetailersPage() {
     const value = rawValue.trim()
     const namePattern = /^[A-Za-z][A-Za-z .&'-]*$/
     const statePattern = /^[A-Za-z][A-Za-z .&'()-]*$/
-    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
     const gstinPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
 
     if (!value) return ''
@@ -173,9 +173,9 @@ export default function RetailersPage() {
       case 'billing_name':
         return namePattern.test(value) ? '' : 'Use letters, spaces and . & - only.'
       case 'phone':
-        return /^\\d{10}$/.test(value) ? '' : 'Phone must be exactly 10 digits.'
+        return /^\d{10}$/.test(value) ? '' : 'Phone must be exactly 10 digits.'
       case 'whatsapp':
-        return /^\\d{10}$/.test(value) ? '' : 'WhatsApp must be exactly 10 digits.'
+        return /^\d{10}$/.test(value) ? '' : 'WhatsApp must be exactly 10 digits.'
       case 'email':
         return emailPattern.test(value) ? '' : 'Enter a valid email address.'
       case 'address':
@@ -185,13 +185,13 @@ export default function RetailersPage() {
       case 'state':
         return statePattern.test(value) ? '' : 'Enter a valid state name.'
       case 'pincode':
-        return /^\\d{6}$/.test(value) ? '' : 'Pincode must be exactly 6 digits.'
+        return /^\d{6}$/.test(value) ? '' : 'Pincode must be exactly 6 digits.'
       case 'gstin':
         return gstinPattern.test(value.toUpperCase()) ? '' : 'GSTIN must be a valid 15-character GSTIN.'
       case 'payment_terms_days':
-        return /^\\d+$/.test(value) && Number(value) >= 0 ? '' : 'Enter 0 or a positive number of days.'
+        return /^\d+$/.test(value) && Number(value) >= 0 ? '' : 'Enter 0 or a positive number of days.'
       case 'credit_limit':
-        return /^\\d+(?:\\.\\d{1,2})?$/.test(value) && Number(value) >= 0 ? '' : 'Enter a valid amount.'
+        return /^\d+(?:\.\d{1,2})?$/.test(value) && Number(value) >= 0 ? '' : 'Enter a valid amount.'
       default:
         return ''
     }
@@ -201,17 +201,17 @@ export default function RetailersPage() {
     let value = rawValue
 
     if (['phone', 'whatsapp'].includes(key)) {
-      value = value.replace(/\\D/g, '').slice(0, 10)
+      value = value.replace(/\D/g, '').slice(0, 10)
     } else if (key === 'pincode') {
-      value = value.replace(/\\D/g, '').slice(0, 6)
+      value = value.replace(/\D/g, '').slice(0, 6)
     } else if (['business_name', 'contact_name', 'billing_name', 'city', 'state'].includes(key)) {
-      value = value.replace(/[^A-Za-z .&'()\\-]/g, '')
+      value = value.replace(/[^A-Za-z .&'()\-]/g, '')
     } else if (key === 'gstin') {
       value = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 15)
     } else if (key === 'payment_terms_days') {
-      value = value.replace(/\\D/g, '')
+      value = value.replace(/\D/g, '')
     } else if (key === 'credit_limit') {
-      value = value.replace(/[^0-9.]/g, '').replace(/\\.(?=.*\\.)/g, '')
+      value = value.replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, '')
       const parts = value.split('.')
       if (parts[1]) value = parts[0] + '.' + parts[1].slice(0, 2)
     }
