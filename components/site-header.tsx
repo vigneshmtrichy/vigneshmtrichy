@@ -5,8 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, X, Search, User, ChevronDown } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
-import { WhatsAppIcon } from '@/components/whatsapp-icon'
-import { NAV_LINKS, WHATSAPP_URL, ALL_PRODUCTS } from '@/lib/site'
+import { NAV_LINKS, ALL_PRODUCTS } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { CartButton } from '@/components/cart/cart-button'
 import { AnnouncementBar } from '@/components/announcement-bar'
@@ -289,17 +288,6 @@ useEffect(() => {
     Login
   </Link>
 )}
-        {/* Desktop WhatsApp */}
-        {!isAdminPage && <a
-          href={WHATSAPP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] sm:inline-flex lg:inline-flex"
-        >
-          <WhatsAppIcon className="h-4 w-4" />
-          WhatsApp Us
-        </a>}
-
         {/* =========================================================
             MOBILE CONTROLS
             ========================================================= */}
@@ -642,17 +630,6 @@ useEffect(() => {
     Login
   </Link>
 )}
-            <li className="mt-3 border-t border-border/50 pt-4">
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm"
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-                WhatsApp Us
-              </a>
-            </li>
           </ul>
         </nav>
       )}
