@@ -173,6 +173,7 @@ useEffect(() => {
             { href: '/admin/products', label: 'Products' },
             { href: '/admin/retailers', label: 'Retailers' },
             { href: '/admin/retailer-orders', label: 'Retailer Orders' },
+            { href: '/admin/manufacturers', label: 'Manufacturers' },
           ].map((link) => {
             const active =
               link.href === '/admin'
