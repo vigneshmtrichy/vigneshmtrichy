@@ -20,6 +20,7 @@ function CustomSelect({
   placeholder,
   className = '',
   disabled = false,
+  searchable = false,
 }: {
   value: string
   onChange: (value: string) => void
@@ -27,10 +28,15 @@ function CustomSelect({
   placeholder?: string
   className?: string
   disabled?: boolean
+  searchable?: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const selected = options.find((option) => option.value === value)
+  const filteredOptions = searchable
+    ? options.filter((option) => option.label.toLowerCase().includes(query.trim().toLowerCase()))
+    : options
 
   useEffect(() => {
     if (!open) return
@@ -48,7 +54,7 @@ function CustomSelect({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => { setOpen((current) => !current); setQuery('') }}
         className="flex h-11 w-full items-center justify-between rounded-lg border bg-background px-3 text-left text-sm transition hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -61,8 +67,19 @@ function CustomSelect({
 
       {open && (
         <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[80] overflow-hidden rounded-xl border bg-background p-1 shadow-lg">
+          {searchable && (
+            <div className="border-b p-2">
+              <input
+                autoFocus
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search..."
+                className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          )}
           <div className="max-h-72 overflow-y-auto" role="listbox">
-            {options.map((option) => {
+            {filteredOptions.map((option) => {
               const isSelected = option.value === value
               return (
                 <button
@@ -81,6 +98,9 @@ function CustomSelect({
                 </button>
               )
             })}
+            {searchable && filteredOptions.length === 0 && (
+              <p className="px-3 py-4 text-center text-xs text-muted-foreground">No matches found.</p>
+            )}
           </div>
         </div>
       )}
@@ -440,7 +460,7 @@ export default function RetailerOrdersPage() {
     {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
 
     <form onSubmit={createOrder} className="mt-6 rounded-2xl border bg-background p-5">
-      <div className="grid gap-4 sm:grid-cols-3"><label className="text-sm font-medium">Retailer<CustomSelect value={retailerId} onChange={setRetailerId} placeholder="Select retailer" className="mt-1" options={retailers.map((r) => ({ value: r.id, label: r.business_name }))} /></label>
+      <div className="grid gap-4 sm:grid-cols-3"><label className="text-sm font-medium">Retailer<CustomSelect value={retailerId} onChange={setRetailerId} placeholder="Select retailer" className="mt-1" searchable options={retailers.map((r) => ({ value: r.id, label: r.business_name }))} /></label>
       <label className="text-sm font-medium">Payment<CustomSelect value={paymentType} onChange={setPaymentType} className="mt-1" options={[{ value: 'credit', label: 'Credit' }, { value: 'prepaid', label: 'Prepaid' }, { value: 'partial', label: 'Partial payment' }, { value: 'cod', label: 'Cash on delivery' }]} /></label>
       <label className="text-sm font-medium">Order note<input value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1 h-11 w-full rounded-lg border bg-background px-3" placeholder="Optional" /></label></div>
       {(paymentType === 'partial' || paymentType === 'prepaid') && <div className="mt-4 grid gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-3">
@@ -455,7 +475,7 @@ export default function RetailerOrdersPage() {
         </label>
       </div>}
       {paymentType !== 'prepaid' && retailerBalance.unapplied > 0 && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><p className="font-semibold">Unapplied credit available: {money(retailerBalance.unapplied)}</p><p className="mt-1">This existing credit will be automatically applied to this order.</p></div>}{creditExceeded && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><p className="font-semibold">Credit limit exceeded</p><p className="mt-1">Available credit: {money(availableCredit)} · Required credit after existing credit: {money(creditRequired)}. Reduce the quantity, record a payment, or choose prepaid.</p></div>}
-      <div className="mt-5 space-y-3">{lines.map((line, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_80px] sm:items-end"><label className="text-xs font-medium text-muted-foreground">Product<CustomSelect value={line.product_slug} onChange={(value) => setLines(lines.map((item, i) => i === index ? { ...item, product_slug: value } : item))} className="mt-1" options={ALL_PRODUCTS.map((product) => ({ value: product.slug, label: product.name }))} /></label><label className="text-xs font-medium text-muted-foreground">Quantity<input type="number" min="1" step="1" value={line.quantity} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" /></label><p className="pb-2 text-right text-sm font-semibold">{Number(prices[line.product_slug] || 0) > 0 ? <span>{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.product_slug] ?? 5)}% GST</span></span> : 'Retailer price not set'}</p><button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] disabled:opacity-30">Remove</button></div>)}</div>
+      <div className="mt-5 space-y-3">{lines.map((line, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_80px] sm:items-end"><label className="text-xs font-medium text-muted-foreground">Product<CustomSelect value={line.product_slug} onChange={(value) => setLines(lines.map((item, i) => i === index ? { ...item, product_slug: value } : item))} className="mt-1" searchable options={ALL_PRODUCTS.map((product) => ({ value: product.slug, label: product.name }))} /></label><label className="text-xs font-medium text-muted-foreground">Quantity<input type="number" min="1" step="1" value={line.quantity} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" /></label><p className="pb-2 text-right text-sm font-semibold">{Number(prices[line.product_slug] || 0) > 0 ? <span>{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.product_slug] ?? 5)}% GST</span></span> : 'Retailer price not set'}</p><button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] disabled:opacity-30">Remove</button></div>)}</div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]">Add product</button><div className="flex items-center gap-4"><span className="text-right"><span className="block text-lg font-bold">Estimated {money(estimatedTotal)}</span><span className="block text-xs font-normal text-muted-foreground">Taxable {money(estimatedTaxableTotal)} · GST {money(estimatedGstTotal)}</span></span><button disabled={saving || creditExceeded || missingRetailerPrice} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
     </form>
 
