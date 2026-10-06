@@ -446,7 +446,7 @@ export default function AdminDashboardPage() {
                   href={item.channel === 'Online'
                     ? `/admin/orders?order=${item.id}`
                     : `/admin/retailer-orders?order=${item.id}`}
-                  className="group flex items-center justify-between gap-3 px-4 py-3 transition-all duration-200 ease-out hover:bg-secondary/60 hover:shadow-sm"
+                  className="group flex items-center justify-between gap-3 px-4 py-3 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.005] hover:bg-secondary/70 hover:shadow-md hover:text-foreground"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium group-hover:text-primary">
