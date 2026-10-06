@@ -668,7 +668,7 @@ export default function RetailersPage() {
                         return
                       }
                       setCreateOrderError('')
-                      window.location.href = '/admin/retailer-orders?retailer=' + selected.id
+                      window.location.href = '/admin/retailer-orders/create?retailer=' + selected.id
                     }}
                     className="w-full min-h-12 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold leading-tight text-primary-foreground transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]"
                   >
