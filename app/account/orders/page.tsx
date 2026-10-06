@@ -36,7 +36,7 @@ type Order = {
   shipping_method: string | null
 }
 
-const STATUS_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered']
+const STATUS_STEPS = ['confirmed', 'processing', 'shipped', 'delivered']
 
 const STATUS_META: Record<
   string,
@@ -47,12 +47,6 @@ const STATUS_META: Record<
     message: string
   }
 > = {
-  pending: {
-    label: 'Pending',
-    className: 'bg-yellow-100 text-yellow-800',
-    icon: '⏳',
-    message: "We're reviewing your order",
-  },
   confirmed: {
     label: 'Confirmed',
     className: 'bg-blue-100 text-blue-800',
@@ -221,7 +215,6 @@ export default function MyOrdersPage() {
   const counts = useMemo(() => {
     return {
       all: orders.length,
-      pending: orders.filter((o) => o.order_status.toLowerCase() === 'pending').length,
       processing: orders.filter((o) => o.order_status.toLowerCase() === 'processing').length,
       shipped: orders.filter((o) => o.order_status.toLowerCase() === 'shipped').length,
       delivered: orders.filter((o) => o.order_status.toLowerCase() === 'delivered').length,
@@ -367,7 +360,6 @@ export default function MyOrdersPage() {
               <div className="mb-5 flex gap-2 overflow-x-auto pb-1 sm:mb-7">
                 {[
                   ['all', 'All', counts.all],
-                  ['pending', 'Pending', counts.pending],
                   ['processing', 'Processing', counts.processing],
                   ['shipped', 'Shipped', counts.shipped],
                   ['delivered', 'Delivered', counts.delivered],
@@ -732,21 +724,6 @@ export default function MyOrdersPage() {
                                     className="w-full rounded-xl border border-green-600 px-5 py-2.5 text-sm font-semibold text-green-700 transition hover:bg-green-50 sm:w-auto"
                                   >
                                     ⭐ Give Feedback
-                                  </button>
-                                )}
-
-                                {status === 'pending' && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      openWhatsApp(
-                                        order,
-                                        'I would like to request cancellation of this order.',
-                                      )
-                                    }
-                                    className="w-full rounded-xl border border-red-300 px-5 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 sm:w-auto"
-                                  >
-                                    Cancel Request
                                   </button>
                                 )}
 
