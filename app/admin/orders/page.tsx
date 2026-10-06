@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useSearchParams } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { OrderStats } from '@/components/admin/OrderStats'
@@ -73,9 +74,7 @@ const getIndiaDateKey = (value: string) =>
   INDIA_DATE_FORMATTER.format(new Date(value))
 
 export default function AdminOrdersPage() {
-  const searchParams = new URLSearchParams(
-  typeof window !== 'undefined' ? window.location.search : ''
-)
+  const searchParams = useSearchParams()
 
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
