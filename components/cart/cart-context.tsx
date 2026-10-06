@@ -10,7 +10,7 @@ import {
 } from 'react'
 
 import {
-  applyProductPricing,
+  applyProductControls,
   type Product,
 } from '@/lib/site'
 import { supabase } from '@/lib/supabase'
@@ -62,22 +62,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const slugs = savedItems.map((item) => item.product.slug)
       const { data } = await supabase
         .from('product_status')
-        .select('product_slug, mrp, price')
+        .select('product_slug, status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg')
         .in('product_slug', slugs)
 
       const pricingBySlug = new Map(
         (data || []).map((item) => [
           item.product_slug,
           {
+            status: item.status,
             mrp: item.mrp,
             price: item.price,
+            retailer_price: item.retailer_price,
+            offer_enabled: item.offer_enabled,
+            offer_label: item.offer_label,
+            featured: item.featured,
+            featured_priority: item.featured_priority,
+            display_name: item.display_name,
+            badges: item.badges,
+            image_url: item.image_url,
+            image_urls: item.image_urls,
+            shipping_weight_kg: item.shipping_weight_kg,
           },
         ]),
       )
 
       const refreshedItems = savedItems.map((item) => ({
         ...item,
-        product: applyProductPricing(
+        product: applyProductControls(
           item.product,
           pricingBySlug.get(item.product.slug),
         ),
