@@ -16,8 +16,6 @@ import {
   getProductBySlug,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
-import { readdir } from 'fs/promises'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
@@ -131,45 +129,12 @@ if (productStatus.status === 'hidden') {
       ? 'For Little Ones & Families'
       : 'For Adults & Wellness'
 
-const GALLERY_FOLDERS: Record<string, string> = {
-  'millet-abc': 'Meltiva-Nutrimix',
-  'pink-abc': 'Rubyblend-Nutrimix',
-  'cotton-milk-mix': 'Paruthipaal-mix',
-  'pirandai-rice-mix': 'Pirandai-rice-mix',
-  'mudavattu-kilangu-rice-mix': 'Mudavaatukaal-rice-mix',
-  'mudavaattu-kizhangu-soup-mix': 'Mudavaatukaal-soup-mix',
-  'black-rice-milk-mix': 'blacko-cocoa-mix',
-  'nutaura': 'Nutaura',
-}
-
-
-const galleryFolder = GALLERY_FOLDERS[product.slug]
-
-const galleryImages = galleryFolder
-  ? (
-      await readdir(
-        path.join(process.cwd(), 'public', 'products', galleryFolder),
-      )
-    )
-      .filter((file) => /\.png$/i.test(file))
-      .sort((a, b) => {
-        const aNum = parseInt(a.replace('.png', ''), 10)
-        const bNum = parseInt(b.replace('.png', ''), 10)
-
-        return aNum - bNum
-      })
-      .map((file) => `/products/${galleryFolder}/${file}`)
-  : []
-
 const managedGalleryImages =
   displayProduct.imageUrls && displayProduct.imageUrls.length > 0
     ? displayProduct.imageUrls
-    : displayProduct.imageUrl &&
-        displayProduct.imageUrl !== product.image
-      ? [displayProduct.imageUrl, ...galleryImages]
-      : galleryImages.length > 0
-        ? galleryImages
-        : [displayProduct.image]
+    : displayProduct.imageUrl
+      ? [displayProduct.imageUrl]
+      : ['/placeholder.svg']
 
   const relatedProducts = ALL_PRODUCTS.filter(
     (item) => item.slug !== product.slug
