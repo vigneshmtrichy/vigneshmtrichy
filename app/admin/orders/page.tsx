@@ -871,14 +871,14 @@ export default function AdminOrdersPage() {
               type="button"
               onClick={() => loadOrders(true)}
               disabled={refreshing}
-              className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99] hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
               {refreshing ? 'Refreshing...' : '↻ Refresh Orders'}
             </button>
           </div>
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <button type="button" onClick={exportCustomerListCsv} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted">
+            <button type="button" onClick={exportCustomerListCsv} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">
               Download Customer List
             </button>
           </div>
@@ -985,7 +985,7 @@ export default function AdminOrdersPage() {
                 type="button"
                 onClick={exportOrdersCsv}
                 disabled={filteredOrders.length === 0}
-                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 ↓ Export CSV
               </button>
@@ -1103,7 +1103,7 @@ export default function AdminOrdersPage() {
                               href={`/admin/orders/invoice/${order.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted"
+                              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]"
                             >
                               Invoice
                             </a>
