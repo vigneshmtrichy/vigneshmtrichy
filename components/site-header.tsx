@@ -16,6 +16,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -50,7 +51,10 @@ useEffect(() => {
             .toLowerCase()
             .includes(search.trim().toLowerCase()),
         ).slice(0, 5)
-      : []
+      : ALL_PRODUCTS.slice(0, 5)
+
+  const showSearchSuggestions =
+    !isAdminPage && searchFocused
 
 
   const closeMobileMenu = () => {
@@ -120,10 +124,15 @@ useEffect(() => {
             />
           </div>
 
-          {!isAdminPage && search.trim() && (
+          {showSearchSuggestions && (
             <div className="absolute left-0 right-0 top-13 overflow-hidden rounded-2xl border border-border bg-background shadow-xl">
               {searchResults.length > 0 ? (
                 <div className="py-2">
+                  {!search.trim() && (
+                    <p className="px-5 pb-2 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Explore our products
+                    </p>
+                  )}
                   {searchResults.map((product) => (
                     <Link
                       key={product.slug}
