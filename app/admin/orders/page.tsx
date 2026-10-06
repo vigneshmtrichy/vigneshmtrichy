@@ -51,16 +51,19 @@ const statusLabel = (status?: string) => {
 const getStatusStyle = (status?: string) =>
   STATUS_STYLES[status || 'pending'] || STATUS_STYLES.pending
 
-const STATUS_FLOW: Record<string, string[]> = {
-  confirmed: ['processing', 'cancelled'],
-  processing: ['shipped', 'cancelled'],
-  shipped: ['delivered', 'cancelled'],
-  delivered: [],
-  cancelled: [],
+const STATUS_RANK: Record<string, number> = {
+  pending: 0,
+  confirmed: 1,
+  processing: 2,
+  shipped: 3,
+  delivered: 4,
 }
 
-const canTransitionStatus = (current: string, next: string) =>
-  STATUS_FLOW[current || 'pending']?.includes(next) ?? false
+const isBackwardStatus = (current: string, next: string) =>
+  (STATUS_RANK[next] ?? 0) < (STATUS_RANK[current] ?? 0)
+
+const canMoveForward = (current: string, next: string) =>
+  next !== 'cancelled' && (STATUS_RANK[next] ?? 0) > (STATUS_RANK[current] ?? 0)
 
 const INDIA_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Kolkata',
@@ -90,6 +93,13 @@ export default function AdminOrdersPage() {
   const [openShippingOrderId, setOpenShippingOrderId] = useState<number | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([])
   const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [bulkBackwardConfirmOpen, setBulkBackwardConfirmOpen] = useState(false)
+  const [bulkTargetStatus, setBulkTargetStatus] = useState('confirmed')
+  const [backwardStatusChange, setBackwardStatusChange] = useState<{ order: any; nextStatus: string } | null>(null)
+  const [cancelOrder, setCancelOrder] = useState<any | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [message, setMessage] = useState('')
 
   const [updatingOrder, setUpdatingOrder] = useState<number | null>(null)
   const [savingShipping, setSavingShipping] = useState<number | null>(null)
@@ -154,72 +164,91 @@ export default function AdminOrdersPage() {
     }
   }, [])
 
-  const updateOrderStatus = async (
-    orderId: number,
-    newStatus: string,
-  ) => {
-    const previousOrder = orders.find((order) => order.id === orderId)
-    if (!previousOrder || !canTransitionStatus(previousOrder.order_status || 'pending', newStatus)) {
-      alert('Invalid order status transition.')
-      return
-    }
-
+  const applyOrderStatusUpdate = async (orderId: number, newStatus: string) => {
     setUpdatingOrder(orderId)
-
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        order_status: newStatus,
-      })
-      .eq('id', orderId)
-
+    const { error } = await supabase.from('orders').update({ order_status: newStatus }).eq('id', orderId)
     if (error) {
       console.error('Failed to update order status:', error)
-      alert('Failed to update order status. Please try again.')
+      setMessage('Failed to update order status. Please try again.')
       setUpdatingOrder(null)
       return
     }
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === orderId
-          ? { ...order, order_status: newStatus }
-          : order,
-      ),
-    )
-
+    setOrders((currentOrders) => currentOrders.map((order) => order.id === orderId ? { ...order, order_status: newStatus } : order))
     setUpdatingOrder(null)
+    setOpenStatusOrderId(null)
+    setMessage('Order #' + orderId + ' status updated to ' + statusLabel(newStatus) + '.')
+  }
+
+  const updateOrderStatus = async (orderId: number, newStatus: string) => {
+    const previousOrder = orders.find((order) => order.id === orderId)
+    if (!previousOrder) return
+    const currentStatus = previousOrder.order_status || 'pending'
+    if (newStatus === 'cancelled') {
+      if (currentStatus === 'delivered' || currentStatus === 'cancelled') {
+        setMessage('Delivered or cancelled orders cannot be cancelled.')
+        return
+      }
+      setCancelOrder(previousOrder)
+      setCancelReason('')
+      setOpenStatusOrderId(null)
+      return
+    }
+    if (newStatus === currentStatus) { setOpenStatusOrderId(null); return }
+    if (isBackwardStatus(currentStatus, newStatus)) {
+      setBackwardStatusChange({ order: previousOrder, nextStatus: newStatus })
+      setOpenStatusOrderId(null)
+      return
+    }
+    if (!canMoveForward(currentStatus, newStatus)) {
+      setMessage('Invalid order status transition.')
+      return
+    }
+    await applyOrderStatusUpdate(orderId, newStatus)
+  }
+
+  const confirmBackwardStatusChange = async () => {
+    if (!backwardStatusChange) return
+    const item = backwardStatusChange
+    setBackwardStatusChange(null)
+    await applyOrderStatusUpdate(item.order.id, item.nextStatus)
+  }
+
+  const confirmCancellation = async () => {
+    if (!cancelOrder) return
+    const orderId = cancelOrder.id
+    setCancelOrder(null)
+    setCancelReason('')
+    await applyOrderStatusUpdate(orderId, 'cancelled')
+  }
+
+  const requestBulkStatusUpdate = (newStatus: string) => {
+    if (!selectedOrderIds.length || bulkUpdating || newStatus === 'cancelled') return
+    setBulkTargetStatus(newStatus)
+    const selectedOrders = orders.filter((order) => selectedOrderIds.includes(order.id))
+    const hasBackwardChange = selectedOrders.some((order) => isBackwardStatus(order.order_status || 'pending', newStatus))
+    if (hasBackwardChange) {
+      setBulkBackwardConfirmOpen(true)
+      return
+    }
+    setBulkConfirmOpen(true)
   }
 
   const bulkUpdateStatus = async (newStatus: string) => {
-    if (selectedOrderIds.length === 0) return
-    const selectedOrders = orders.filter((order) => selectedOrderIds.includes(order.id))
-    if (selectedOrders.some((order) => !canTransitionStatus(order.order_status || 'pending', newStatus))) {
-      alert('One or more selected orders cannot move to that status.')
-      return
-    }
+    if (!selectedOrderIds.length || newStatus === 'cancelled') return
+    setBulkConfirmOpen(false)
+    setBulkBackwardConfirmOpen(false)
     setBulkUpdating(true)
-    const { error } = await supabase
-      .from('orders')
-      .update({ order_status: newStatus })
-      .in('id', selectedOrderIds)
-
+    const { error } = await supabase.from('orders').update({ order_status: newStatus }).in('id', selectedOrderIds)
     if (error) {
       console.error('Failed to bulk update order status:', error)
-      alert('Failed to update selected orders. Please try again.')
+      setMessage('Failed to update selected orders. Please try again.')
       setBulkUpdating(false)
       return
     }
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        selectedOrderIds.includes(order.id)
-          ? { ...order, order_status: newStatus }
-          : order,
-      ),
-    )
+    setOrders((currentOrders) => currentOrders.map((order) => selectedOrderIds.includes(order.id) ? { ...order, order_status: newStatus } : order))
     setSelectedOrderIds([])
     setBulkUpdating(false)
+    setMessage(selectedOrderIds.length + ' order' + (selectedOrderIds.length === 1 ? '' : 's') + ' updated to ' + statusLabel(newStatus) + '.')
   }
 
   const updateLocalOrder = (
@@ -655,6 +684,12 @@ export default function AdminOrdersPage() {
     setSelectedOrderIds([])
   }, [searchQuery, statusFilter, currentPage, pageSize])
 
+  useEffect(() => {
+    if (!message) return
+    const timer = window.setTimeout(() => setMessage(''), 4000)
+    return () => window.clearTimeout(timer)
+  }, [message])
+
   const selectStatusFilter = (status: string) => {
     setStatusFilter(status)
     setCurrentPage(1)
@@ -810,7 +845,65 @@ export default function AdminOrdersPage() {
             <div className="h-28 rounded-2xl bg-card" />
             <div className="h-32 rounded-2xl bg-card" />
           </div>
-        </main>
+        {backwardStatusChange && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Move order backward?</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Order #{backwardStatusChange.order.id} is currently <span className="font-semibold text-foreground">{statusLabel(backwardStatusChange.order.order_status)}</span>. Do you really want to move it back to <span className="font-semibold text-foreground">{statusLabel(backwardStatusChange.nextStatus)}</span>?</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBackwardStatusChange(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep current status</button>
+              <button type="button" onClick={() => void confirmBackwardStatusChange()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, move backward</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelOrder && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Cancel order?</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Are you sure you want to cancel Order #{cancelOrder.id}?</p>
+            <textarea value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Cancellation reason (optional)" className="mt-4 min-h-24 w-full rounded-xl border bg-background p-3 text-sm outline-none focus:border-primary" />
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => { setCancelOrder(null); setCancelReason('') }} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep order</button>
+              <button type="button" onClick={() => void confirmCancellation()} className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white">Yes, cancel order</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkBackwardConfirmOpen && (
+        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Some orders will move backward</h2>
+            <p className="mt-2 text-sm text-muted-foreground">You selected orders with different statuses. Changing all of them to <span className="font-semibold text-foreground">{statusLabel(bulkTargetStatus)}</span> will move some orders backward.</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBulkBackwardConfirmOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, go back</button>
+              <button type="button" onClick={() => void bulkUpdateStatus(bulkTargetStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, update orders</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkConfirmOpen && (
+        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Confirm bulk status update</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Are you sure you want to change {selectedOrderIds.length} orders to <span className="font-semibold text-foreground">{statusLabel(bulkTargetStatus)}</span>?</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBulkConfirmOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, go back</button>
+              <button type="button" onClick={() => void bulkUpdateStatus(bulkTargetStatus)} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, update orders</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {message && (
+        <div className="fixed inset-x-4 bottom-5 z-[120] flex justify-center pointer-events-none sm:inset-x-auto sm:right-6 sm:left-auto sm:bottom-6">
+          <div className="max-w-md rounded-xl border border-border bg-foreground px-4 py-3 text-sm font-semibold text-background shadow-xl">{message}</div>
+        </div>
+      )}
+      </main>
 
   
       </>
@@ -950,8 +1043,8 @@ export default function AdminOrdersPage() {
                     <button
                       key={status}
                       type="button"
-                      disabled={bulkUpdating || selectedOrderIds.length === 0 || orders.filter((order) => selectedOrderIds.includes(order.id)).some((order) => !canTransitionStatus(order.order_status || 'pending', status))}
-                      onClick={() => void bulkUpdateStatus(status)}
+                      disabled={bulkUpdating || selectedOrderIds.length === 0}
+                      onClick={() => requestBulkStatusUpdate(status)}
                       className="rounded-lg border px-3 py-2 text-xs font-semibold capitalize hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {bulkUpdating ? 'Updating…' : 'Mark ' + status}
@@ -972,7 +1065,7 @@ export default function AdminOrdersPage() {
           >
             <div>
               <h2 className="text-xl font-bold text-foreground">
-                Orders
+                Online Orders
               </h2>
 
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
@@ -1154,30 +1247,14 @@ export default function AdminOrdersPage() {
                           {openStatusOrderId ===
                             order.id && (
                             <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-xl border border-border bg-card p-1.5 shadow-xl">
-                              {STATUS_FILTERS.filter(
-                                (value) =>
-                                  value !== 'all',
-                              ).map(
+                              {['confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map(
                                 (nextStatus) => (
                                   <button
                                     key={nextStatus}
                                     type="button"
-                                    disabled={
-                                      updatingOrder ===
-                                        order.id ||
-                                      !canTransitionStatus(
-                                        status,
-                                        nextStatus,
-                                      )
-                                    }
+                                    disabled={updatingOrder === order.id || nextStatus === status}
                                     onClick={async () => {
-                                      await updateOrderStatus(
-                                        order.id,
-                                        nextStatus,
-                                      )
-                                      setOpenStatusOrderId(
-                                        null,
-                                      )
+                                      await updateOrderStatus(order.id, nextStatus)
                                     }}
                                     className={`block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted disabled:opacity-50 ${
                                       status ===
