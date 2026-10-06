@@ -183,6 +183,30 @@ export default function RetailersPage() {
     if (retailerPage > retailerPageCount) setRetailerPage(retailerPageCount)
   }, [retailerPage, retailerPageCount])
 
+  const renderRetailerPagination = () => retailerPageCount > 1 ? (
+    <div className="flex items-center justify-between gap-2 rounded-xl border bg-background p-2.5 sm:rounded-2xl sm:p-3">
+      <button
+        type="button"
+        disabled={retailerPage === 1}
+        onClick={() => setRetailerPage((page) => Math.max(1, page - 1))}
+        className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+      >
+        ← Previous
+      </button>
+      <span className="text-xs font-semibold text-muted-foreground sm:text-sm">
+        Page {retailerPage} of {retailerPageCount}
+      </span>
+      <button
+        type="button"
+        disabled={retailerPage === retailerPageCount}
+        onClick={() => setRetailerPage((page) => Math.min(retailerPageCount, page + 1))}
+        className="rounded-lg border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+      >
+        Next →
+      </button>
+    </div>
+  ) : null
+
   const validateRetailerField = (key: string, rawValue: string) => {
     const value = rawValue.trim()
     const namePattern = /^[A-Za-z][A-Za-z .&'-]*$/
@@ -584,14 +608,18 @@ export default function RetailersPage() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search retailer, person, phone or city…" className="mt-4 h-10 w-full rounded-xl border bg-background px-3 text-sm sm:mt-6 sm:h-11 sm:px-4" />
 
           <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-[1fr_1.1fr] lg:gap-4">
-            <section className="space-y-3">{paginatedRetailers.map((retailer) => {
+            <section className="space-y-3">
+              {renderRetailerPagination()}
+              {paginatedRetailers.map((retailer) => {
               const balance = balances[retailer.id]?.outstanding_balance || 0
               const unappliedCredit = balances[retailer.id]?.unapplied_credit || 0
               return <button key={retailer.id} onClick={() => void selectRetailer(retailer)} className="w-full rounded-xl border bg-background p-3 text-left transition hover:border-primary sm:rounded-2xl sm:p-4">
                 <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="truncate font-semibold">{retailer.business_name}</p><p className="mt-0.5 truncate text-xs text-muted-foreground sm:mt-1 sm:text-sm">{retailer.contact_name || retailer.phone} {retailer.city ? '· ' + retailer.city : ''}</p></div><span className="shrink-0 text-right text-sm font-semibold text-amber-700">{money(balance)}<small className="block text-[10px] font-normal text-muted-foreground sm:text-xs">outstanding</small>{unappliedCredit > 0 && <small className="mt-0.5 block text-[10px] font-semibold text-emerald-700 sm:mt-1 sm:text-xs">{money(unappliedCredit)} unapplied credit</small>}{overdueByRetailer[retailer.id]?.count > 0 && <small className="mt-1 block text-[10px] font-semibold text-red-700 sm:text-xs">{overdueByRetailer[retailer.id].count} overdue · {money(overdueByRetailer[retailer.id].amount)}</small>}</span></div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground sm:mt-3 sm:text-xs"><span className="rounded-full bg-muted px-2 py-1">{retailer.status}</span><span className="truncate text-right">{retailer.payment_terms_days} day terms · credit {money(retailer.credit_limit)}</span></div>
               </button>
-            })}</section>
+              })}
+              {renderRetailerPagination()}
+            </section>
 
             <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3">
                 <div>
