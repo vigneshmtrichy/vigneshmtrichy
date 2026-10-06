@@ -164,7 +164,7 @@ useEffect(() => {
                     </p>
                   )}
                   {searchResults.map((product) => (
-                    <Link
+                    <a
                       key={product.slug}
                       href={`/products/${product.slug}`}
                       onClick={() => {
@@ -180,7 +180,7 @@ useEffect(() => {
                       <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                         {product.tagline}
                       </p>
-                    </Link>
+                    </a>
                   ))}
                 </div>
               ) : (
@@ -418,7 +418,7 @@ useEffect(() => {
                 {searchResults.length > 0 ? (
                   <div className="py-2">
                     {searchResults.map((product) => (
-                      <Link
+                      <a
                         key={product.slug}
                         href={`/products/${product.slug}`}
                         onClick={() => {
@@ -434,7 +434,7 @@ useEffect(() => {
                         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                           {product.tagline}
                         </p>
-                      </Link>
+                      </a>
                     ))}
                   </div>
                 ) : (
