@@ -219,6 +219,7 @@ export default function RetailerOrdersPage() {
   const [bulkStatus, setBulkStatus] = useState('packing')
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [bulkBackwardConfirmOpen, setBulkBackwardConfirmOpen] = useState(false)
   const [backwardStatusChange, setBackwardStatusChange] = useState<{ order: any; nextStatus: string } | null>(null)
   const load = async () => {
     const query = search.trim()
@@ -338,6 +339,13 @@ export default function RetailerOrdersPage() {
   const requestBulkStatusUpdate = () => {
     if (!selectedOrderIds.length || bulkStatus === 'cancelled' || bulkUpdating) return
 
+    const selectedOrders = orders.filter((order: any) => selectedOrderIds.includes(Number(order.id)))
+    const statusRank: Record<string, number> = { confirmed: 1, packing: 2, dispatched: 3, delivered: 4 }
+    const hasBackwardChange = selectedOrders.some((order: any) => (statusRank[bulkStatus] || 0) < (statusRank[order.order_status] || 0))
+    if (hasBackwardChange) {
+      setBulkBackwardConfirmOpen(true)
+      return
+    }
     setBulkConfirmOpen(true)
   }
 
@@ -361,6 +369,18 @@ export default function RetailerOrdersPage() {
   }
 
   const statusRank: Record<string, number> = { confirmed: 1, packing: 2, dispatched: 3, delivered: 4 }
+
+  const bulkBackwardUpdateStatus = async () => {
+    if (!selectedOrderIds.length || bulkStatus === 'cancelled') return
+    setBulkBackwardConfirmOpen(false)
+    setBulkUpdating(true)
+    const { error } = await supabase.from('retailer_orders').update({ order_status: bulkStatus, updated_at: new Date().toISOString() }).in('id', selectedOrderIds)
+    setBulkUpdating(false)
+    if (error) { setMessage(error.message); return }
+    setMessage(`${selectedOrderIds.length} order${selectedOrderIds.length === 1 ? '' : 's'} updated to ${bulkStatus}.`)
+    setSelectedOrderIds([])
+    await load()
+  }
 
   const updateStatus = async (order: any, order_status: string) => {
     if (order_status === 'cancelled') {
@@ -503,6 +523,19 @@ export default function RetailerOrdersPage() {
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setBackwardStatusChange(null)} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">No, keep current status</button>
               <button type="button" onClick={() => void confirmBackwardStatusChange()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Yes, move backward</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {bulkBackwardConfirmOpen && (
+        <div className="fixed inset-0 z-[105] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Some orders will move backward</h2>
+            <p className="mt-2 text-sm text-muted-foreground">You selected orders with different statuses. Changing all of them to <span className="font-semibold text-foreground">{bulkStatus}</span> will move some orders backward.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Are you sure you want to continue?</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setBulkBackwardConfirmOpen(false)} disabled={bulkUpdating} className="rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50">No, go back</button>
+              <button type="button" onClick={() => void bulkBackwardUpdateStatus()} disabled={bulkUpdating} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{bulkUpdating ? 'Updating…' : 'Yes, update orders'}</button>
             </div>
           </div>
         </div>
