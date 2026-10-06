@@ -18,6 +18,8 @@ export function RelatedProductsCarousel({
 
   const [productStatuses, setProductStatuses] =
   useState<Record<string, ProductStatus>>({})
+  const [productImages, setProductImages] =
+    useState<Record<string, string>>({})
 
 useEffect(() => {
   const loadProductStatuses = async () => {
