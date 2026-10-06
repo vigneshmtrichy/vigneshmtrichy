@@ -406,25 +406,25 @@ export default function AdminDashboardPage() {
               <div className="mt-4 grid gap-2">
                 <Link
                   href="/admin/orders"
-                  className="rounded-xl border border-border px-4 py-3 text-sm font-semibold hover:bg-muted"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
                 >
                   View customer orders
                 </Link>
                 <Link
                   href="/admin/products"
-                  className="rounded-xl border border-border px-4 py-3 text-sm font-semibold hover:bg-muted"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
                 >
                   Manage products & stock
                 </Link>
                 <Link
                   href="/admin/retailers"
-                  className="rounded-xl border border-border px-4 py-3 text-sm font-semibold hover:bg-muted"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
                 >
                   Manage retailers & collections
                 </Link>
                 <Link
                   href="/admin/retailer-orders"
-                  className="rounded-xl border border-border px-4 py-3 text-sm font-semibold hover:bg-muted"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
                 >
                   Create retailer order
                 </Link>
