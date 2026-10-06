@@ -1607,7 +1607,7 @@ Thank you for choosing TENOO.`,
                                             null,
                                           )
                                         }}
-                                        className={`block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted ${
+                                        className={`block w-full rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm transition-all duration-150 ease-out hover:border-primary/50 hover:bg-primary/10 hover:text-primary ${
                                           shippingMethod ===
                                           value
                                             ? 'bg-muted font-semibold'
@@ -1793,7 +1793,7 @@ Thank you for choosing TENOO.`,
                             href={`/admin/orders/invoice/${order.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-xl border border-border bg-background px-4 py-2.5 text-center text-sm font-medium hover:bg-muted"
+                            className="rounded-xl border border-border bg-background px-4 py-2.5 text-center text-sm font-medium transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
                           >
                             Open Full Invoice →
                           </a>
