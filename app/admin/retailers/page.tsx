@@ -255,7 +255,9 @@ export default function RetailersPage() {
     setMessage('')
 
     const payload = {
-      business_name: form.business_name.trim() || null,
+      // The database currently requires business_name. If only Contact Name is provided,
+      // use it as the account display name while still preserving contact_name separately.
+      business_name: form.business_name.trim() || form.contact_name.trim() || null,
       contact_name: form.contact_name.trim() || null,
       phone: form.phone.trim() || null,
       whatsapp: form.whatsapp.trim() || null,
