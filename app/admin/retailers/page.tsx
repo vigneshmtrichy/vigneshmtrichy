@@ -442,7 +442,7 @@ export default function RetailersPage() {
                 </button>
                 <div className={`${showSpecialPrices ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
                   <div className="max-h-80 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate">{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 shrink-0 rounded-lg border px-2 text-right" /></label>)}</div>
-                  <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">{saving ? 'Saving…' : 'Save special prices'</button>
+                  <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">{saving ? 'Saving…' : 'Save special prices'}</button>
                 </div>
               </div>
             </> : <div className="flex min-h-28 items-center justify-center text-center"><p className="max-w-sm text-sm leading-6 text-muted-foreground"><span className="font-semibold text-foreground">Select a retailer</span> to manage their special prices, payments and orders.</p></div>}</aside>
