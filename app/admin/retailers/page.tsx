@@ -259,7 +259,9 @@ export default function RetailersPage() {
       // use it as the account display name while still preserving contact_name separately.
       business_name: form.business_name.trim() || form.contact_name.trim() || null,
       contact_name: form.contact_name.trim() || null,
-      phone: form.phone.trim() || null,
+      // The current database requires phone. When only WhatsApp is provided,
+      // use it as the database phone fallback while preserving the WhatsApp field too.
+      phone: form.phone.trim() || form.whatsapp.trim() || null,
       whatsapp: form.whatsapp.trim() || null,
       email: form.email.trim() || null,
       billing_name: form.billing_name.trim() || null,
