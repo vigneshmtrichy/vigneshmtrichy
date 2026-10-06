@@ -104,6 +104,7 @@ export default function RetailersPage() {
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [showSpecialPrices, setShowSpecialPrices] = useState(false)
   const [showStatement, setShowStatement] = useState(false)
+  const [retailerStatusTarget, setRetailerStatusTarget] = useState<Retailer | null>(null)
   const [statementLoading, setStatementLoading] = useState(false)
   const [statementOrders, setStatementOrders] = useState<any[]>([])
   const [statementPayments, setStatementPayments] = useState<any[]>([])
@@ -196,17 +197,20 @@ export default function RetailersPage() {
     }, 0)
   }
 
-  const toggleRetailerStatus = async (retailer: Retailer) => {
+  const toggleRetailerStatus = (retailer: Retailer) => {
+    setRetailerStatusTarget(retailer)
+  }
+
+  const confirmRetailerStatus = async () => {
+    if (!retailerStatusTarget) return
+
+    const retailer = retailerStatusTarget
     const nextStatus = retailer.status === 'active' ? 'inactive' : 'active'
     const action = nextStatus === 'inactive' ? 'block' : 'reactivate'
 
-    if (!window.confirm(
-      nextStatus === 'inactive'
-        ? `Block ${retailer.business_name}? They will remain in your records but should not receive new orders.`
-        : `Reactivate ${retailer.business_name}?`
-    )) return
-
+    setRetailerStatusTarget(null)
     setMessage('')
+
     const { error } = await supabase
       .from('retailers')
       .update({ status: nextStatus, updated_at: new Date().toISOString() })
@@ -224,7 +228,6 @@ export default function RetailersPage() {
     if (selected?.id === retailer.id) setSelected(updatedRetailer)
     setMessage(action === 'block' ? 'Retailer blocked.' : 'Retailer reactivated.')
   }
-
   const selectRetailer = async (retailer: Retailer) => {
     setSelected(retailer); setShowSpecialPrices(false); setMessage('')
     const { data } = await supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailer.id)
@@ -495,6 +498,40 @@ export default function RetailersPage() {
           </div>
         </div>
       </main>
+      {retailerStatusTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 backdrop-blur-[2px]" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-2xl">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">
+                {retailerStatusTarget.status === 'active' ? 'Block Retailer?' : 'Reactivate Retailer?'}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {retailerStatusTarget.status === 'active'
+                  ? `${retailerStatusTarget.business_name} will remain in your records but should not receive new orders.`
+                  : `${retailerStatusTarget.business_name} will be allowed to receive new orders again.`}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRetailerStatusTarget(null)}
+                className="rounded-xl border bg-background px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:bg-muted hover:shadow-md active:scale-[0.99]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmRetailerStatus()}
+                className={retailerStatusTarget.status === 'active'
+                  ? "rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:bg-red-700 hover:shadow-md active:scale-[0.99]"
+                  : "rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:bg-emerald-700 hover:shadow-md active:scale-[0.99]"}
+              >
+                {retailerStatusTarget.status === 'active' ? 'Block Retailer' : 'Reactivate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
