@@ -91,6 +91,7 @@ export default function RetailersPage() {
   const [prices, setPrices] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
   const [form, setForm] = useState(emptyForm)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState<Retailer | null>(null)
   const [selected, setSelected] = useState<Retailer | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -157,68 +158,105 @@ export default function RetailersPage() {
         .some((value) => String(value || '').toLowerCase().includes(query)))
   }, [retailers, search])
 
-  const saveRetailer = async (event: FormEvent) => {
-    event.preventDefault()
-
-    const businessName = form.business_name.trim()
-    const contactName = form.contact_name.trim()
-    const phone = form.phone.trim()
-    const whatsapp = form.whatsapp.trim()
-    const email = form.email.trim()
-    const billingName = form.billing_name.trim()
-    const address = form.address.trim()
-    const city = form.city.trim()
-    const state = form.state.trim()
-    const pincode = form.pincode.trim()
-    const gstin = form.gstin.trim().toUpperCase()
-    const paymentTerms = form.payment_terms_days.trim()
-    const creditLimit = form.credit_limit.trim()
-
+  const validateRetailerField = (key: string, rawValue: string) => {
+    const value = rawValue.trim()
     const namePattern = /^[A-Za-z][A-Za-z .&'-]*$/
     const statePattern = /^[A-Za-z][A-Za-z .&'()-]*$/
     const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/
     const gstinPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
 
-    if (!businessName) return setMessage('Business name is required.')
-    if (businessName.length < 2 || !namePattern.test(businessName)) {
-      return setMessage('Enter a valid business name. Numbers-only or invalid characters are not allowed.')
+    if (!value) return ''
+
+    switch (key) {
+      case 'business_name':
+      case 'contact_name':
+      case 'billing_name':
+        return namePattern.test(value) ? '' : 'Use letters, spaces and . & - only.'
+      case 'phone':
+        return /^\\d{10}$/.test(value) ? '' : 'Phone must be exactly 10 digits.'
+      case 'whatsapp':
+        return /^\\d{10}$/.test(value) ? '' : 'WhatsApp must be exactly 10 digits.'
+      case 'email':
+        return emailPattern.test(value) ? '' : 'Enter a valid email address.'
+      case 'address':
+        return value.length >= 5 ? '' : 'Enter at least 5 characters.'
+      case 'city':
+        return namePattern.test(value) ? '' : 'Use letters, spaces and . & - only.'
+      case 'state':
+        return statePattern.test(value) ? '' : 'Enter a valid state name.'
+      case 'pincode':
+        return /^\\d{6}$/.test(value) ? '' : 'Pincode must be exactly 6 digits.'
+      case 'gstin':
+        return gstinPattern.test(value.toUpperCase()) ? '' : 'GSTIN must be a valid 15-character GSTIN.'
+      case 'payment_terms_days':
+        return /^\\d+$/.test(value) && Number(value) >= 0 ? '' : 'Enter 0 or a positive number of days.'
+      case 'credit_limit':
+        return /^\\d+(?:\\.\\d{1,2})?$/.test(value) && Number(value) >= 0 ? '' : 'Enter a valid amount.'
+      default:
+        return ''
     }
-    if (!contactName) return setMessage('Contact name is required.')
-    if (!namePattern.test(contactName)) return setMessage('Enter a valid contact name. Use letters, spaces or . & - only.')
-    if (!/^\\d{10}$/.test(phone)) return setMessage('Phone number must contain exactly 10 digits.')
-    if (whatsapp && !/^\\d{10}$/.test(whatsapp)) return setMessage('WhatsApp number must contain exactly 10 digits.')
-    if (email && !emailPattern.test(email)) return setMessage('Enter a valid email address.')
-    if (billingName && !namePattern.test(billingName)) return setMessage('Enter a valid billing name.')
-    if (!address || address.length < 5) return setMessage('Enter a valid address.')
-    if (!city || !namePattern.test(city)) return setMessage('Enter a valid city name.')
-    if (!state || !statePattern.test(state)) return setMessage('Enter a valid state name.')
-    if (!/^\\d{6}$/.test(pincode)) return setMessage('Pincode must contain exactly 6 digits.')
-    if (gstin && !gstinPattern.test(gstin)) return setMessage('Enter a valid 15-character GSTIN or leave it blank.')
-    if (!/^\\d+$/.test(paymentTerms) || Number(paymentTerms) < 0) return setMessage('Payment terms must be a valid number of days.')
-    if (!/^\\d+(?:\\.\\d{1,2})?$/.test(creditLimit) || Number(creditLimit) < 0) return setMessage('Credit limit must be a valid amount.')
-    
-    setSaving(true); setMessage('')
-    const payload = {
-      business_name: businessName, contact_name: contactName || null,
-      phone, whatsapp: whatsapp || null, email: email || null,
-      billing_name: billingName || null, address: address || null,
-      city: city || null, state: state || null, pincode: pincode || null,
-      gstin: gstin || null,
-      payment_terms_days: Number(paymentTerms || 0),
-      credit_limit: Number(creditLimit || 0), notes: form.notes.trim() || null,
-      updated_at: new Date().toISOString(),
-    }
-    const result = editing
-      ? await supabase.from('retailers').update(payload).eq('id', editing.id)
-      : await supabase.from('retailers').insert(payload)
-    setSaving(false)
-    if (result.error) { setMessage(result.error.message); return }
-    setForm(emptyForm); setEditing(null); setShowForm(false); setMessage('Retailer saved.')
-    await load()
   }
 
+  const handleRetailerFieldChange = (key: string, rawValue: string) => {
+    let value = rawValue
+
+    if (['phone', 'whatsapp'].includes(key)) {
+      value = value.replace(/\\D/g, '').slice(0, 10)
+    } else if (key === 'pincode') {
+      value = value.replace(/\\D/g, '').slice(0, 6)
+    } else if (['business_name', 'contact_name', 'billing_name', 'city', 'state'].includes(key)) {
+      value = value.replace(/[^A-Za-z .&'()\\-]/g, '')
+    } else if (key === 'gstin') {
+      value = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 15)
+    } else if (key === 'payment_terms_days') {
+      value = value.replace(/\\D/g, '')
+    } else if (key === 'credit_limit') {
+      value = value.replace(/[^0-9.]/g, '').replace(/\\.(?=.*\\.)/g, '')
+      const parts = value.split('.')
+      if (parts[1]) value = parts[0] + '.' + parts[1].slice(0, 2)
+    }
+
+    setForm((current) => ({ ...current, [key]: value }))
+    setFieldErrors((current) => ({ ...current, [key]: validateRetailerField(key, value) }))
+  }
+
+  const validateAllRetailerFields = () => {
+    const errors: Record<string, string> = {}
+    Object.entries(form).forEach(([key, value]) => {
+      const error = validateRetailerField(key, value)
+      if (error) errors[key] = error
+    })
+    setFieldErrors(errors)
+    return errors
+  }
+
+  const saveRetailer = async (event: FormEvent) => {
+    event.preventDefault()
+
+    const errors = validateAllRetailerFields()
+    if (Object.keys(errors).length > 0) {
+      setMessage('Please correct the highlighted fields before saving.')
+      return
+    }
+
+    setSaving(true); setMessage('')
+    const payload = {
+      business_name: form.business_name.trim() || null,
+      contact_name: form.contact_name.trim() || null,
+      phone: form.phone.trim() || null,
+      whatsapp: form.whatsapp.trim() || null,
+      email: form.email.trim() || null,
+      billing_name: form.billing_name.trim() || null,
+      address: form.address.trim() || null,
+      city: form.city.trim() || null,
+      state: form.state.trim() || null,
+      pincode: form.pincode.trim() || null,
+      gstin: form.gstin.trim().toUpperCase() || null,
+      payment_terms_days: Number(form.payment_terms_days || 0),
+      credit_limit: Number(form.credit_limit || 0),
   const editRetailer = (retailer: Retailer) => {
     setEditing(retailer)
+    setFieldErrors({})
     setForm({
       business_name: retailer.business_name, contact_name: retailer.contact_name || '', phone: retailer.phone,
       whatsapp: retailer.whatsapp || '', email: retailer.email || '', billing_name: retailer.billing_name || '',
@@ -437,32 +475,26 @@ export default function RetailersPage() {
           {showForm && <form ref={retailerFormRef} onSubmit={saveRetailer} className="mt-5 scroll-mt-24 grid gap-3 rounded-2xl border bg-background p-5 sm:grid-cols-2">
             <h2 className="sm:col-span-2 font-semibold">{editing ? 'Edit retailer' : 'New retailer'}</h2>
             {Object.entries(form).map(([key, value]) => {
-              const required = ['business_name', 'contact_name', 'phone', 'address', 'city', 'state', 'pincode'].includes(key)
               const numeric = key === 'payment_terms_days' || key === 'credit_limit'
               const tel = key === 'phone' || key === 'whatsapp' || key === 'pincode'
               const emailField = key === 'email'
               const gstField = key === 'gstin'
               const maxLength = key === 'phone' || key === 'whatsapp' ? 10 : key === 'pincode' ? 6 : gstField ? 15 : undefined
+              const error = fieldErrors[key]
 
               return (
                 <label key={key} className="text-xs font-medium text-muted-foreground">
                   {key.replaceAll('_', ' ')}
                   <input
-                    required={required}
                     value={value}
                     maxLength={maxLength}
                     inputMode={numeric || tel ? 'numeric' : emailField ? 'email' : undefined}
                     autoCapitalize={gstField ? 'characters' : 'words'}
-                    onChange={(e) => {
-                      let next = e.target.value
-                      if (gstField) next = next.toUpperCase()
-                      setForm({ ...form, [key]: next })
-                    }}
-                    className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground"
-                    type={numeric ? 'number' : tel ? 'tel' : emailField ? 'email' : 'text'}
-                    min={numeric ? '0' : undefined}
-                    step={key === 'credit_limit' ? '0.01' : undefined}
+                    onChange={(e) => handleRetailerFieldChange(key, e.target.value)}
+                    className={`mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-primary/20 ${error ? 'border-red-500 focus:border-red-500' : 'focus:border-primary/50'}`}
+                    type={numeric ? 'text' : tel ? 'tel' : emailField ? 'email' : 'text'}
                   />
+                  {error && <span className="mt-1 block text-[11px] font-medium text-red-600">{error}</span>}
                 </label>
               )
             })}
