@@ -1,5 +1,7 @@
 'use client'
 
+// Trigger production deployment for the latest retailer UI updates.
+
 import Link from 'next/link'
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { ALL_PRODUCTS } from '@/lib/site'
