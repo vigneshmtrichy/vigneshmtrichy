@@ -394,7 +394,7 @@ export default function RetailersPage() {
               </button>
             })}</section>
 
-            <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3"><div><h2 className="text-xl font-semibold">{selected.business_name}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p></div><button onClick={() => editRetailer(selected)} className="text-sm font-semibold text-primary">Edit</button></div>
+            <aside className="rounded-xl border bg-background p-4 sm:rounded-2xl sm:p-5">{selected ? <><div className="flex justify-between gap-3"><div><h2 className="text-xl font-semibold">{selected.business_name}</h2><p className="mt-1 text-sm text-muted-foreground">{selected.phone}</p></div><button onClick={() => editRetailer(selected)} className="rounded-lg px-2 py-1 text-sm font-semibold text-primary transition-all duration-200 ease-out hover:bg-primary/10 hover:text-primary hover:shadow-sm">Edit</button></div>
               {(() => {
                 const balance = balances[selected.id]
                 const unappliedCredit = Number(balance?.unapplied_credit || 0)
@@ -402,9 +402,9 @@ export default function RetailersPage() {
               })()}
               <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
                 <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground sm:flex-none">Create order</Link>
-                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg border px-3 py-2 text-center text-sm font-semibold sm:flex-none">View orders</Link>
-                <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold sm:flex-none">Record payment</button>
-                <button onClick={() => { setShowStatement(true); void loadStatement() }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold sm:flex-none">Statement</button>
+                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">View orders</Link>
+                <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">Record payment</button>
+                <button onClick={() => { setShowStatement(true); void loadStatement() }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">Statement</button>
               </div>
               {showStatement && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                 <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-xl">
@@ -442,7 +442,7 @@ export default function RetailersPage() {
                 </button>
                 <div className={`${showSpecialPrices ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
                   <div className="max-h-80 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate">{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 shrink-0 rounded-lg border px-2 text-right" /></label>)}</div>
-                  <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold">{saving ? 'Saving…' : 'Save special prices'}</button>
+                  <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">{saving ? 'Saving…' : 'Save special prices'</button>
                 </div>
               </div>
             </> : <div className="flex min-h-28 items-center justify-center text-center"><p className="max-w-sm text-sm leading-6 text-muted-foreground"><span className="font-semibold text-foreground">Select a retailer</span> to manage their special prices, payments and orders.</p></div>}</aside>
