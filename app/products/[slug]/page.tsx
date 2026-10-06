@@ -16,46 +16,52 @@ import {
   getProductBySlug,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
+import { unstable_cache } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
 
-async function getProductStatus(slug: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-  )
+const getProductStatus = unstable_cache(
+  async (slug: string) => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    )
 
-  const { data, error } = await supabase
-    .from('product_status')
-    .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg')
-    .eq('product_slug', slug)
-    .maybeSingle()
+    const { data, error } = await supabase
+      .from('product_status')
+      .select('status, mrp, price, retailer_price, offer_enabled, offer_label, featured, featured_priority, display_name, badges, image_url, image_urls, shipping_weight_kg')
+      .eq('product_slug', slug)
+      .maybeSingle()
 
-  if (error) {
-    console.error('Failed to load product status:', error)
-    return {
-      status: 'active' as const,
-      mrp: null,
-      price: null,
+    if (error) {
+      console.error('Failed to load product status:', error)
+      return {
+        status: 'active' as const,
+        mrp: null,
+        price: null,
+      }
     }
-  }
 
-  return {
-    status: data?.status || 'active',
-    mrp: data?.mrp ?? null,
-    price: data?.price ?? null,
-    retailer_price: data?.retailer_price ?? null,
-    offer_enabled: data?.offer_enabled ?? null,
-    offer_label: data?.offer_label ?? null,
-    featured: data?.featured ?? null,
-    featured_priority: data?.featured_priority ?? null,
-    display_name: data?.display_name ?? null,
-    badges: data?.badges ?? null,
-    image_url: data?.image_url ?? null,
-    image_urls: data?.image_urls ?? null,
-    shipping_weight_kg: data?.shipping_weight_kg ?? null,
-  }
-}
+    return {
+      status: data?.status || 'active',
+      mrp: data?.mrp ?? null,
+      price: data?.price ?? null,
+      retailer_price: data?.retailer_price ?? null,
+      offer_enabled: data?.offer_enabled ?? null,
+      offer_label: data?.offer_label ?? null,
+      featured: data?.featured ?? null,
+      featured_priority: data?.featured_priority ?? null,
+      display_name: data?.display_name ?? null,
+      badges: data?.badges ?? null,
+      image_url: data?.image_url ?? null,
+      image_urls: data?.image_urls ?? null,
+      shipping_weight_kg: data?.shipping_weight_kg ?? null,
+    }
+  },
+  ['product-page-status'],
+  { revalidate: 60 },
+)
+
 
 export async function generateMetadata({
   params,
