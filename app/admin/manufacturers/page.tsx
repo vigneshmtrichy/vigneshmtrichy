@@ -103,7 +103,7 @@ export default function AdminManufacturersPage() {
       return ''
     }
     if (key === 'code') return /^[A-Z]{2,3}$/.test(value) ? '' : 'Batch code must be 2 or 3 letters.'
-    if (key === 'manufacturer') return /^[A-Za-z0-9][A-Za-z0-9 .&'()\-]{1,99}$/.test(value) ? '' : 'Enter a valid manufacturer name.'
+    if (key === 'manufacturer') return /^[A-Za-z][A-Za-z .&'()\-]{1,99}$/.test(value) ? '' : 'Use letters, spaces and . & - only.'
     if (key === 'address') return value.length >= 5 ? '' : 'Address must be at least 5 characters.'
     if (key === 'fssai') return /^\d{14}$/.test(value) ? '' : 'FSSAI Licence No. must be exactly 14 digits.'
     return ''
@@ -112,6 +112,7 @@ export default function AdminManufacturersPage() {
   const handleFieldChange = (key: keyof typeof EMPTY, rawValue: string) => {
     let value = rawValue
     if (key === 'code') value = value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3)
+    if (key === 'manufacturer') value = value.replace(/[^A-Za-z .&'()\-]/g, '').slice(0, 100)
     if (key === 'fssai') value = value.replace(/\D/g, '').slice(0, 14)
     setForm(current => ({ ...current, [key]: value }))
     setFieldErrors(current => ({ ...current, [key]: validateField(key, value) }))
@@ -255,7 +256,11 @@ export default function AdminManufacturersPage() {
     await load()
   }
 
-  const remove = async (code: string) => {
+  const remove = async (code: string, group?: Group) => {
+    if (group && group.codes.length === 1) {
+      setMessage('This is the only batch code for this manufacturer. Use Delete Manufacturer to remove the manufacturer.')
+      return
+    }
     if (!window.confirm(`Delete batch code "${code}"?`)) return
 
     const { error } = await supabase
@@ -453,7 +458,7 @@ export default function AdminManufacturersPage() {
                                 {code}
                                 <button
                                   type="button"
-                                  onClick={() => void remove(code)}
+                                  onClick={(event) => { event.stopPropagation(); void remove(code, group) }}
                                   className="rounded-full p-0.5 text-red-500 shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] hover:bg-red-50"
                                   aria-label={`Delete ${code}`}
                                 >
