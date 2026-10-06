@@ -320,7 +320,7 @@ export default function AdminManufacturersPage() {
         </div>
 
         {message && (
-          <div className="mt-5 rounded-xl border bg-background px-4 py-3 text-sm">
+          <div className={`mt-5 rounded-xl border px-4 py-3 text-sm ${message.includes('only batch code') || message.includes('Unable to delete') ? 'border-red-200 bg-red-50 text-red-600' : 'bg-background'}`}>
             {message}
           </div>
         )}
