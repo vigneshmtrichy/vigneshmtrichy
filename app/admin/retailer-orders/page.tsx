@@ -1,13 +1,9 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { ALL_PRODUCTS } from '@/lib/site'
+import { useEffect, useRef, useState } from 'react'
 import { SiteHeader } from '@/components/site-header'
 import { supabase } from '@/lib/supabase'
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
-
-type Retailer = { id: string; business_name: string; payment_terms_days: number; credit_limit: number }
-type OrderLine = { product_slug: string; quantity: string }
 
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
@@ -202,22 +198,9 @@ function DateFilter({
 }
 
 export default function RetailerOrdersPage() {
-  const [requestedRetailerId, setRequestedRetailerId] = useState('')
   const [authorized, setAuthorized] = useState<boolean | null>(null)
-  const [retailers, setRetailers] = useState<Retailer[]>([])
   const [orders, setOrders] = useState<any[]>([])
-  const [retailerId, setRetailerId] = useState('')
-  const [lines, setLines] = useState<OrderLine[]>([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
-  const [prices, setPrices] = useState<Record<string, number>>({})
-  const [gstRates, setGstRates] = useState<Record<string, number>>({})
-  const [paymentType, setPaymentType] = useState('credit')
-  const [initialPayment, setInitialPayment] = useState('')
-  const [initialPaymentMethod, setInitialPaymentMethod] = useState('upi')
-  const [initialPaymentReference, setInitialPaymentReference] = useState('')
-  const [notes, setNotes] = useState('')
-  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [retailerBalance, setRetailerBalance] = useState({ outstanding: 0, unapplied: 0 })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [paymentFilter, setPaymentFilter] = useState('all')
@@ -235,13 +218,6 @@ export default function RetailerOrdersPage() {
   const [bulkStatus, setBulkStatus] = useState('packing')
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const load = async () => {
-    const { data: retailerRows } = await supabase
-      .from('retailers')
-      .select('id, business_name, payment_terms_days, credit_limit')
-      .eq('status', 'active')
-      .order('business_name')
-    setRetailers((retailerRows || []) as Retailer[])
-
     const query = search.trim()
     let matchingOrderIds: number[] | null = null
     if (query) {
@@ -326,56 +302,6 @@ export default function RetailerOrdersPage() {
     })
   }, [])
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    setRequestedRetailerId(params.get('retailer') || '')
-  }, [])
-
-  useEffect(() => {
-    if (!retailerId && requestedRetailerId && retailers.some((retailer) => retailer.id === requestedRetailerId)) {
-      setRetailerId(requestedRetailerId)
-    }
-  }, [requestedRetailerId, retailerId, retailers])
-
-  useEffect(() => {
-    if (!retailerId) { setPrices({}); setGstRates({}); setRetailerBalance({ outstanding: 0, unapplied: 0 }); return }
-    const loadBalance = async () => {
-      const { data } = await supabase.from('retailer_balances').select('outstanding_balance, unapplied_credit').eq('retailer_id', retailerId).maybeSingle()
-      setRetailerBalance({ outstanding: Number(data?.outstanding_balance || 0), unapplied: Number(data?.unapplied_credit || 0) })
-    }
-    void loadBalance()
-    const loadPrices = async () => {
-      const [{ data: defaults }, { data: overrides }] = await Promise.all([
-        supabase.from('product_status').select('product_slug, retailer_price, gst_rate'),
-        supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailerId),
-      ])
-      const next: Record<string, number> = {}
-      const nextGst: Record<string, number> = {}
-      defaults?.forEach((row: any) => {
-        next[row.product_slug] = Number(row.retailer_price || 0)
-        nextGst[row.product_slug] = Number(row.gst_rate ?? 5)
-      })
-      overrides?.forEach((row: any) => {
-        next[row.product_slug] = Number(row.unit_price)
-      })
-      setPrices(next)
-      setGstRates(nextGst)
-    }
-    void loadPrices()
-  }, [retailerId])
-
-  const estimatedTaxableTotal = useMemo(() => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0), [lines, prices])
-  const estimatedGstTotal = useMemo(() => lines.reduce((sum, line) => {
-    const taxable = Number(line.quantity || 0) * Number(prices[line.product_slug] || 0)
-    return sum + taxable * Number(gstRates[line.product_slug] ?? 5) / 100
-  }, 0), [lines, prices, gstRates])
-  const estimatedTotal = Math.round((estimatedTaxableTotal + estimatedGstTotal) * 100) / 100
-  const missingRetailerPrice = lines.some((line) => Number(prices[line.product_slug] || 0) <= 0)
-  const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
-  const creditRequired = paymentType === 'prepaid' ? 0 : Math.max(estimatedTotal - (paymentType === 'partial' ? Number(initialPayment || 0) : 0) - retailerBalance.unapplied, 0)
-  const availableCredit = Math.max(Number(selectedRetailer?.credit_limit || 0) - retailerBalance.outstanding, 0)
-  const creditExceeded = Boolean(retailerId && creditRequired > availableCredit)
-
   const totalPages = Math.max(1, Math.ceil(totalOrderCount / pageSize))
   const paginatedOrders = orders
 
@@ -390,43 +316,6 @@ export default function RetailerOrdersPage() {
   useEffect(() => {
     if (authorized) void load()
   }, [authorized, currentPage, pageSize, search, statusFilter, paymentFilter, dateFrom, dateTo])
-
-  const createOrder = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!retailerId) { setMessage('Choose a retailer.'); return }
-    if (missingRetailerPrice) {
-      setMessage('Set the retailer price for every selected product in Product Settings before creating the order.')
-      return
-    }
-    const payload = lines.map((line) => ({ product_slug: line.product_slug, quantity: Number(line.quantity) }))
-    if (payload.some((line) => !line.product_slug || !Number.isSafeInteger(line.quantity) || line.quantity < 1)) {
-      setMessage('Every line needs a product and whole quantity.'); return
-    }
-    const requestedInitialPayment = paymentType === 'prepaid'
-      ? estimatedTotal
-      : paymentType === 'partial'
-        ? Number(initialPayment || 0)
-        : 0
-    if (paymentType === 'partial' && (!Number.isFinite(requestedInitialPayment) || requestedInitialPayment <= 0 || requestedInitialPayment >= estimatedTotal)) {
-      setMessage('For partial payment, enter an amount greater than zero and less than the estimated order total.')
-      return
-    }
-    setSaving(true); setMessage('')
-    const { data, error } = await supabase.rpc('create_retailer_order_with_stock', {
-      p_retailer_id: retailerId,
-      p_items: payload,
-      p_payment_type: paymentType,
-      p_due_date: null,
-      p_notes: notes || null,
-      p_initial_payment: requestedInitialPayment,
-      p_initial_payment_method: initialPaymentMethod,
-      p_initial_payment_reference: initialPaymentReference || null,
-    })
-    setSaving(false)
-    if (error || !data?.success) { setMessage(error?.message || data?.message || 'Unable to create retailer order.'); return }
-    setLines([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }]); setInitialPayment(''); setInitialPaymentReference(''); setNotes(''); setMessage('Retailer order #' + data.order_id + ' created and stock reserved.')
-    await load()
-  }
 
   const toggleOrderSelection = (orderId: number) => {
     setSelectedOrderIds((current) => current.includes(orderId) ? current.filter((id) => id !== orderId) : [...current, orderId])
@@ -486,28 +375,8 @@ export default function RetailerOrdersPage() {
   if (!authorized) return <><SiteHeader /><main className="p-10 text-center">Admin access only.</main></>
 
   return <><SiteHeader /><main className="min-h-screen bg-muted/20 px-4 py-8 sm:px-6"><div className="mx-auto max-w-7xl">
-    <div><h1 className="text-3xl font-semibold">Retailer Orders</h1><p className="mt-1 text-sm text-muted-foreground">Create trade orders at the retailer’s approved price; stock is reserved immediately.</p></div>
+    <div><h1 className="text-3xl font-semibold">Trade Orders</h1><p className="mt-1 text-sm text-muted-foreground">View, search, filter and manage all retailer trade orders.</p></div>
     {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
-
-    <form onSubmit={createOrder} className="mt-6 rounded-2xl border bg-background p-5">
-      <div className="grid gap-4 sm:grid-cols-3"><label className="text-sm font-medium">Retailer<CustomSelect value={retailerId} onChange={setRetailerId} placeholder="Select retailer" className="mt-1" searchable options={retailers.map((r) => ({ value: r.id, label: r.business_name }))} /></label>
-      <label className="text-sm font-medium">Payment<CustomSelect value={paymentType} onChange={setPaymentType} className="mt-1" options={[{ value: 'credit', label: 'Credit' }, { value: 'prepaid', label: 'Prepaid' }, { value: 'partial', label: 'Partial payment' }, { value: 'cod', label: 'Cash on delivery' }]} /></label>
-      <label className="text-sm font-medium">Order note<input value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1 h-11 w-full rounded-lg border bg-background px-3" placeholder="Optional" /></label></div>
-      {(paymentType === 'partial' || paymentType === 'prepaid') && <div className="mt-4 grid gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-3">
-        <label className="text-xs font-medium text-muted-foreground">Initial payment {paymentType === 'prepaid' ? '(full total)' : '(₹)'}
-          <input value={paymentType === 'prepaid' ? String(estimatedTotal || '') : initialPayment} onChange={(e) => setInitialPayment(e.target.value)} disabled={paymentType === 'prepaid'} type="number" min="0" step="0.01" className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm" />
-        </label>
-        <label className="text-xs font-medium text-muted-foreground">Payment method
-          <CustomSelect value={initialPaymentMethod} onChange={setInitialPaymentMethod} className="mt-1" options={[{ value: 'upi', label: 'UPI' }, { value: 'bank-transfer', label: 'Bank transfer' }, { value: 'cash', label: 'Cash' }, { value: 'cheque', label: 'Cheque' }, { value: 'other', label: 'Other' }]} />
-        </label>
-        <label className="text-xs font-medium text-muted-foreground">Reference
-          <input value={initialPaymentReference} onChange={(e) => setInitialPaymentReference(e.target.value)} placeholder="Optional" className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm" />
-        </label>
-      </div>}
-      {paymentType !== 'prepaid' && retailerBalance.unapplied > 0 && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><p className="font-semibold">Unapplied credit available: {money(retailerBalance.unapplied)}</p><p className="mt-1">This existing credit will be automatically applied to this order.</p></div>}{creditExceeded && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><p className="font-semibold">Credit limit exceeded</p><p className="mt-1">Available credit: {money(availableCredit)} · Required credit after existing credit: {money(creditRequired)}. Reduce the quantity, record a payment, or choose prepaid.</p></div>}
-      <div className="mt-5 space-y-3">{lines.map((line, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_80px] sm:items-end"><label className="text-xs font-medium text-muted-foreground">Product<CustomSelect value={line.product_slug} onChange={(value) => setLines(lines.map((item, i) => i === index ? { ...item, product_slug: value } : item))} className="mt-1" searchable options={ALL_PRODUCTS.map((product) => ({ value: product.slug, label: product.name }))} /></label><label className="text-xs font-medium text-muted-foreground">Quantity<input type="number" min="1" step="1" value={line.quantity} onChange={(e) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: e.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" /></label><p className="pb-2 text-right text-sm font-semibold">{Number(prices[line.product_slug] || 0) > 0 ? <span>{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.product_slug] ?? 5)}% GST</span></span> : 'Retailer price not set'}</p><button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] disabled:opacity-30">Remove</button></div>)}</div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><button type="button" onClick={() => setLines([...lines, { product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])} className="rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]">Add product</button><div className="flex items-center gap-4"><span className="text-right"><span className="block text-lg font-bold">Estimated {money(estimatedTotal)}</span><span className="block text-xs font-normal text-muted-foreground">Taxable {money(estimatedTaxableTotal)} · GST {money(estimatedGstTotal)}</span></span><button disabled={saving || creditExceeded || missingRetailerPrice} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">{saving ? 'Creating…' : 'Confirm order'}</button></div></div>
-    </form>
 
     <section className="mt-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Server-side pagination · filters and search are applied before loading the page.</p></div><p className="text-sm text-muted-foreground">{totalOrderCount} total orders</p></div>
