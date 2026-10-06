@@ -314,7 +314,15 @@ export default function CreateRetailerOrderPage() {
             <a href="/admin/retailer-orders" className="rounded-lg border px-4 py-2.5 text-center text-sm font-semibold transition hover:bg-muted">View Trade Orders</a>
           </div>
 
-          {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
+          {message && (
+            <p className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+              message.startsWith('Retailer order #')
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                : 'border-red-200 bg-red-50 text-red-800'
+            }`}>
+              {message}
+            </p>
+          )}
 
           <form onSubmit={createOrder} className="mt-6 rounded-2xl border bg-background p-4 sm:p-6">
             <div className="grid gap-4 sm:grid-cols-3">
