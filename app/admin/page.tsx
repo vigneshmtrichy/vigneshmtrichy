@@ -441,13 +441,25 @@ export default function AdminDashboardPage() {
               {data.recentActivity.length === 0 ? (
                 <p className="p-4 text-sm text-muted-foreground">No recent orders.</p>
               ) : data.recentActivity.map((item) => (
-                <div key={item.channel + '-' + item.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <Link
+                  key={item.channel + '-' + item.id}
+                  href={item.channel === 'Online'
+                    ? `/admin/orders?order=${item.id}`
+                    : `/admin/retailer-orders?order=${item.id}`}
+                  className="group flex items-center justify-between gap-3 px-4 py-3 transition-all duration-200 ease-out hover:bg-secondary/60 hover:shadow-sm"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{item.channel} order #{item.id}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('en-IN')} · {item.status}</p>
+                    <p className="truncate text-sm font-medium group-hover:text-primary">
+                      {item.channel} order #{item.id}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {new Date(item.created_at).toLocaleString('en-IN')} · {item.status}
+                    </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold">{money(item.total)}</span>
-                </div>
+                  <span className="shrink-0 text-sm font-semibold">
+                    {money(item.total)}
+                  </span>
+                </Link>
               ))}
             </div>
           </section>
