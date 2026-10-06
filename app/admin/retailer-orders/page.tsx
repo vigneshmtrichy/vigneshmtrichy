@@ -7,30 +7,6 @@ import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'luc
 
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
-const statusRank: Record<string, number> = {
-  confirmed: 1,
-  packing: 2,
-  dispatched: 3,
-  delivered: 4,
-}
-
-const getNextStatusOptions = (current: string) => {
-  if (current === 'delivered' || current === 'cancelled') {
-    return [{ value: current, label: current.charAt(0).toUpperCase() + current.slice(1) }]
-  }
-
-  const currentRank = statusRank[current] || 1
-  return Object.entries(statusRank)
-    .filter(([, rank]) => rank === currentRank || rank === currentRank + 1)
-    .map(([value]) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))
-}
-
-const canMoveForward = (current: string, next: string) => {
-  if (next === 'cancelled') return current !== 'delivered' && current !== 'cancelled'
-  if (current === 'cancelled') return false
-  return (statusRank[next] || 0) === (statusRank[current] || 0) + 1
-}
-
 
 type SelectOption = { value: string; label: string }
 
@@ -361,25 +337,11 @@ export default function RetailerOrdersPage() {
   const requestBulkStatusUpdate = () => {
     if (!selectedOrderIds.length || bulkStatus === 'cancelled' || bulkUpdating) return
 
-    const selectedOrders = orders.filter((order: any) => selectedOrderIds.includes(Number(order.id)))
-    const invalid = selectedOrders.some((order: any) => !canMoveForward(order.order_status, bulkStatus))
-    if (invalid) {
-      setMessage('Orders can only move one step forward: Confirmed → Packing → Dispatched → Delivered.')
-      return
-    }
-
     setBulkConfirmOpen(true)
   }
 
   const bulkUpdateStatus = async () => {
     if (!selectedOrderIds.length || bulkStatus === 'cancelled') return
-
-    const selectedOrders = orders.filter((order: any) => selectedOrderIds.includes(Number(order.id)))
-    if (selectedOrders.some((order: any) => !canMoveForward(order.order_status, bulkStatus))) {
-      setBulkConfirmOpen(false)
-      setMessage('Invalid status progression. Move orders one step at a time.')
-      return
-    }
 
     setBulkConfirmOpen(false)
     setBulkUpdating(true)
@@ -405,11 +367,6 @@ export default function RetailerOrdersPage() {
       }
       setCancelOrder(order)
       setCancelReason('')
-      return
-    }
-
-    if (!canMoveForward(order.order_status, order_status)) {
-      setMessage('Order status must move one step forward: Confirmed → Packing → Dispatched → Delivered.')
       return
     }
 
@@ -505,13 +462,12 @@ export default function RetailerOrdersPage() {
               value={bulkStatus}
               onChange={setBulkStatus}
               className="w-40"
-              options={(() => {
-                const selectedOrders = orders.filter((order: any) => selectedOrderIds.includes(Number(order.id)))
-                const options = ['confirmed', 'packing', 'dispatched', 'delivered']
-                  .filter((status) => selectedOrders.length > 0 && selectedOrders.every((order: any) => canMoveForward(order.order_status, status)))
-                  .map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))
-                return options.length ? options : [{ value: bulkStatus, label: bulkStatus.charAt(0).toUpperCase() + bulkStatus.slice(1) }]
-              })}
+              options={[
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'packing', label: 'Packing' },
+                { value: 'dispatched', label: 'Dispatched' },
+                { value: 'delivered', label: 'Delivered' },
+              ]}
 />
             <button type="button" disabled={bulkUpdating} onClick={requestBulkStatusUpdate} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
               {bulkUpdating ? 'Updating…' : 'Apply status'}
@@ -556,7 +512,10 @@ export default function RetailerOrdersPage() {
               onChange={(value) => void updateStatus(order, value)}
               className="w-44"
               options={[
-                ...getNextStatusOptions(order.order_status),
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'packing', label: 'Packing' },
+                { value: 'dispatched', label: 'Dispatched' },
+                { value: 'delivered', label: 'Delivered' },
                 ...(order.order_status !== 'delivered' && order.order_status !== 'cancelled' ? [{ value: 'cancelled', label: 'Cancelled' }] : []),
               ]}
             /></div></div>
