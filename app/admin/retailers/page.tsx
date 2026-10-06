@@ -111,6 +111,7 @@ export default function RetailersPage() {
   const [statementLoading, setStatementLoading] = useState(false)
   const [statementOrders, setStatementOrders] = useState<any[]>([])
   const [statementPayments, setStatementPayments] = useState<any[]>([])
+  const [statementTransactionFilter, setStatementTransactionFilter] = useState('all')
   const [overdueByRetailer, setOverdueByRetailer] = useState<Record<string, { count: number; amount: number }>>({})
   const retailerFormRef = useRef<HTMLFormElement>(null)
   const retailerDetailsRef = useRef<HTMLElement>(null)
@@ -684,9 +685,16 @@ export default function RetailersPage() {
                 <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="min-h-12 rounded-lg border px-3 py-2 text-center text-sm font-semibold leading-tight transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm">Record payment</button>
                 <button onClick={() => { setShowStatement(true); void loadStatement() }} className="min-h-12 rounded-lg border px-3 py-2 text-center text-sm font-semibold leading-tight transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm">Statement</button>
               </div>
-              {showStatement && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-xl">
-                  <div className="flex items-start justify-between gap-3"><div><h3 className="text-xl font-semibold">Retailer statement</h3><p className="mt-1 text-sm text-muted-foreground">{selected.business_name}</p></div><div className="flex gap-2"><button type="button" onClick={exportStatementCsv} disabled={statementLoading} className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Export statement</button><button type="button" onClick={exportPaymentsCsv} disabled={statementLoading || statementPayments.length === 0} className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Export payments</button><button type="button" onClick={() => setShowStatement(false)} className="rounded-lg border px-3 py-2 text-sm">Close</button></div></div>
+              {showStatement && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
+                <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border bg-background p-4 shadow-xl sm:max-h-[88vh] sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0"><h3 className="text-xl font-semibold">Retailer statement</h3><p className="mt-1 truncate text-sm text-muted-foreground">{selected.business_name}</p></div>
+                    <button type="button" onClick={() => setShowStatement(false)} className="shrink-0 rounded-full border px-3 py-1 text-lg leading-none text-muted-foreground hover:bg-muted" aria-label="Close statement">×</button>
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+                    <button type="button" onClick={exportStatementCsv} disabled={statementLoading} className="min-h-11 rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Export statement</button>
+                    <button type="button" onClick={exportPaymentsCsv} disabled={statementLoading || statementPayments.length === 0} className="min-h-11 rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Export payments</button>
+                  </div>
                   {statementLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading statement…</p> : (() => {
                     const now = new Date()
                     const buckets = { current: 0, d1_15: 0, d16_30: 0, d31_60: 0, d60: 0 }
@@ -699,15 +707,66 @@ export default function RetailersPage() {
                       else if (days <= 60) buckets.d31_60 += order.outstanding
                       else buckets.d60 += order.outstanding
                     })
+                    const totalSales = statementOrders.filter((o) => o.order_status !== 'cancelled').reduce((sum, o) => sum + Number(o.total || 0), 0)
+                    const totalPaid = statementPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+                    const outstanding = Number(balances[selected.id]?.outstanding_balance || statementOrders.reduce((sum, o) => sum + Number(o.outstanding || 0), 0))
+                    const unappliedCredit = Number(balances[selected.id]?.unapplied_credit || 0)
+                    const availableCredit = Math.max(Number(selected.credit_limit || 0) - outstanding + unappliedCredit, 0)
                     const transactions = [
-                      ...statementOrders.filter((o) => o.order_status !== 'cancelled').map((o) => ({ date: o.created_at, label: 'Order #' + o.id, detail: o.payment_status, amount: Number(o.total || 0) })),
-                      ...statementPayments.map((p) => ({ date: p.created_at, label: 'Payment', detail: p.payment_method + (p.reference ? ' · ' + p.reference : ''), amount: -Number(p.amount || 0) })),
+                      ...statementOrders.map((o) => ({
+                        date: o.created_at,
+                        label: 'Order #' + o.id,
+                        detail: o.order_status === 'cancelled' ? 'Cancelled · amount reversed' : o.payment_status,
+                        amount: o.order_status === 'cancelled' ? -Number(o.total || 0) : Number(o.total || 0),
+                        category: o.order_status === 'cancelled' ? 'adjustment' : 'sale',
+                      })),
+                      ...statementPayments.map((p) => ({
+                        date: p.created_at,
+                        label: 'Payment' + (p.reference ? ' · ' + p.reference : ''),
+                        detail: p.payment_method + (p.notes ? ' · ' + p.notes : ''),
+                        amount: -Number(p.amount || 0),
+                        category: 'payment',
+                      })),
                     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    const filteredTransactions = statementTransactionFilter === 'all'
+                      ? transactions
+                      : transactions.filter((tx) => tx.category === statementTransactionFilter)
                     return <div className="mt-5 space-y-5">
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                        {[['Current', buckets.current], ['1–15 days', buckets.d1_15], ['16–30 days', buckets.d16_30], ['31–60 days', buckets.d31_60], ['60+ days', buckets.d60]].map(([label, value]) => <div key={String(label)} className="rounded-xl border p-3"><p className="text-[11px] text-muted-foreground">{label}</p><p className="mt-1 text-sm font-semibold">{money(value)}</p></div>)}
+                      <div>
+                        <h4 className="font-semibold">Account summary</h4>
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {[['Total sales', totalSales], ['Total paid', totalPaid], ['Outstanding', outstanding], ['Available credit', availableCredit]].map(([label, value]) => (
+                            <div key={String(label)} className="rounded-xl border p-3">
+                              <p className="text-[11px] text-muted-foreground">{label}</p>
+                              <p className="mt-1 text-sm font-semibold">{money(value)}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div><h4 className="font-semibold">Transactions</h4><div className="mt-2 divide-y rounded-xl border">{transactions.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No transactions yet.</p> : transactions.map((tx, index) => <div key={index} className="flex items-center justify-between gap-3 p-3 text-sm"><div><p className="font-medium">{tx.label}</p><p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleString('en-IN')} · {tx.detail}</p></div><span className={tx.amount < 0 ? 'font-semibold text-emerald-700' : 'font-semibold text-amber-700'}>{tx.amount < 0 ? '−' : '+'}{money(Math.abs(tx.amount))}</span></div>)}</div></div>
+                      <div>
+                        <h4 className="font-semibold">Ageing</h4>
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                          {[['Current', buckets.current], ['1–15 days', buckets.d1_15], ['16–30 days', buckets.d16_30], ['31–60 days', buckets.d31_60], ['60+ days', buckets.d60]].map(([label, value]) => <div key={String(label)} className="rounded-xl border p-3"><p className="text-[11px] text-muted-foreground">{label}</p><p className="mt-1 text-sm font-semibold">{money(value)}</p></div>)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-semibold">Transactions</h4>
+                        </div>
+                        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                          {[['all', 'All'], ['sale', 'Sales'], ['payment', 'Payments'], ['adjustment', 'Adjustments']].map(([value, label]) => (
+                            <button key={value} type="button" onClick={() => setStatementTransactionFilter(value)} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${statementTransactionFilter === value ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}>{label}</button>
+                          ))}
+                        </div>
+                        <div className="mt-2 divide-y rounded-xl border">
+                          {filteredTransactions.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No transactions in this filter.</p> : filteredTransactions.map((tx, index) => (
+                            <div key={index} className="flex items-center justify-between gap-3 p-3 text-sm">
+                              <div className="min-w-0"><p className="truncate font-medium">{tx.label}</p><p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleString('en-IN')} · {tx.detail}</p></div>
+                              <span className={tx.amount < 0 ? 'shrink-0 font-semibold text-emerald-700' : 'shrink-0 font-semibold text-amber-700'}>{tx.amount < 0 ? '−' : '+'}{money(Math.abs(tx.amount))}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   })()}
                 </div>
