@@ -10,7 +10,8 @@ export function Hero() {
           alt="TENOO — Rooted in Indian Food"
           width={2048}
           height={768}
-          priority
+          preload
+          sizes="100vw"
           className="block h-auto w-full"
         />
 
