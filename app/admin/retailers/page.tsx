@@ -227,8 +227,16 @@ export default function RetailersPage() {
       if (error) errors[key] = error
     })
 
-    if (!form.business_name.trim()) errors.business_name = 'Business name is required.'
-    if (!form.phone.trim() && !form.whatsapp.trim()) errors.phone = 'Phone number or WhatsApp number is required.'
+    if (!form.business_name.trim() && !form.contact_name.trim()) {
+      const message = 'Business name or contact name is required.'
+      errors.business_name = message
+      errors.contact_name = message
+    }
+    if (!form.phone.trim() && !form.whatsapp.trim()) {
+      const message = 'Phone number or WhatsApp number is required.'
+      errors.phone = message
+      errors.whatsapp = message
+    }
 
     setFieldErrors(errors)
     return errors
@@ -520,7 +528,7 @@ export default function RetailersPage() {
                   {key.replaceAll('_', ' ')}
                   <input
                     value={value}
-                    required={key === 'business_name' || (key === 'phone' && !form.whatsapp.trim()) || (key === 'whatsapp' && !form.phone.trim())}
+                    required={false}
                     maxLength={maxLength}
                     inputMode={numeric || tel ? 'numeric' : emailField ? 'email' : undefined}
                     autoCapitalize={gstField ? 'characters' : 'words'}
