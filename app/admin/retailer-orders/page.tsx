@@ -231,6 +231,9 @@ export default function RetailerOrdersPage() {
   const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
   const [cancelOrder, setCancelOrder] = useState<any | null>(null)
   const [cancelReason, setCancelReason] = useState('')
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([])
+  const [bulkStatus, setBulkStatus] = useState('packing')
+  const [bulkUpdating, setBulkUpdating] = useState(false)
   const load = async () => {
     const { data: retailerRows } = await supabase
       .from('retailers')
@@ -298,6 +301,7 @@ export default function RetailerOrdersPage() {
     const nextOrders = orderRows || []
     setOrders(nextOrders)
     setTotalOrderCount(orderCount || 0)
+    setSelectedOrderIds([])
     const ids = nextOrders.map((order: any) => order.id)
     setStatusHistoryError('')
     if (ids.length) {
@@ -424,6 +428,32 @@ export default function RetailerOrdersPage() {
     await load()
   }
 
+  const toggleOrderSelection = (orderId: number) => {
+    setSelectedOrderIds((current) => current.includes(orderId) ? current.filter((id) => id !== orderId) : [...current, orderId])
+  }
+
+  const toggleSelectAllVisible = () => {
+    const visibleIds = orders.map((order: any) => Number(order.id))
+    setSelectedOrderIds((current) => visibleIds.every((id) => current.includes(id)) ? current.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...current, ...visibleIds])))
+  }
+
+  const bulkUpdateStatus = async () => {
+    if (!selectedOrderIds.length || bulkStatus === 'cancelled') return
+    setBulkUpdating(true)
+    const { error } = await supabase
+      .from('retailer_orders')
+      .update({ order_status: bulkStatus, updated_at: new Date().toISOString() })
+      .in('id', selectedOrderIds)
+    setBulkUpdating(false)
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    setMessage(`${selectedOrderIds.length} order${selectedOrderIds.length === 1 ? '' : 's'} updated to ${bulkStatus}.`)
+    setSelectedOrderIds([])
+    await load()
+  }
+
   const updateStatus = async (order: any, order_status: string) => {
     if (order_status === 'cancelled') {
       setCancelOrder(order)
@@ -480,7 +510,7 @@ export default function RetailerOrdersPage() {
     </form>
 
     <section className="mt-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Server-side pagination · filters and search are applied before loading the page.</p></div><p className="text-sm text-muted-foreground">{totalOrderCount} shown</p></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Retailer orders</h2><p className="mt-1 text-xs text-muted-foreground">Server-side pagination · filters and search are applied before loading the page.</p></div><p className="text-sm text-muted-foreground">{totalOrderCount} total orders</p></div>
       <div className="mt-4 grid gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-2 lg:grid-cols-5">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search order, retailer or product" className="h-11 rounded-lg border bg-background px-3 text-sm lg:col-span-2" />
         <CustomSelect value={statusFilter} onChange={setStatusFilter} className="w-full" options={[{ value: 'all', label: 'All order statuses' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} />
@@ -508,8 +538,34 @@ export default function RetailerOrdersPage() {
           </div>
         </div>
       )}
+      {selectedOrderIds.length > 0 && (
+        <div className="mt-3 flex flex-col gap-3 rounded-2xl border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="font-semibold">{selectedOrderIds.length} selected</span>
+            <button type="button" onClick={() => setSelectedOrderIds([])} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Clear</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Change status to</span>
+            <CustomSelect value={bulkStatus} onChange={setBulkStatus} className="w-40" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }]} />
+            <button type="button" disabled={bulkUpdating} onClick={() => void bulkUpdateStatus()} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+              {bulkUpdating ? 'Updating…' : 'Apply status'}
+            </button>
+          </div>
+        </div>
+      )}
       {statusHistoryError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">Status history could not be loaded: {statusHistoryError}</p>}
-      <div className="mt-4 space-y-3">{paginatedOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
+      <div className="mt-4 flex items-center justify-between rounded-xl border bg-background px-3 py-2">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" checked={orders.length > 0 && orders.every((order: any) => selectedOrderIds.includes(Number(order.id)))} onChange={toggleSelectAllVisible} className="h-4 w-4 rounded" />
+          Select all visible
+        </label>
+        <span className="text-xs text-muted-foreground">Select orders for bulk status update</span>
+      </div>
+      <div className="mt-3 space-y-3">{paginatedOrders.map((order) => <article key={order.id} className="rounded-2xl border bg-background p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <input type="checkbox" checked={selectedOrderIds.includes(Number(order.id))} onChange={() => toggleOrderSelection(Number(order.id))} className="h-4 w-4 rounded" aria-label={`Select order #${order.id}`} />
+          <span className="text-xs text-muted-foreground">Select order</span>
+        </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="font-semibold">Order #{order.id} · {order.retailers?.business_name || 'Retailer'}</p><p className="mt-1 text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString('en-IN')} · {order.payment_type} · {order.payment_status} · due {order.due_date || 'on receipt'}</p><p className="mt-2 text-sm">{(order.retailer_order_items || []).map((item: any) => item.product_name + ' × ' + item.quantity).join(', ')}</p></div><div className="flex flex-wrap items-center gap-2"><a href={`/admin/retailer-orders/invoice/${order.id}`} className="rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] hover:bg-muted">Invoice</a><p className="text-lg font-bold text-primary">{money(order.total)}</p><CustomSelect value={order.order_status} onChange={(value) => void updateStatus(order, value)} className="w-44" options={[{ value: 'confirmed', label: 'Confirmed' }, { value: 'packing', label: 'Packing' }, { value: 'dispatched', label: 'Dispatched' }, { value: 'delivered', label: 'Delivered' }, { value: 'cancelled', label: 'Cancelled' }]} /></div></div>
         {order.order_status === 'cancelled' && order.notes?.includes('Cancellation reason:') && <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{order.notes.split('Cancellation reason:').pop()?.trim()}</p>}
         {statusHistory[String(order.id)]?.length > 0 && <div className="mt-3"><button type="button" onClick={() => setOpenHistory((current) => ({ ...current, [order.id]: !current[order.id] }))} className="text-xs font-semibold text-primary">{openHistory[order.id] ? 'Hide status history' : 'View status history'}</button>{openHistory[order.id] && <div className="mt-2 rounded-lg border bg-muted/30 p-3 text-xs">{statusHistory[String(order.id)].slice(0, 8).map((entry: any, index: number) => <div key={index} className="flex justify-between gap-3 border-b py-2 last:border-0"><span>{entry.old_status ? entry.old_status + ' → ' : ''}{entry.new_status}</span><span className="text-right text-muted-foreground">{new Date(entry.changed_at).toLocaleString('en-IN')}{entry.note ? ' · ' + entry.note : ''}</span></div>)}</div>}</div>}
