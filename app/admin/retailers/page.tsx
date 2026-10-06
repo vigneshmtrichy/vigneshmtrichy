@@ -228,7 +228,7 @@ export default function RetailersPage() {
     })
 
     if (!form.business_name.trim()) errors.business_name = 'Business name is required.'
-    if (!form.phone.trim()) errors.phone = 'Phone number is required.'
+    if (!form.phone.trim() && !form.whatsapp.trim()) errors.phone = 'Phone number or WhatsApp number is required.'
 
     setFieldErrors(errors)
     return errors
@@ -504,7 +504,7 @@ export default function RetailersPage() {
           {showForm && <form ref={retailerFormRef} onSubmit={saveRetailer} className="mt-5 scroll-mt-24 grid gap-3 rounded-2xl border bg-background p-5 sm:grid-cols-2">
             <h2 className="sm:col-span-2 font-semibold">{editing ? 'Edit retailer' : 'New retailer'}</h2>
             <p className="sm:col-span-2 rounded-xl border bg-muted/40 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
-              <span className="font-semibold text-foreground">Required:</span> Business Name & Phone Number.
+              <span className="font-semibold text-foreground">Required:</span> Business Name & Phone Number or WhatsApp Number.
               <span className="ml-1">All other details are optional and can be updated later.</span>
             </p>
             {Object.entries(form).map(([key, value]) => {
@@ -520,7 +520,7 @@ export default function RetailersPage() {
                   {key.replaceAll('_', ' ')}
                   <input
                     value={value}
-                    required={key === 'business_name' || key === 'phone'}
+                    required={key === 'business_name' || (key === 'phone' && !form.whatsapp.trim()) || (key === 'whatsapp' && !form.phone.trim())}
                     maxLength={maxLength}
                     inputMode={numeric || tel ? 'numeric' : emailField ? 'email' : undefined}
                     autoCapitalize={gstField ? 'characters' : 'words'}
