@@ -62,7 +62,6 @@ export function IntroAnimation() {
             alt="Tenoo"
             width={230}
             height={100}
-            priority
             className="tenoo-intro-logo"
           />
         </div>
