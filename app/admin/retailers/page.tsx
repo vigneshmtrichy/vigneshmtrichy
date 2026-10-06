@@ -105,6 +105,7 @@ export default function RetailersPage() {
   const [showSpecialPrices, setShowSpecialPrices] = useState(false)
   const [showStatement, setShowStatement] = useState(false)
   const [retailerStatusTarget, setRetailerStatusTarget] = useState<Retailer | null>(null)
+  const [createOrderError, setCreateOrderError] = useState('')
   const [statementLoading, setStatementLoading] = useState(false)
   const [statementOrders, setStatementOrders] = useState<any[]>([])
   const [statementPayments, setStatementPayments] = useState<any[]>([])
@@ -450,7 +451,27 @@ export default function RetailersPage() {
                 return unappliedCredit > 0 ? <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{money(unappliedCredit)} unapplied credit available on this account.</p> : null
               })()}
               <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
-                <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground sm:flex-none">Create order</Link>
+                <div className="flex-1 sm:flex-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selected.status !== 'active') {
+                        setCreateOrderError('This retailer is blocked and cannot receive new orders. Reactivate the retailer to create an order.')
+                        return
+                      }
+                      setCreateOrderError('')
+                      window.location.href = '/admin/retailer-orders?retailer=' + selected.id
+                    }}
+                    className="w-full rounded-lg bg-primary px-3 py-2 text-center text-sm font-semibold text-primary-foreground transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99]"
+                  >
+                    Create order
+                  </button>
+                  {createOrderError && selected.status !== 'active' && (
+                    <p className="mt-2 max-w-xs rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium leading-5 text-red-700">
+                      {createOrderError}
+                    </p>
+                  )}
+                </div>
                 <Link href={'/admin/retailer-orders?retailer=' + selected.id} className="flex-1 rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">View orders</Link>
                 <button onClick={() => { setShowPaymentModal(true); setShowStatement(false) }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">Record payment</button>
                 <button onClick={() => { setShowStatement(true); void loadStatement() }} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary hover:shadow-sm sm:flex-none">Statement</button>
