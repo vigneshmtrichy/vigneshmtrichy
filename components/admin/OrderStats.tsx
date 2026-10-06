@@ -1,7 +1,6 @@
 type OrderStatsProps = {
   counts: {
     total: number
-    pending: number
     confirmed: number
     processing: number
     shipped: number
@@ -22,7 +21,6 @@ export function OrderStats({
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
           ['Total Orders', counts.total, 'all'],
-          ['Pending', counts.pending, 'pending'],
           ['Confirmed', counts.confirmed, 'confirmed'],
           ['Processing', counts.processing, 'processing'],
           ['Shipped', counts.shipped, 'shipped'],
