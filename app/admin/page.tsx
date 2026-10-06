@@ -278,7 +278,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => void loadDashboard(true)}
                 disabled={refreshing}
-                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50"
+                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99] hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {refreshing ? 'Refreshing…' : 'Refresh'}
               </button>
