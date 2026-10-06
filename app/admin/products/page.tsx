@@ -58,6 +58,7 @@ export default function AdminProductsPage() {
   const [statuses, setStatuses] = useState<Record<string, ProductStatus>>({})
   const [stockQuantities, setStockQuantities] = useState<Record<string, number | null>>({})
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({})
+  const [productImages, setProductImages] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [message, setMessage] = useState('')
@@ -80,6 +81,7 @@ export default function AdminProductsPage() {
         setStatuses({})
         setStockQuantities({})
         setDisplayNames({})
+        setProductImages({})
       }
     }
 
@@ -105,7 +107,7 @@ export default function AdminProductsPage() {
     try {
       const { data, error } = await supabase
         .from('product_status')
-        .select('product_slug, status, stock_quantity, display_name')
+        .select('product_slug, status, stock_quantity, display_name, image_url, image_urls')
 
       if (error) {
         console.error('Failed to load product statuses:', error)
@@ -116,6 +118,7 @@ export default function AdminProductsPage() {
       const statusMap: Record<string, ProductStatus> = {}
       const stockMap: Record<string, number | null> = {}
       const nameMap: Record<string, string> = {}
+      const imageMap: Record<string, string> = {}
 
       data?.forEach((item) => {
         statusMap[item.product_slug] = item.status as ProductStatus
@@ -124,11 +127,18 @@ export default function AdminProductsPage() {
         if (item.display_name) {
           nameMap[item.product_slug] = String(item.display_name)
         }
+        const imageUrl =
+          item.image_url ||
+          (Array.isArray(item.image_urls) ? item.image_urls[0] : null)
+        if (imageUrl) {
+          imageMap[item.product_slug] = String(imageUrl)
+        }
       })
 
       setStatuses(statusMap)
       setStockQuantities(stockMap)
       setDisplayNames(nameMap)
+      setProductImages(imageMap)
     } catch (error) {
       console.error('Failed to load product statuses:', error)
       setMessage('Unable to load product statuses.')
@@ -398,7 +408,7 @@ export default function AdminProductsPage() {
                     <div className="flex min-w-0 items-center gap-4">
                       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border bg-muted sm:h-20 sm:w-20">
                         <img
-                          src={product.image}
+                          src={productImages[product.slug] || '/placeholder.svg'}
                           alt={product.name}
                           className="h-full w-full object-contain"
                           onError={(e) => {
