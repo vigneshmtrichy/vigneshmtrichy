@@ -305,7 +305,7 @@ export default function AdminManufacturersPage() {
                       ...x,
                       code: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3),
                     }))}
-                    placeholder="VMK"
+                    placeholder="e.g. ABC"
                     className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary"
                   />
                 </label>
@@ -317,7 +317,7 @@ export default function AdminManufacturersPage() {
                   value={form.manufacturer}
                   disabled={mode === 'add-code'}
                   onChange={e => setForm(x => ({ ...x, manufacturer: e.target.value }))}
-                  placeholder="Veetoon Health Foods"
+                  placeholder="e.g. Your Manufacturer Name"
                   className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40"
                 />
               </label>
@@ -329,7 +329,7 @@ export default function AdminManufacturersPage() {
                   value={form.address}
                   disabled={mode === 'add-code'}
                   onChange={e => setForm(x => ({ ...x, address: e.target.value }))}
-                  placeholder={'Line 1\nLine 2\nTamil Nadu, India'}
+                  placeholder={'e.g. 123, Main Street\nCity, Tamil Nadu'}
                   className="mt-2 w-full rounded-xl border bg-background px-3 py-3 outline-none focus:border-primary disabled:bg-muted/40"
                 />
               </label>
@@ -340,7 +340,7 @@ export default function AdminManufacturersPage() {
                   value={form.fssai}
                   disabled={mode === 'add-code'}
                   onChange={e => setForm(x => ({ ...x, fssai: e.target.value }))}
-                  placeholder="12423027001124"
+                  placeholder="e.g. 12345678901234"
                   className="mt-2 h-11 w-full rounded-xl border bg-background px-3 outline-none focus:border-primary disabled:bg-muted/40"
                 />
               </label>
