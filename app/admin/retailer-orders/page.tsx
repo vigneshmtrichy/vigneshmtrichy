@@ -303,6 +303,12 @@ export default function RetailerOrdersPage() {
     })
   }, [])
 
+  useEffect(() => {
+    if (!message) return
+    const timer = window.setTimeout(() => setMessage(''), 4000)
+    return () => window.clearTimeout(timer)
+  }, [message])
+
   const totalPages = Math.max(1, Math.ceil(totalOrderCount / pageSize))
   const paginatedOrders = orders
 
@@ -383,7 +389,20 @@ export default function RetailerOrdersPage() {
 
   return <><SiteHeader /><main className="min-h-screen bg-muted/20 px-4 py-8 sm:px-6"><div className="mx-auto max-w-7xl">
     <div><h1 className="text-3xl font-semibold">Trade Orders</h1><p className="mt-1 text-sm text-muted-foreground">View, search, filter and manage all retailer trade orders.</p></div>
-    {message && <p className="mt-4 rounded-xl border bg-background px-4 py-3 text-sm">{message}</p>}
+    {message && (
+      <div className="fixed inset-x-4 bottom-5 z-[120] flex justify-center pointer-events-none sm:inset-x-auto sm:right-6 sm:left-auto sm:max-w-md">
+        <div
+          role="alert"
+          className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium shadow-2xl backdrop-blur pointer-events-auto ${
+            message.includes('updated to') || message.includes('status updated')
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+              : 'border-red-200 bg-red-50 text-red-800'
+          }`}
+        >
+          {message}
+        </div>
+      </div>
+    )}
 
     <section className="mt-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
