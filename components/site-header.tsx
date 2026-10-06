@@ -17,6 +17,7 @@ export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
+  const [hiddenProductSlugs, setHiddenProductSlugs] = useState<Set<string>>(new Set())
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -35,6 +36,27 @@ useEffect(() => {
 
   loadUser()
 
+  const loadHiddenProducts = async () => {
+    const { data, error } = await supabase
+      .from('product_status')
+      .select('product_slug, status')
+
+    if (error) {
+      console.error('Failed to load product visibility for search:', error)
+      return
+    }
+
+    setHiddenProductSlugs(
+      new Set(
+        (data || [])
+          .filter((item) => item.status === 'hidden')
+          .map((item) => item.product_slug),
+      ),
+    )
+  }
+
+  loadHiddenProducts()
+
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -44,14 +66,18 @@ useEffect(() => {
   return () => subscription.unsubscribe()
 }, [])
 
+  const visibleSearchProducts = ALL_PRODUCTS.filter(
+    (product) => !hiddenProductSlugs.has(product.slug),
+  )
+
   const searchResults =
     search.trim().length > 0
-      ? ALL_PRODUCTS.filter((product) =>
+      ? visibleSearchProducts.filter((product) =>
           `${product.name} ${product.tagline ?? ''}`
             .toLowerCase()
             .includes(search.trim().toLowerCase()),
         ).slice(0, 5)
-      : ALL_PRODUCTS.slice(0, 5)
+      : visibleSearchProducts.slice(0, 5)
 
   const showSearchSuggestions =
     !isAdminPage && searchFocused
