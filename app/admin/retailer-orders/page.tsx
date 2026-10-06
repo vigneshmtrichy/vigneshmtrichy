@@ -224,7 +224,7 @@ export default function RetailerOrdersPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(25)
+  const [pageSize, setPageSize] = useState(10)
   const [totalOrderCount, setTotalOrderCount] = useState(0)
   const [statusHistory, setStatusHistory] = useState<Record<string, any[]>>({})
   const [statusHistoryError, setStatusHistoryError] = useState('')
@@ -504,7 +504,7 @@ export default function RetailerOrdersPage() {
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               Per page
-              <CustomSelect value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setCurrentPage(1) }} className="w-24" options={[{ value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }]} />
+              <CustomSelect value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setCurrentPage(1) }} className="w-24" options={[{ value: '10', label: '10' }, { value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }]} />
             </label>
             <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button>
             <span className="px-1 text-xs font-semibold">Page {currentPage} / {totalPages}</span>
