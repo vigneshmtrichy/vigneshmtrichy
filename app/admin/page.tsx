@@ -428,6 +428,12 @@ export default function AdminDashboardPage() {
                 >
                   Create retailer order
                 </Link>
+                <Link
+                  href="/admin/gst-reports"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
+                >
+                  GST Reports & quarter closing
+                </Link>
               </div>
             </div>
           </section>
