@@ -27,7 +27,7 @@ const parseInvoiceText=(text:string)=>{
   const flat=lines.join(' | ')
   const pick=(re:RegExp)=>{const m=joined.match(re);return m?.[1]?.trim()||''}
 
-  const gstin=(joined.replace(/\s+/g,'').match(/\b\d{2}[A-Z0-9]{5}\d{4}[A-Z0-9][A-Z0-9]\dZ[A-Z0-9]\b/i)?.[0]||'').toUpperCase()
+  const gstin=(joined.replace(/\s+/g,'').match(/\b\d{2}[A-Z]{5}\d{4}[A-Z]\d[A-Z]\d[A-Z]\b/i)?.[0]||'').toUpperCase()
 
   const parseDateValue=(value:string)=>{
     const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
@@ -75,53 +75,52 @@ const parseInvoiceText=(text:string)=>{
     return null
   }
 
+  const findAllAmountsAfterLabel=(label:RegExp)=>{
+    const values:number[]=[]
+    for(let i=0;i<lines.length;i++){
+      if(!label.test(lines[i]))continue
+      for(let j=i;j<Math.min(i+6,lines.length);j++){
+        for(const n of moneyValues(lines[j]))if(n>0&&!values.includes(n))values.push(n)
+      }
+      if(values.length)break
+    }
+    return values
+  }
+
   let taxable=findLineAfter(/(?:taxable\s*(?:value|amount)|taxable)/i)
   let cgst=findLineAfter(/(?:CGST|central\s*GST)/i)
   let sgst=findLineAfter(/(?:SGST|state\s*GST)/i)
   let igst=findLineAfter(/(?:IGST|integrated\s*GST)/i)
 
-  // Many invoice OCR layouts put the GST rate on one line and the tax amounts
-  // on the next line. Never treat a percentage such as "9 (%)" as the tax amount.
-  if(cgst===9 || cgst===18 || cgst===5)cgst=null
-  if(sgst===9 || sgst===18 || sgst===5)sgst=null
-  if(igst===9 || igst===18 || igst===5)igst=null
-
-  const finalPrice=findLineAfter(/(?:final\s*price|grand\s*total|amount\s*payable|net\s*amount)/i)
-  let invoiceTotal=finalPrice!==null?String(finalPrice):''
-  if(!invoiceTotal){
-    const totalLineIndex=lines.findIndex(x=>/^total\s*:/i.test(x))
-    if(totalLineIndex>=0){
-      const values=moneyValues(lines[totalLineIndex])
-      if(values.length)taxable=values[values.length-1]
+  // OCR commonly returns this invoice tax block as:
+  // "9 (%) CGST", "9 (%) SGST", "₹189.00", "₹189.00".
+  // In that layout the tax amounts are shared by the two labels, so map
+  // the first two non-rate currency values to CGST and SGST respectively.
+  const taxBlock=lines.map((line,i)=>({line,i})).find(x=>/(?:CGST|SGST)/i.test(x.line))
+  if(taxBlock){
+    const blockAmounts:number[]=[]
+    for(let j=taxBlock.i;j<Math.min(taxBlock.i+6,lines.length);j++){
+      for(const n of moneyValues(lines[j]))if(n>0&&!blockAmounts.includes(n))blockAmounts.push(n)
     }
+    const usable=blockAmounts.filter(n=>n!==5&&n!==9&&n!==18)
+    if(cgst===null&&usable.length>=1)cgst=usable[0]
+    if(sgst===null&&usable.length>=2)sgst=usable[1]
   }
 
-  // Product table fallback: e.g. "... Quantity Rate Total / 6 ₹350.00 ₹2,100.00".
-  // Use the last monetary value from a row containing quantity + rate + total.
+  // Product/cart table fallback: this invoice exposes
+  // "Quantity Rate Total" followed by "6 ₹350.00 ₹2,100.00".
+  // Prefer the last monetary value on that product row as taxable value.
   if(taxable===null){
-    for(const line of lines){
+    const productRow=lines.find(line=>{
       const values=moneyValues(line)
-      if(values.length>=2 && /\b\d+\b/.test(line) && values[values.length-1]>values[0]){
-        taxable=values[values.length-1]
-        break
-      }
+      return values.length>=2 && /(?:quantity|rate|total)/i.test(line)===false && /\b\d+\b/.test(line)
+    })
+    if(productRow){
+      const values=moneyValues(productRow)
+      taxable=values[values.length-1]
     }
   }
 
-  // If the invoice exposes GST percentages but OCR separated the tax amounts,
-  // calculate the tax from the detected taxable value. This is safer than using
-  // the percentage number itself as a currency amount.
-  if(taxable!==null){
-    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    if(cgst===null && cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
-    if(sgst===null && sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
-    if(igst===null && igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
-  }
-
-  // On invoices with a final price but no explicit taxable label, the total
-  // before coupon/shipping is usually the taxable line in the cart section.
   if(taxable===null){
     const totalIndex=lines.findIndex(x=>/^total\s*:/i.test(x))
     if(totalIndex>=0){
@@ -130,7 +129,19 @@ const parseInvoiceText=(text:string)=>{
     }
   }
 
-  if(!invoiceTotal && taxable!==null){
+  // If GST amounts are missing but rates are visible, calculate from taxable.
+  if(taxable!==null){
+    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    if(cgst===null&&cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
+    if(sgst===null&&sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
+    if(igst===null&&igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
+  }
+
+  const finalPrice=findLineAfter(/(?:final\s*price|grand\s*total|amount\s*payable|net\s*amount)/i)
+  let invoiceTotal=finalPrice!==null?String(finalPrice):''
+  if(!invoiceTotal&&taxable!==null){
     const calculated=taxable+(cgst||0)+(sgst||0)+(igst||0)
     if(calculated>0)invoiceTotal=String(calculated)
   }
