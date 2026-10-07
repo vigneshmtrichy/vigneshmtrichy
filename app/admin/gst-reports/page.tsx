@@ -752,4 +752,118 @@ export default function GstReportsPage() {
 
           {tab === 'notes' && (
             <section className="mt-6 space-y-5">
-              <div className="rounded-2xl border bg-background p-5"><h2 className="font-semibold">Add credit / debit note</h2><p className="mt-1 text-xs text-muted-foreground">Keep GST adjustment documents in the same quarter working so the outward-supply summary can be reconciled.</p><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border bg-background p-5">
+                <h2 className="font-semibold">Add credit / debit note</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Keep GST adjustment documents in the same quarter working so the outward-supply summary can be reconciled.</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <label className="text-xs font-semibold text-muted-foreground">Type
+                    <select value={noteForm.note_type} onChange={(e)=>setNoteForm((v)=>({...v,note_type:e.target.value as 'Credit Note'|'Debit Note'}))} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm">
+                      <option>Credit Note</option><option>Debit Note</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">Note number
+                    <input value={noteForm.note_number} onChange={(e)=>setNoteForm((v)=>({...v,note_number:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">Date
+                    <input type="date" value={noteForm.note_date} onChange={(e)=>setNoteForm((v)=>({...v,note_date:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">Party type
+                    <select value={noteForm.party_type} onChange={(e)=>setNoteForm((v)=>({...v,party_type:e.target.value as 'B2B'|'B2C'}))} className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm">
+                      <option>B2B</option><option>B2C</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground lg:col-span-2">Party name
+                    <input value={noteForm.party_name} onChange={(e)=>setNoteForm((v)=>({...v,party_name:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">Party GSTIN
+                    <input value={noteForm.party_gstin} onChange={(e)=>setNoteForm((v)=>({...v,party_gstin:e.target.value.toUpperCase()}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">Reference invoice
+                    <input value={noteForm.reference_invoice} onChange={(e)=>setNoteForm((v)=>({...v,reference_invoice:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">Taxable
+                    <input type="number" min="0" step="0.01" value={noteForm.taxable_amount} onChange={(e)=>setNoteForm((v)=>({...v,taxable_amount:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">CGST
+                    <input type="number" min="0" step="0.01" value={noteForm.cgst} onChange={(e)=>setNoteForm((v)=>({...v,cgst:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">SGST
+                    <input type="number" min="0" step="0.01" value={noteForm.sgst} onChange={(e)=>setNoteForm((v)=>({...v,sgst:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground">IGST
+                    <input type="number" min="0" step="0.01" value={noteForm.igst} onChange={(e)=>setNoteForm((v)=>({...v,igst:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-muted-foreground lg:col-span-3">Reason
+                    <input value={noteForm.reason} onChange={(e)=>setNoteForm((v)=>({...v,reason:e.target.value}))} className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" />
+                  </label>
+                  <div className="flex items-end">
+                    <button type="button" disabled={saving} onClick={addNote} className="h-10 w-full rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Plus className="mr-1 inline h-4 w-4" /> Save note</button>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-background p-5">
+                <h2 className="font-semibold">Quarter notes</h2>
+                <div className="mt-4 space-y-2">
+                  {notes.length === 0 ? (
+                    <p className="rounded-xl border border-dashed px-4 py-6 text-sm text-muted-foreground">No credit / debit notes recorded for this quarter.</p>
+                  ) : notes.map((note) => (
+                    <div key={note.id} className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-semibold">{note.note_type} · {note.note_number}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{indiaDate(note.note_date)} · {note.party_name} · {note.party_gstin || 'No GSTIN'} · Ref {note.reference_invoice || '—'}</p>
+                        {note.reason && <p className="mt-1 text-xs text-muted-foreground">{note.reason}</p>}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">{money(note.taxable_amount + note.cgst + note.sgst + note.igst)}</span>
+                        <button type="button" onClick={()=>deleteNote(note.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50" aria-label="Delete note"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {tab === 'closing' && (
+            <section className="mt-6 space-y-5">
+              <div className="rounded-2xl border bg-background p-5">
+                <div className="flex items-start gap-3">
+                  <FileCheck2 className="mt-0.5 h-6 w-6 text-primary" />
+                  <div>
+                    <h2 className="font-semibold">Quarter closing checklist</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">Complete these checks before sharing the quarter figures with your CA.</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {checklistItems.map(([key,label]) => (
+                    <label key={key} className="flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-4 text-sm">
+                      <input type="checkbox" checked={Boolean(checklist[key])} onChange={(e)=>setChecklist((v)=>({...v,[key]:e.target.checked}))} className="h-5 w-5" />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <label className="mt-5 block text-sm font-semibold">
+                  Quarter notes
+                  <textarea value={closingNotes} onChange={(e)=>setClosingNotes(e.target.value)} rows={4} placeholder="Anything your CA should know about this quarter..." className="mt-2 w-full rounded-xl border px-4 py-3 text-sm" />
+                </label>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">{closedAt ? `Closed / reviewed on ${new Date(closedAt).toLocaleString('en-IN')}` : 'Not closed yet'}</p>
+                  <button type="button" disabled={saving} onClick={saveClosing} className="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Save className="mr-1 inline h-4 w-4" /> Save quarter closing</button>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-900">
+                <h2 className="font-semibold">What this prepares</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>GSTR-1 outward-supply working: B2B, B2C, state and HSN views.</li>
+                  <li>GSTR-3B working: output GST versus internally matched ITC.</li>
+                  <li>Purchase / expense and GSTR-2B reconciliation queue.</li>
+                  <li>Credit / debit note working for the selected quarter.</li>
+                </ul>
+              </div>
+            </section>
+          )}
+        </div>
+      </main>
+    </>
+  )
+}
