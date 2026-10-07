@@ -145,9 +145,15 @@ const parseInvoiceText=(text:string)=>{
   }
 
   if(taxable!==null){
-    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const cgstRateMatch=
+      joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i) ||
+      joined.match(/(\d+(?:\.\d+)?)\s*\(?\s*%\s*\)?[^\n]{0,30}(?:CGST|central\s*GST)/i)
+    const sgstRateMatch=
+      joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i) ||
+      joined.match(/(\d+(?:\.\d+)?)\s*\(?\s*%\s*\)?[^\n]{0,30}(?:SGST|state\s*GST)/i)
+    const igstRateMatch=
+      joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i) ||
+      joined.match(/(\d+(?:\.\d+)?)\s*\(?\s*%\s*\)?[^\n]{0,30}(?:IGST|integrated\s*GST)/i)
     // When the invoice explicitly gives a GST rate, calculate the tax from the
     // taxable value instead of trusting OCR amounts that may have been picked
     // from a nearby table cell.
