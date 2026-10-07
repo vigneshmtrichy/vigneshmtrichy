@@ -89,8 +89,8 @@ const parseInvoiceText=(text:string)=>{
 
   const explicitAmount=(label:RegExp)=>{
     const patterns=[
-      new RegExp(label.source+'\\s*[:#-]?\\s*(?:₹|Rs\\.?|INR)?\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i'),
-      new RegExp(label.source+'[^\\n]{0,40}?(?:₹|Rs\\.?|INR)\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i')
+      new RegExp(label.source+'\s*[:#-]?\s*(?:₹|Rs\\.?|INR)?\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i'),
+      new RegExp(label.source+'[^\\n]{0,40}?(?:₹|Rs\\.?|INR)\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i')
     ]
     for(const re of patterns){
       const m=joined.match(re)
@@ -99,10 +99,10 @@ const parseInvoiceText=(text:string)=>{
     return null
   }
 
-  let taxable=explicitAmount(/(?:taxable\\s*(?:value|amount)|taxable)/)
-  let cgst=explicitAmount(/(?:CGST|central\\s*GST)/)
-  let sgst=explicitAmount(/(?:SGST|state\\s*GST)/)
-  let igst=explicitAmount(/(?:IGST|integrated\\s*GST)/)
+  let taxable=explicitAmount(/(?:taxable\s*(?:value|amount)|taxable)/)
+  let cgst=explicitAmount(/(?:CGST|central\s*GST)/)
+  let sgst=explicitAmount(/(?:SGST|state\s*GST)/)
+  let igst=explicitAmount(/(?:IGST|integrated\s*GST)/)
 
   // In OCR output, "9 (%) CGST / 9 (%) SGST" can appear separately from
   // the following ₹189 / ₹189 amounts. Never use the 9% rate as a currency value.
@@ -133,7 +133,7 @@ const parseInvoiceText=(text:string)=>{
   if(taxable===null){
     for(const line of lines){
       const values=moneyValues(line)
-      if(values.length>=2 && /\\b\\d+\\b/.test(line)){
+      if(values.length>=2 && /\b\d+\b/.test(line)){
         const candidate=values[values.length-1]
         if(candidate>18){taxable=candidate;break}
       }
@@ -141,9 +141,9 @@ const parseInvoiceText=(text:string)=>{
   }
 
   if(taxable!==null){
-    const cgstRateMatch=joined.match(/(?:CGST|central\\s*GST)[^\\n]{0,30}?(\\d+(?:\\.\\d+)?)\\s*\\(?\\s*%/i)
-    const sgstRateMatch=joined.match(/(?:SGST|state\\s*GST)[^\\n]{0,30}?(\\d+(?:\\.\\d+)?)\\s*\\(?\\s*%/i)
-    const igstRateMatch=joined.match(/(?:IGST|integrated\\s*GST)[^\\n]{0,30}?(\\d+(?:\\.\\d+)?)\\s*\\(?\\s*%/i)
+    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\\.\d+)?)\s*\(?\s*%/i)
+    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\\.\d+)?)\s*\(?\s*%/i)
+    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\\.\d+)?)\s*\(?\s*%/i)
     if(cgst===null&&cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
     if(sgst===null&&sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
     if(igst===null&&igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
@@ -151,8 +151,8 @@ const parseInvoiceText=(text:string)=>{
 
   // "Final Price" is the strongest invoice-total signal. Do not fall back to
   // a nearby tax amount when this explicit label exists.
-  const finalPrice=explicitAmount(/final\\s*price/)
-  const grandTotal=explicitAmount(/(?:grand\\s*total|invoice\\s*total|amount\\s*payable|net\\s*amount)/)
+  const finalPrice=explicitAmount(/final\s*price/)
+  const grandTotal=explicitAmount(/(?:grand\s*total|invoice\s*total|amount\s*payable|net\s*amount)/)
   let invoiceTotal=finalPrice!==null?String(finalPrice):grandTotal!==null?String(grandTotal):''
   if(!invoiceTotal&&taxable!==null){
     const calculated=taxable+(cgst||0)+(sgst||0)+(igst||0)
