@@ -124,7 +124,7 @@ const parseInvoiceText=(text:string)=>{
 
   // Explicit "Total : ₹2,100.00" is the taxable/cart total on this invoice.
   if(taxable===null){
-    const total=explicitAmount(/^total/)
+    const total=explicitAmount(/(?:^|\\n)total/)
     if(total!==null)taxable=total
   }
 
