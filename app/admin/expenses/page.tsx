@@ -27,7 +27,10 @@ const parseInvoiceText=(text:string)=>{
   const flat=lines.join(' | ')
   const pick=(re:RegExp)=>{const m=joined.match(re);return m?.[1]?.trim()||''}
 
-  const gstin=(joined.replace(/\s+/g,'').match(/\b\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]\b/i)?.[0]||'').toUpperCase()
+  const gstinCandidates=[...normalized.matchAll(/(?:GSTIN|GST\s*No\.?|GST\s*Number)?\s*[:#-]?\s*([0-9A-Z][0-9A-Z\s-]{12,20}[0-9A-Z])/gi)]
+    .map(m=>m[1].replace(/[^0-9A-Z]/gi,'').toUpperCase())
+  const gstin=(gstinCandidates.find(v=>/^\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]$/.test(v)) ||
+    (normalized.replace(/[^0-9A-Z]/gi,'').match(/\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]/i)?.[0]||'')).toUpperCase()
 
   const parseDateValue=(value:string)=>{
     const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
@@ -144,9 +147,12 @@ const parseInvoiceText=(text:string)=>{
     const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
     const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
     const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    if(cgst===null&&cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
-    if(sgst===null&&sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
-    if(igst===null&&igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
+    // When the invoice explicitly gives a GST rate, calculate the tax from the
+    // taxable value instead of trusting OCR amounts that may have been picked
+    // from a nearby table cell.
+    if(cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
+    if(sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
+    if(igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
   }
 
   // "Final Price" is the strongest invoice-total signal. Do not fall back to
