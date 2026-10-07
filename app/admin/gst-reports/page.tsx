@@ -605,20 +605,40 @@ export default function GstReportsPage() {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
 
-    const widths = [18, 30, 24, 18, 16, 16, 14, 14, 14, 18, 46]
+    const widths = [18, 30, 24, 20, 16, 16, 14, 14, 14, 18, 48]
     const htmlRows = rows.map((values, rowIndex) => {
+      const firstCell = String(values[0] ?? '')
+      const isTitle = rowIndex === 0
+      const isHeader = rowIndex === 3
+      const isSection = isTitle || firstCell.endsWith('SUMMARY') || firstCell === 'PURCHASES / ITC' || firstCell === 'CREDIT / DEBIT NOTES'
       const cells = values.map((value, columnIndex) => {
         const isBlank = String(value ?? '') === ''
-        const isSection = rowIndex === 0 || String(values[0] ?? '').endsWith('SUMMARY') || String(values[0] ?? '') === 'PURCHASES / ITC' || String(values[0] ?? '') === 'CREDIT / DEBIT NOTES'
-        return `<td style="min-width:${widths[columnIndex]}ch;width:${widths[columnIndex]}ch;padding:7px 12px;vertical-align:top;border-bottom:1px solid #e5e7eb;${isSection ? 'font-weight:700;background:#f5f7f2;' : ''}">${isBlank ? '&nbsp;' : escapeHtml(value)}</td>`
+        let background = '#ffffff'
+        let fontWeight = '400'
+        let fontColor = '#1f2937'
+        if (isTitle) {
+          background = '#eaf3df'
+          fontWeight = '700'
+          fontColor = '#173b22'
+        } else if (isHeader) {
+          background = '#dce9d0'
+          fontWeight = '700'
+          fontColor = '#173b22'
+        } else if (isSection) {
+          background = '#f1f5ec'
+          fontWeight = '700'
+          fontColor = '#203326'
+        }
+        const alignment = columnIndex >= 5 && columnIndex <= 9 ? 'text-align:right;' : 'text-align:left;'
+        return `<td style="min-width:${widths[columnIndex]}ch;width:${widths[columnIndex]}ch;padding:8px 12px;vertical-align:top;border:1px solid #cfd8c8;background:${background};font-weight:${fontWeight};color:${fontColor};${alignment}">${isBlank ? '&nbsp;' : escapeHtml(value)}</td>`
       }).join('')
       return `<tr>${cells}</tr>`
     }).join('')
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><style>
-      body{font-family:Calibri,Arial,sans-serif;font-size:11pt}
-      table{border-collapse:collapse;table-layout:fixed}
-      td{white-space:normal}
+      body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1f2937}
+      table{border-collapse:collapse;table-layout:fixed;border:1px solid #aeb9a8}
+      td{white-space:normal;line-height:1.35}
     </style></head><body><table>${htmlRows}</table></body></html>`
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
