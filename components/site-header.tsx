@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, X, Search, User, ChevronDown } from 'lucide-react'
@@ -20,9 +20,28 @@ export function SiteHeader() {
   const [hiddenProductSlugs, setHiddenProductSlugs] = useState<Set<string>>(new Set())
   const pathname = usePathname()
   const router = useRouter()
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      const height = headerRef.current?.getBoundingClientRect().height ?? 0
+      document.documentElement.style.setProperty('--tenoo-site-header-height', `${height}px`)
+    }
+
+    updateHeaderHeight()
+    const observer = new ResizeObserver(updateHeaderHeight)
+    if (headerRef.current) observer.observe(headerRef.current)
+    window.addEventListener('resize', updateHeaderHeight)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateHeaderHeight)
+      document.documentElement.style.removeProperty('--tenoo-site-header-height')
+    }
+  }, [])
   const [user, setUser] = useState<any>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
+  const headerRef = useRef<HTMLElement | null>(null)
 const isAdminPage = pathname.startsWith('/admin')
 
 useEffect(() => {
@@ -99,6 +118,7 @@ useEffect(() => {
       <>
     {!isAdminPage && <AnnouncementBar />}
     <header
+      ref={headerRef}
       onClickCapture={(event) => {
         const target = event.target as HTMLElement
         const link = target.closest('a')
