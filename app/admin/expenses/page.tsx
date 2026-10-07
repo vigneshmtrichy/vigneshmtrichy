@@ -103,8 +103,8 @@ const parseInvoiceText=(text:string)=>{
 
   const explicitAmount=(label:RegExp)=>{
     const patterns=[
-      new RegExp(label.source+'\s*[:#-]?\s*(?:₹|Rs\\.?|INR)?\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i'),
-      new RegExp(label.source+'[^\\n]{0,40}?(?:₹|Rs\\.?|INR)\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i')
+      new RegExp(`${label.source}\\s*[:#-]?\\s*(?:₹|Rs\\.?|INR)?\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)`,'i'),
+      new RegExp(`${label.source}[^\\n]{0,60}?(?:₹|Rs\\.?|INR)\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)`,'i')
     ]
     for(const re of patterns){
       const m=joined.match(re)
@@ -114,6 +114,8 @@ const parseInvoiceText=(text:string)=>{
   }
 
   let taxable=explicitAmount(/(?:taxable\s*(?:value|amount)|taxable)/)
+  // Prefer Sub Total when the PDF does not explicitly label a taxable value.
+  if(taxable===null)taxable=explicitAmount(/(?:sub\s*total|subtotal)/)
   let cgst=explicitAmount(/(?:CGST|central\s*GST)/)
   let sgst=explicitAmount(/(?:SGST|state\s*GST)/)
   let igst=explicitAmount(/(?:IGST|integrated\s*GST)/)
@@ -136,11 +138,7 @@ const parseInvoiceText=(text:string)=>{
     if(sgst===null&&blockAmounts.length>=2)sgst=blockAmounts[1]
   }
 
-  // Explicit "Total : ₹2,100.00" is the taxable/cart total on this invoice.
-  if(taxable===null){
-    const total=explicitAmount(/(?:^|\\n)total/)
-    if(total!==null)taxable=total
-  }
+  // Never use the final Total as taxable; that would double-count GST.
 
   // Product-table fallback: pick the largest monetary value from a row that
   // contains a quantity/rate-style numeric sequence.
@@ -175,7 +173,9 @@ const parseInvoiceText=(text:string)=>{
   // "Final Price" is the strongest invoice-total signal. Do not fall back to
   // a nearby tax amount when this explicit label exists.
   const finalPrice=explicitAmount(/final\s*price/)
-  const grandTotal=explicitAmount(/(?:grand\s*total|invoice\s*total|amount\s*payable|net\s*amount)/)
+  const grandTotal=
+    explicitAmount(/(?:grand\s*total|invoice\s*total|amount\s*payable|net\s*amount)/) ??
+    explicitAmount(/(?:^|\\n)total\\b/)
   let invoiceTotal=finalPrice!==null?String(finalPrice):grandTotal!==null?String(grandTotal):''
   if(!invoiceTotal&&taxable!==null){
     const calculated=taxable+(cgst||0)+(sgst||0)+(igst||0)
@@ -203,16 +203,24 @@ const parseInvoiceText=(text:string)=>{
     }
   }
 
-  const supplierCandidates=lines.slice(0,Math.min(lines.length,20)).filter(x=>
-    /\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) &&
-    !/(invoice|total|gst|date|phone|email|address|customer|shipping|billing)/i.test(x)
-  )
-  const supplier=supplierCandidates[0] ||
-    pick(/(?:supplier|vendor|seller|billed\s*by|from)\s*[:\-]?\s*([^\n]{2,80})/i) ||
-    ''
-  
+  const cleanSupplier=(value:string)=>value
+    .replace(/^(?:account\s*name|supplier\s*name|vendor\s*name|seller\s*name|name|company)\s*[:#-]?\s*/i,'')
+    .trim()
+
+  const supplierCandidates=lines.slice(0,Math.min(lines.length,20))
+    .map(cleanSupplier)
+    .filter(x=>
+      /\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) &&
+      !/(invoice|total|gst|date|phone|email|address|customer|shipping|billing|quote|quotation)/i.test(x)
+    )
+  const supplier=cleanSupplier(supplierCandidates[0] ||
+    pick(/(?:supplier|vendor|seller|billed\s*by|from|account\s*name)\s*[:\-]?\s*([^\n]{2,100})/i) ||
+    '')
+
+  const isQuotation=/\b(?:quote|quotation)\s*(?:#|no\.?|number)?\s*[A-Z0-9._/-]+/i.test(normalized)
+
   return {
-    supplier_name:supplier.replace(/^(name|company)\s*[:\-]?\s*/i,''),
+    supplier_name:supplier,
     supplier_gstin:gstin,
     invoice_number:invoiceNumber,
     invoice_date:invoiceDate,
@@ -220,7 +228,8 @@ const parseInvoiceText=(text:string)=>{
     cgst:cgst!==null?String(cgst):'',
     sgst:sgst!==null?String(sgst):'',
     igst:igst!==null?String(igst):'',
-    invoice_total:invoiceTotal
+    invoice_total:invoiceTotal,
+    document_warning:isQuotation?'This document appears to be a quotation, not a tax invoice. Verify the final invoice before claiming ITC.':''
   }
 }
 
@@ -310,7 +319,8 @@ export default function BusinessExpensesPage(){
     // Count only the editable form fields. invoice_total is derived/display-only,
     // so it should not inflate the "auto-filled fields" count.
     const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst].filter(Boolean).length
-    setOcrNote(count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text was read, but the fields could not be identified. Please enter them manually.')
+    const autoMessage=count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text was read, but the fields could not be identified. Please enter them manually.'
+    setOcrNote(parsed.document_warning ? parsed.document_warning+' '+autoMessage : autoMessage)
   }catch(e:any){
     setOcrNote(e.message||'Automatic invoice reading failed. You can continue with manual entry.')
   }finally{
