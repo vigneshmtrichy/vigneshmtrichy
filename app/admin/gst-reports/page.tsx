@@ -253,7 +253,7 @@ export default function GstReportsPage() {
           reason: row.reason || '',
         }))
 
-      const master: Record<string, { hsn: string; uqc: string }> = {}
+      const master: Record<string, { hsn: string; uqc: string; rate: number }> = {}
       ;(productRows || []).forEach((row: any) => {
         master[row.product_slug] = {
           hsn: row.hsn_code || '',
@@ -331,8 +331,16 @@ export default function GstReportsPage() {
         const directTaxable = sale.channel === 'Retailer'
           ? Number(item.line_total || 0)
           : Number(item.taxable_amount || 0)
-        const grossLine = Number(item.line_total || item.total || item.price || 0) * Math.max(qty, 1)
-        const grossBase = sale.items.reduce((sum: number, current: any) => sum + (Number(current.line_total || current.total || current.price || 0) * Math.max(Number(current.quantity || 0), 1)), 0)
+        const grossLine = Number(item.line_total || 0) > 0
+          ? Number(item.line_total)
+          : Number(item.total || item.price || 0) * Math.max(qty, 1)
+        const grossBase = sale.items.reduce((sum: number, current: any) => {
+          const currentQty = Math.max(Number(current.quantity || 0), 1)
+          const currentLine = Number(current.line_total || 0) > 0
+            ? Number(current.line_total)
+            : Number(current.total || current.price || 0) * currentQty
+          return sum + currentLine
+        }, 0)
         const taxable = directTaxable > 0
           ? directTaxable
           : grossBase > 0
