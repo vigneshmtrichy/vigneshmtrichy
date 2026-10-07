@@ -580,6 +580,10 @@ export default function GstReportsPage() {
                   {checklistItems.map(([key,label]) => <div key={key} className={`rounded-xl border px-4 py-3 text-sm ${checklist[key] ? 'border-emerald-200 bg-emerald-50' : 'bg-background'}`}>{checklist[key] ? '✓ ' : '○ '}{label}</div>)}
                 </div>
               </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-900">
+                <p className="font-semibold">Quarterly filing note</p>
+                <p className="mt-1">If Tenoo is on the QRMP scheme, GSTR-1 and GSTR-3B are filed quarterly, but tax payment is still made monthly. Keep this quarter report alongside the monthly payment/challan records.</p>
+              </div>
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
                 <p className="font-semibold">Important filing boundary</p>
                 <p className="mt-1">This page prepares and reconciles figures from your website. It does not file GSTR-1/GSTR-3B and it does not decide eligibility of ITC. GST portal data, invoice records, reversals, RCM and other adjustments must be checked before filing.</p>
