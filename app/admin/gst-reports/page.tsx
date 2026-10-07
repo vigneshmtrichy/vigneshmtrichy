@@ -579,7 +579,8 @@ export default function GstReportsPage() {
     ])))
     if (notes.length === 0) sections.push(row(['Credit / Debit Note','','','','','','','','','','No credit / debit notes in this quarter.']))
 
-    const blob = new Blob(['\\uFEFF' + sections.join('\\r\\n')], { type: 'text/csv;charset=utf-8;' })
+    const csvContent = '\uFEFF' + sections.join('\r\n') + '\r\n'
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -647,7 +648,7 @@ export default function GstReportsPage() {
             ].map(([label, value]) => <div key={label} className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>)}
           </div>
 
-          <div className="sticky top-[104px] z-40 -mx-4 mt-6 border-b bg-background/95 px-4 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6 md:top-[104px]">
+          <div className="sticky top-[104px] z-[45] -mx-4 mt-6 border-y border-border/70 bg-background px-4 shadow-md backdrop-blur-md sm:-mx-6 sm:px-6">
             <div className="flex gap-2 overflow-x-auto">
               {[
                 ['overview','Overview'],['gstr1','GSTR-1 Working'],['gstr3b','GSTR-3B Working'],['hsn','HSN / B2B / State'],['itc','ITC / GSTR-2B'],['notes','Credit / Debit Notes'],['closing','Quarter Closing'],
