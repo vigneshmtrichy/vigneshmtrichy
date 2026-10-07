@@ -201,11 +201,28 @@ export default function BusinessExpensesPage(){
   if(selected.size>1048576){setOcrNote('OCR skipped: files over 1 MB are saved normally, but automatic reading needs a smaller file. You can still fill the fields manually.');return}
   setOcrBusy(true);
   try{
-    const fd=new FormData();fd.append('file',selected);fd.append('language','auto');fd.append('OCREngine','3');fd.append('isTable','true');fd.append('detectOrientation','true');fd.append('scale','true');
-    const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',headers:{apikey:'helloworld'},body:fd});
-    const json=await res.json();
-    const text=(json.ParsedResults||[]).map((x:{ParsedText?:string})=>x.ParsedText||'').join('\n');
-    if(!text.trim())throw Error(json.ErrorMessage||'No readable text found in the invoice.');
+    const makeRequest=async(engine:'2'|'3')=>{
+      const fd=new FormData();
+      fd.append('file',selected);
+      fd.append('language','auto');
+      fd.append('OCREngine',engine);
+      fd.append('isTable','true');
+      fd.append('detectOrientation','true');
+      fd.append('scale','true');
+      const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',headers:{apikey:'helloworld'},body:fd});
+      const json=await res.json();
+      const text=(json.ParsedResults||[]).map((x:{ParsedText?:string})=>x.ParsedText||'').join('\n');
+      return {json,text};
+    };
+    let result=await makeRequest('3');
+    // OCR.space can occasionally return an empty result for a PDF with Engine 3.
+    // Retry once with Engine 2 before asking the user to enter the bill manually.
+    if(!result.text.trim())result=await makeRequest('2');
+    const {json}=result;
+    const text=result.text;
+    if(!text.trim()){
+      const detail=Array.isArray(json.ErrorMessage)?json.ErrorMessage.join(' '):json.ErrorMessage;
+      throw Error(detail||json.ErrorDetails||'No readable text found in the invoice. Please try the upload once more.');
     const parsed=parseInvoiceText(text);
     setForm(prev=>({...prev,supplier_name:parsed.supplier_name||prev.supplier_name,supplier_gstin:parsed.supplier_gstin||prev.supplier_gstin,invoice_number:parsed.invoice_number||prev.invoice_number,invoice_date:parsed.invoice_date||prev.invoice_date,taxable_amount:parsed.taxable_amount||prev.taxable_amount,cgst:parsed.cgst||prev.cgst,sgst:parsed.sgst||prev.sgst,igst:parsed.igst!==''?parsed.igst:prev.igst}));
     if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total));
