@@ -21,97 +21,137 @@ const parseMoney=(value:string)=>{
   return Number.isFinite(n)?n:null
 }
 const parseInvoiceText=(text:string)=>{
-  const lines=text.split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean)
+  const normalized=text.replace(/[\u00a0\u2007\u202f]/g,' ').replace(/[￾]/g,' ')
+  const lines=normalized.split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean)
   const joined=lines.join('\n')
+  const flat=lines.join(' | ')
   const pick=(re:RegExp)=>{const m=joined.match(re);return m?.[1]?.trim()||''}
-  const gstin=(joined.match(/\b\d{2}[A-Z0-9]{5}\d{4}[A-Z0-9]{1}[A-Z0-9]\dZ[A-Z0-9]\b/i)?.[0]||'').toUpperCase()
+
+  const gstin=(joined.replace(/\s+/g,'').match(/\b\d{2}[A-Z0-9]{5}\d{4}[A-Z0-9][A-Z0-9]\dZ[A-Z0-9]\b/i)?.[0]||'').toUpperCase()
 
   const parseDateValue=(value:string)=>{
     const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
     let m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/)
     if(m)return `${m[3].length===2?'20'+m[3]:m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`
     m=s.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/)
-    if(m){
-      const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],month=months.indexOf(m[2].slice(0,3).toLowerCase())
-      if(month>=0)return `${m[3]}-${String(month+1).padStart(2,'0')}-${m[1].padStart(2,'0')}`
-    }
-    m=s.match(/^([A-Za-z]{3,9})\s+(\d{1,2})\s+(\d{4})$/)
-    if(m){
-      const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],month=months.indexOf(m[1].slice(0,3).toLowerCase())
-      if(month>=0)return `${m[3]}-${String(month+1).padStart(2,'0')}-${m[2].padStart(2,'0')}`
-    }
+    if(m){const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],month=months.indexOf(m[2].slice(0,3).toLowerCase());if(month>=0)return `${m[3]}-${String(month+1).padStart(2,'0')}-${m[1].padStart(2,'0')}`}
     return ''
   }
 
   const invoiceNumber=
     pick(/invoice\s*no\.?\s*#?\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
     pick(/invoice\s*(?:number|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
-    pick(/inv\.?\s*(?:no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i)
+    pick(/order\s*id\s*#?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i)
 
   let invoiceDate=''
   const explicitDate=pick(/(?:invoice\s*date|date\s*of\s*invoice|invoice\s*dt)\s*[:\-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4})/i)
   if(explicitDate)invoiceDate=parseDateValue(explicitDate)
   if(!invoiceDate){
-    const dateLineIndex=lines.findIndex(x=>/date\s+print\s+date\s+ship\s+date\s+delivery\s+date/i.test(x))
-    if(dateLineIndex>=0){
-      const candidate=(lines[dateLineIndex+1]||'').match(/\b\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4}\b|\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/)
+    const dateHeaderIndex=lines.findIndex(x=>/date\s+print\s+date\s+ship\s+date\s+delivery\s+date/i.test(x))
+    if(dateHeaderIndex>=0){
+      const candidate=(lines[dateHeaderIndex+1]||'').match(/\b\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4}\b|\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/)
       if(candidate)invoiceDate=parseDateValue(candidate[0])
     }
   }
+  if(!invoiceDate){
+    const candidate=joined.match(/\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s+(20\d{2})\b/i)
+    if(candidate)invoiceDate=parseDateValue(candidate[0])
+  }
 
-  const amountFromLine=(line:string)=>{
-    const matches=line.match(/(?:₹|Rs\.?|INR)\s*[0-9][0-9,]*(?:\.\d{1,2})?|\b[0-9][0-9,]*\.\d{2}\b/g)||[]
-    for(const value of matches){
-      const n=parseMoney(value)
-      if(n!==null)return n
+  const moneyValues=(value:string)=>{
+    const matches=value.match(/(?:₹|Rs\.?|INR)\s*[0-9][0-9,]*(?:\.\d{1,2})?|\b[0-9][0-9,]*\.\d{2}\b/g)||[]
+    return matches.map(parseMoney).filter((n):n is number=>n!==null)
+  }
+  const findLineAfter=(label:RegExp)=>{
+    for(let i=0;i<lines.length;i++){
+      if(!label.test(lines[i]))continue
+      const same=moneyValues(lines[i]).filter(n=>n>0)
+      if(same.length)return same[same.length-1]
+      for(let j=i+1;j<Math.min(i+4,lines.length);j++){
+        const values=moneyValues(lines[j]).filter(n=>n>0)
+        if(values.length)return values[values.length-1]
+      }
     }
     return null
   }
-  const findLabeledAmount=(label:RegExp)=>{
-    for(let i=0;i<lines.length;i++){
-      if(!label.test(lines[i]))continue
-      const same=amountFromLine(lines[i])
-      if(same!==null&&!/%/.test(lines[i]))return String(same)
-      for(let j=i+1;j<=Math.min(i+3,lines.length-1);j++){
-        if(/(?:CGST|SGST|IGST|TOTAL|FINAL\s+PRICE|PAYMENT|SHIPPING)/i.test(lines[j])&&j!==i+1)break
-        const n=amountFromLine(lines[j])
-        if(n!==null&&!/%/.test(lines[j]))return String(n)
+
+  let taxable=findLineAfter(/(?:taxable\s*(?:value|amount)|taxable)/i)
+  let cgst=findLineAfter(/(?:CGST|central\s*GST)/i)
+  let sgst=findLineAfter(/(?:SGST|state\s*GST)/i)
+  let igst=findLineAfter(/(?:IGST|integrated\s*GST)/i)
+
+  // Many invoice OCR layouts put the GST rate on one line and the tax amounts
+  // on the next line. Never treat a percentage such as "9 (%)" as the tax amount.
+  if(cgst===9 || cgst===18 || cgst===5)cgst=null
+  if(sgst===9 || sgst===18 || sgst===5)sgst=null
+  if(igst===9 || igst===18 || igst===5)igst=null
+
+  const finalPrice=findLineAfter(/(?:final\s*price|grand\s*total|amount\s*payable|net\s*amount)/i)
+  let invoiceTotal=finalPrice!==null?String(finalPrice):''
+  if(!invoiceTotal){
+    const totalLineIndex=lines.findIndex(x=>/^total\s*:/i.test(x))
+    if(totalLineIndex>=0){
+      const values=moneyValues(lines[totalLineIndex])
+      if(values.length)taxable=values[values.length-1]
+    }
+  }
+
+  // Product table fallback: e.g. "... Quantity Rate Total / 6 ₹350.00 ₹2,100.00".
+  // Use the last monetary value from a row containing quantity + rate + total.
+  if(taxable===null){
+    for(const line of lines){
+      const values=moneyValues(line)
+      if(values.length>=2 && /\b\d+\b/.test(line) && values[values.length-1]>values[0]){
+        taxable=values[values.length-1]
+        break
       }
     }
-    return ''
   }
 
-  const taxable=findLabeledAmount(/(?:taxable\s*(?:value|amount)|taxable)/i)
-  const cgst=findLabeledAmount(/(?:CGST|central\s*GST)/i)
-  const sgst=findLabeledAmount(/(?:SGST|state\s*GST)/i)
-  const igst=findLabeledAmount(/(?:IGST|integrated\s*GST)/i)
-
-  let invoiceTotal=findLabeledAmount(/(?:final\s*price|grand\s*total|invoice\s*total|total\s*amount|amount\s*payable|net\s*amount)/i)
-  if(!invoiceTotal){
-    const finalIndex=lines.findIndex(x=>/final\s*price|grand\s*total|amount\s*payable/i.test(x))
-    if(finalIndex>=0)invoiceTotal=String(amountFromLine(lines[finalIndex])??'')
+  // If the invoice exposes GST percentages but OCR separated the tax amounts,
+  // calculate the tax from the detected taxable value. This is safer than using
+  // the percentage number itself as a currency amount.
+  if(taxable!==null){
+    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    if(cgst===null && cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
+    if(sgst===null && sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
+    if(igst===null && igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
   }
 
-  let taxableAmount=taxable
-  if(!taxableAmount){
-    const totalIndex=lines.findIndex(x=>/^total\s*[:\-]?/i.test(x))
-    if(totalIndex>=0)taxableAmount=String(amountFromLine(lines[totalIndex])??'')
+  // On invoices with a final price but no explicit taxable label, the total
+  // before coupon/shipping is usually the taxable line in the cart section.
+  if(taxable===null){
+    const totalIndex=lines.findIndex(x=>/^total\s*:/i.test(x))
+    if(totalIndex>=0){
+      const values=moneyValues(lines[totalIndex])
+      if(values.length)taxable=values[values.length-1]
+    }
   }
 
-  const supplier=
+  if(!invoiceTotal && taxable!==null){
+    const calculated=taxable+(cgst||0)+(sgst||0)+(igst||0)
+    if(calculated>0)invoiceTotal=String(calculated)
+  }
+
+  const supplierCandidates=lines.slice(0,Math.min(lines.length,20)).filter(x=>
+    /\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) &&
+    !/(invoice|total|gst|date|phone|email|address|customer|shipping|billing)/i.test(x)
+  )
+  const supplier=supplierCandidates[0] ||
     pick(/(?:supplier|vendor|seller|billed\s*by|from)\s*[:\-]?\s*([^\n]{2,80})/i) ||
-    (lines.find(x=>/\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) && !/(invoice|total|gst|date|phone|email|address)/i.test(x)) || '') ||
-    (lines.find(x=>!/(invoice|tax|gst|amount|date|phone|email|bill|total|state|code|payment|shipping|customer|billing)/i.test(x) && /[A-Za-z]{3}/.test(x) && x.length<=80) || '')
-
+    ''
+  
   return {
     supplier_name:supplier.replace(/^(name|company)\s*[:\-]?\s*/i,''),
     supplier_gstin:gstin,
     invoice_number:invoiceNumber,
     invoice_date:invoiceDate,
-    taxable_amount:taxableAmount,
-    cgst,
-    sgst,
-    igst,
+    taxable_amount:taxable!==null?String(taxable):'',
+    cgst:cgst!==null?String(cgst):'',
+    sgst:sgst!==null?String(sgst):'',
+    igst:igst!==null?String(igst):'',
     invoice_total:invoiceTotal
   }
 }
