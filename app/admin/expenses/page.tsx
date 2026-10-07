@@ -27,11 +27,12 @@ const parseInvoiceText=(text:string)=>{
   const flat=lines.join(' | ')
   const pick=(re:RegExp)=>{const m=joined.match(re);return m?.[1]?.trim()||''}
 
-  const gstinCandidates=[...normalized.matchAll(/(?:GSTIN|GST\s*No\.?|GST\s*Number)?\s*[:#-]?\s*([0-9A-Z][0-9A-Z\s-]{12,20}[0-9A-Z])/gi)]
-    .map(m=>m[1].replace(/[^0-9A-Z]/gi,'').toUpperCase())
-  const compactAlphaNum=normalized.replace(/[^0-9A-Z]/gi,'').toUpperCase()
-  const gstin=(gstinCandidates.find(v=>/^\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]$/.test(v)) ||
-    compactAlphaNum.match(/\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]/)?.[0]||'').toUpperCase()
+  // Prefer an explicit GSTIN/GSTIN-UIN label, then fall back to a standalone
+  // 15-character GSTIN anywhere in the extracted invoice text. This avoids
+  // OCR variants such as "GSTIN/UIN: 33AAKCB7691R1ZS" being missed.
+  const gstinPattern=/\b\d{2}[A-Z]{5}\d{4}[A-Z][0-9A-Z]Z[A-Z0-9]\b/i
+  const explicitGstin=normalized.match(/\b(?:GSTIN(?:\/UIN)?|GST\s*(?:No\.?|Number))\s*[:#-]?\s*([0-9A-Z]{15})\b/i)?.[1]||''
+  const gstin=(explicitGstin||normalized.match(gstinPattern)?.[0]||'').toUpperCase()
 
   const parseDateValue=(value:string)=>{
     const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
@@ -295,7 +296,9 @@ export default function BusinessExpensesPage(){
       igst:parsed.igst!==''?parsed.igst:prev.igst
     }))
     if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total))
-    const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst,parsed.invoice_total].filter(Boolean).length
+    // Count only the editable form fields. invoice_total is derived/display-only,
+    // so it should not inflate the "auto-filled fields" count.
+    const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst].filter(Boolean).length
     setOcrNote(count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text was read, but the fields could not be identified. Please enter them manually.')
   }catch(e:any){
     setOcrNote(e.message||'Automatic invoice reading failed. You can continue with manual entry.')
