@@ -6,7 +6,7 @@ export function Hero() {
     <section id="tenoo-hero" className="relative mt-3 = 12px w-full overflow-hidden">
       <div className="relative">
         <Image
-          src="/home-banner.png"
+          src="/home-banner.webp"
           alt="TENOO — Rooted in Indian Food"
           width={2048}
           height={768}
