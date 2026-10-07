@@ -563,7 +563,7 @@ export default function GstReportsPage() {
 
           <div className="mt-6 flex gap-2 overflow-x-auto border-b">
             {[
-              ['overview','Overview'],['gstr1','GSTR-1 Working'],['hsn','HSN / B2B / State'],['itc','ITC / GSTR-2B'],['notes','Credit / Debit Notes'],['closing','Quarter Closing'],
+              ['overview','Overview'],['gstr1','GSTR-1 Working'],['gstr3b','GSTR-3B Working'],['hsn','HSN / B2B / State'],['itc','ITC / GSTR-2B'],['notes','Credit / Debit Notes'],['closing','Quarter Closing'],
             ].map(([value,label]) => <button key={value} type="button" onClick={() => setTab(value)} className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold ${tab === value ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{label}</button>)}
           </div>
 
@@ -594,7 +594,47 @@ export default function GstReportsPage() {
                 <p className="mt-1 text-xs text-muted-foreground">Use this as your quarter-level outward-supply working. Retailer orders are treated as B2B and online orders as B2C in this internal report.</p>
                 <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="px-3 py-3">Channel</th><th className="px-3 py-3 text-right">Invoices</th><th className="px-3 py-3 text-right">Taxable</th><th className="px-3 py-3 text-right">CGST</th><th className="px-3 py-3 text-right">SGST</th><th className="px-3 py-3 text-right">IGST</th><th className="px-3 py-3 text-right">Total</th></tr></thead><tbody>{['Online','Retailer'].map((channel) => { const rows=sales.filter(r=>r.channel===channel); const v=rows.reduce((s,r)=>({taxable:s.taxable+r.taxable,cgst:s.cgst+r.cgst,sgst:s.sgst+r.sgst,igst:s.igst+r.igst,total:s.total+r.total}),{taxable:0,cgst:0,sgst:0,igst:0,total:0}); return <tr key={channel} className="border-b"><td className="px-3 py-3 font-semibold">{channel==='Online'?'B2C':'B2B'}</td><td className="px-3 py-3 text-right">{rows.length}</td><td className="px-3 py-3 text-right">{money(v.taxable)}</td><td className="px-3 py-3 text-right">{money(v.cgst)}</td><td className="px-3 py-3 text-right">{money(v.sgst)}</td><td className="px-3 py-3 text-right">{money(v.igst)}</td><td className="px-3 py-3 text-right font-semibold">{money(v.total)}</td></tr>})}<tr className="bg-muted/30 font-bold"><td className="px-3 py-3">Net outward after notes</td><td className="px-3 py-3 text-right">{sales.length}</td><td className="px-3 py-3 text-right">{money(netOutput.taxable)}</td><td className="px-3 py-3 text-right">{money(netOutput.cgst)}</td><td className="px-3 py-3 text-right">{money(netOutput.sgst)}</td><td className="px-3 py-3 text-right">{money(netOutput.igst)}</td><td className="px-3 py-3 text-right">{money(netOutput.taxable+netOutput.cgst+netOutput.sgst+netOutput.igst)}</td></tr></tbody></table></div>
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <p className="font-semibold">Pending orders in this period: {sales.filter((row) => row.status === 'pending').length}</p>
+                  <p className="mt-1 text-xs">These are included in the website working set but should be checked against the actual invoice / time-of-supply before filing.</p>
+                </div>
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                  <p className="font-semibold">B2C Large candidates: {sales.filter((row) => row.channel === 'Online' && row.igst > 0 && row.total > 100000).length}</p>
+                  <p className="mt-1 text-xs">Current GST portal guidance uses the inter-state consumer threshold of more than ₹1 lakh for B2C Large from August 2024 return periods.</p>
+                </div>
+              </div>
               <div className="rounded-2xl border bg-background p-5"><h2 className="font-semibold">Invoice-level sales register</h2><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[900px] text-xs"><thead><tr className="border-b text-left text-muted-foreground"><th className="px-3 py-2">Date</th><th className="px-3 py-2">Channel</th><th className="px-3 py-2">Party</th><th className="px-3 py-2">GSTIN</th><th className="px-3 py-2">State</th><th className="px-3 py-2 text-right">Taxable</th><th className="px-3 py-2 text-right">GST</th><th className="px-3 py-2 text-right">Total</th></tr></thead><tbody>{sales.map((row)=><tr key={row.id} className="border-b"><td className="px-3 py-2">{indiaDate(row.date)}</td><td className="px-3 py-2">{row.channel}</td><td className="px-3 py-2">{row.party}</td><td className="px-3 py-2">{row.gstin||'—'}</td><td className="px-3 py-2">{row.state||'—'}</td><td className="px-3 py-2 text-right">{money(row.taxable)}</td><td className="px-3 py-2 text-right">{money(row.cgst+row.sgst+row.igst)}</td><td className="px-3 py-2 text-right font-semibold">{money(row.total)}</td></tr>)}</tbody></table></div></div>
+            </section>
+          )}
+
+          {tab === 'gstr3b' && (
+            <section className="mt-6 space-y-5">
+              <div className="rounded-2xl border bg-background p-5">
+                <h2 className="font-semibold">GSTR-3B working summary</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Internal working only. The final return can include other liabilities, RCM, reversals, blocked/ineligible ITC and adjustments that are not represented here.</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Output CGST</p><p className="mt-1 text-lg font-bold">{money(netOutput.cgst)}</p></div>
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Output SGST</p><p className="mt-1 text-lg font-bold">{money(netOutput.sgst)}</p></div>
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Output IGST</p><p className="mt-1 text-lg font-bold">{money(netOutput.igst)}</p></div>
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Matched ITC</p><p className="mt-1 text-lg font-bold">{money(input.matchedItc)}</p></div>
+                </div>
+                <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div><p className="text-sm font-semibold">Working net GST after matched ITC</p><p className="mt-1 text-xs text-muted-foreground">Output GST {money(netOutputGst)} − matched ITC {money(input.matchedItc)}</p></div>
+                    <p className="text-2xl font-bold">{money(estimatedNetPayable)}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-background p-5">
+                <h2 className="font-semibold">ITC safety checks</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Bills with ITC = Yes</p><p className="mt-1 text-lg font-bold">{money(input.itc)}</p></div>
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">ITC + GSTR-2B matched</p><p className="mt-1 text-lg font-bold">{money(input.matchedItc)}</p></div>
+                  <div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">2B not matched</p><p className="mt-1 text-lg font-bold">{expenses.filter((row) => row.gstr2b_status !== 'Matched').length}</p></div>
+                </div>
+                <p className="mt-4 text-xs text-muted-foreground">GSTR-2B is a read-only auto-drafted statement used to support ITC decisions. Do not treat the website's matched amount as an automatic eligibility decision.</p>
+              </div>
             </section>
           )}
 
