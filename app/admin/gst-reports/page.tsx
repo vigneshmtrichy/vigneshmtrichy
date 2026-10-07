@@ -466,17 +466,21 @@ export default function GstReportsPage() {
 
   const exportCsv = () => {
     const sections: string[] = []
-    const row = (values: unknown[]) => values.map(csvEscape).join(',')
+    const row = (values: unknown[]) => {
+      const padded = [...values, ...Array(Math.max(0, 11 - values.length)).fill('')]
+      return padded.slice(0, 11).map(csvEscape).join(',')
+    }
     const amount = (value: number) => Number.isFinite(Number(value)) ? Number(Number(value).toFixed(2)).toFixed(2) : '0.00'
     const qty = (value: number) => Number.isFinite(Number(value)) ? Number(Number(value).toFixed(2)).toFixed(2) : '0.00'
     const whole = (value: number) => Number.isFinite(Number(value)) ? String(Math.round(Number(value))) : '0'
 
+    // Every row uses the same 11 columns so Excel/WPS cannot shift later sections.
     sections.push(row(['TENOO GST WORKING SUMMARY', `${fyLabel} ${quarterConfig.value}`]))
     sections.push(row(['Period', `${indiaDate(quarterConfig.start)} - ${indiaDate(quarterConfig.end)}`]))
     sections.push('')
+    sections.push(row(['Section','Item / Party','GSTIN / Number','Date / State','UQC / Rate','Taxable','CGST','SGST','IGST','GST / Total','Status / Notes']))
 
     sections.push(row(['SALES SUMMARY']))
-    sections.push(row(['Channel','Taxable','CGST','SGST','IGST','Total']))
     ;['Online','Retailer'].forEach((channel) => {
       const rows = sales.filter((item) => item.channel === channel)
       const values = rows.reduce((sum, item) => ({
@@ -486,45 +490,100 @@ export default function GstReportsPage() {
         igst: sum.igst + item.igst,
         total: sum.total + item.total,
       }), { taxable:0,cgst:0,sgst:0,igst:0,total:0 })
-      sections.push(row([channel, amount(values.taxable), amount(values.cgst), amount(values.sgst), amount(values.igst), amount(values.total)]))
+      sections.push(row(['Sales Summary', channel, '', '', '', amount(values.taxable), amount(values.cgst), amount(values.sgst), amount(values.igst), amount(values.total), `${rows.length} invoices`]))
     })
-    sections.push(row(['TOTAL OUTPUT', amount(netOutput.taxable), amount(netOutput.cgst), amount(netOutput.sgst), amount(netOutput.igst), amount(netOutput.taxable + netOutput.cgst + netOutput.sgst + netOutput.igst)]))
+    sections.push(row(['Sales Summary','TOTAL OUTPUT','','','','',amount(netOutput.cgst),amount(netOutput.sgst),amount(netOutput.igst),amount(netOutput.taxable + netOutput.cgst + netOutput.sgst + netOutput.igst),`${amount(netOutput.taxable)} taxable`]))
     sections.push('')
 
     sections.push(row(['PURCHASES / ITC']))
-    sections.push(row(['Supplier','GSTIN','Taxable','CGST','SGST','IGST','Total','ITC','GSTR-2B']))
-    expenses.forEach((item) => sections.push(row([item.supplier_name,item.supplier_gstin,amount(item.taxable_amount),amount(item.cgst),amount(item.sgst),amount(item.igst),amount(item.total_amount),item.itc_status,item.gstr2b_status])))
-    if (expenses.length === 0) sections.push(row(['No purchase / expense bills in this quarter.']))
+    expenses.forEach((item) => sections.push(row([
+      'Purchases / ITC',
+      item.supplier_name,
+      item.supplier_gstin || '',
+      indiaDate(item.invoice_date),
+      '',
+      amount(item.taxable_amount),
+      amount(item.cgst),
+      amount(item.sgst),
+      amount(item.igst),
+      amount(item.total_amount),
+      `${item.itc_status} · ${item.gstr2b_status}`,
+    ])))
+    if (expenses.length === 0) sections.push(row(['Purchases / ITC','','','','','','','','','','No purchase / expense bills in this quarter.']))
     sections.push('')
 
     sections.push(row(['HSN SUMMARY']))
-    sections.push(row(['HSN','UQC','Rate','B2B Qty','B2B Taxable','B2B GST','B2C Qty','B2C Taxable','B2C GST']))
-    hsnRows.forEach((item) => sections.push(row([item.hsn,item.uqc,amount(item.rate),qty(item.b2bQty),amount(item.b2bTaxable),amount(item.b2bGst),qty(item.b2cQty),amount(item.b2cTaxable),amount(item.b2cGst)])))
-    if (hsnRows.length === 0) sections.push(row(['No HSN sales in this quarter.']))
+    hsnRows.forEach((item) => sections.push(row([
+      'HSN Summary',
+      item.hsn,
+      '',
+      '',
+      `${item.uqc} / ${amount(item.rate)}%`,
+      amount(item.b2bTaxable + item.b2cTaxable),
+      '',
+      '',
+      '',
+      amount(item.b2bGst + item.b2cGst),
+      `B2B Qty ${qty(item.b2bQty)} · B2C Qty ${qty(item.b2cQty)} · B2B Taxable ${amount(item.b2bTaxable)} · B2C Taxable ${amount(item.b2cTaxable)}`,
+    ])))
+    if (hsnRows.length === 0) sections.push(row(['HSN Summary','','','','','','','','','','No HSN sales in this quarter.']))
     sections.push('')
 
     sections.push(row(['B2B SUMMARY']))
-    sections.push(row(['Party','GSTIN','State','Invoices','Taxable','GST','Total']))
-    b2bRows.forEach((item) => sections.push(row([item.name,item.gstin,item.state,whole(item.invoices),amount(item.taxable),amount(item.gst),amount(item.total)])))
-    if (b2bRows.length === 0) sections.push(row(['No B2B sales in this quarter.']))
+    b2bRows.forEach((item) => sections.push(row([
+      'B2B Summary',
+      item.name,
+      item.gstin || '',
+      item.state || '',
+      whole(item.invoices),
+      amount(item.taxable),
+      '',
+      '',
+      '',
+      amount(item.gst),
+      `Total ${amount(item.total)}`,
+    ])))
+    if (b2bRows.length === 0) sections.push(row(['B2B Summary','','','','','','','','','','No B2B sales in this quarter.']))
     sections.push('')
 
     sections.push(row(['STATE SUMMARY']))
-    sections.push(row(['State','Taxable','CGST','SGST','IGST','Total']))
-    stateRows.forEach((item) => sections.push(row([item.state,amount(item.taxable),amount(item.cgst),amount(item.sgst),amount(item.igst),amount(item.total)])))
-    if (stateRows.length === 0) sections.push(row(['No state-wise sales in this quarter.']))
+    stateRows.forEach((item) => sections.push(row([
+      'State Summary',
+      item.state,
+      '',
+      item.state,
+      '',
+      amount(item.taxable),
+      amount(item.cgst),
+      amount(item.sgst),
+      amount(item.igst),
+      amount(item.total),
+      '',
+    ])))
+    if (stateRows.length === 0) sections.push(row(['State Summary','','','','','','','','','','No state-wise sales in this quarter.']))
     sections.push('')
 
     sections.push(row(['CREDIT / DEBIT NOTES']))
-    sections.push(row(['Type','Number','Date','Party','GSTIN','Reference Invoice','Taxable','CGST','SGST','IGST']))
-    notes.forEach((item) => sections.push(row([item.note_type,item.note_number,item.note_date,item.party_name,item.party_gstin,item.reference_invoice,amount(item.taxable_amount),amount(item.cgst),amount(item.sgst),amount(item.igst)])))
-    if (notes.length === 0) sections.push(row(['No credit / debit notes in this quarter.']))
+    notes.forEach((item) => sections.push(row([
+      'Credit / Debit Note',
+      item.party_name,
+      item.party_gstin || '',
+      indiaDate(item.note_date),
+      item.note_number,
+      amount(item.taxable_amount),
+      amount(item.cgst),
+      amount(item.sgst),
+      amount(item.igst),
+      amount(item.taxable_amount + item.cgst + item.sgst + item.igst),
+      `${item.note_type} · Ref ${item.reference_invoice || '—'}`,
+    ])))
+    if (notes.length === 0) sections.push(row(['Credit / Debit Note','','','','','','','','','','No credit / debit notes in this quarter.']))
 
-    const blob = new Blob(['\uFEFF' + sections.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['\\uFEFF' + sections.join('\\r\\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `tenoo-gst-${fyLabel.replace(/[^0-9-]/g, '')}-${quarterConfig.value.toLowerCase()}.csv`
+    link.download = `tenoo-gst-${fyLabel.replace(/[^0-9-]/g, '')}-${quarterConfig.value.toLowerCase()}-working.csv`
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -588,7 +647,7 @@ export default function GstReportsPage() {
             ].map(([label, value]) => <div key={label} className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>)}
           </div>
 
-          <div className="sticky top-[68px] z-40 -mx-4 mt-6 border-b bg-background/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 md:top-[76px]">
+          <div className="sticky top-[104px] z-40 -mx-4 mt-6 border-b bg-background/95 px-4 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6 md:top-[104px]">
             <div className="flex gap-2 overflow-x-auto">
               {[
                 ['overview','Overview'],['gstr1','GSTR-1 Working'],['gstr3b','GSTR-3B Working'],['hsn','HSN / B2B / State'],['itc','ITC / GSTR-2B'],['notes','Credit / Debit Notes'],['closing','Quarter Closing'],
