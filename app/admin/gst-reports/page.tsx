@@ -649,10 +649,7 @@ export default function GstReportsPage() {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Link href="/admin/expenses" className="rounded-xl border bg-background px-4 py-2.5 text-center text-sm font-semibold hover:bg-muted">GST / Expenses</Link>
-              <div className="flex flex-wrap gap-2">
-  <button type="button" onClick={exportCsv} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold"><Download className="h-4 w-4" />CSV</button>
-  <button type="button" onClick={exportExcel} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Download className="h-4 w-4" />Excel</button>
-</div>
+              <button type="button" onClick={exportExcel} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Download className="h-4 w-4" />Excel</button>
             </div>
           </div>
 
