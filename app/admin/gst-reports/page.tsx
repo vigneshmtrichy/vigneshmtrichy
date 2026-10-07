@@ -492,7 +492,7 @@ export default function GstReportsPage() {
       }), { taxable:0,cgst:0,sgst:0,igst:0,total:0 })
       sections.push(row(['Sales Summary', channel, '', '', '', amount(values.taxable), amount(values.cgst), amount(values.sgst), amount(values.igst), amount(values.total), `${rows.length} invoices`]))
     })
-    sections.push(row(['Sales Summary','TOTAL OUTPUT','','','','',amount(netOutput.cgst),amount(netOutput.sgst),amount(netOutput.igst),amount(netOutput.taxable + netOutput.cgst + netOutput.sgst + netOutput.igst),`${amount(netOutput.taxable)} taxable`]))
+    sections.push(row(['Sales Summary','TOTAL OUTPUT','','','',amount(netOutput.taxable),amount(netOutput.cgst),amount(netOutput.sgst),amount(netOutput.igst),amount(netOutput.taxable + netOutput.cgst + netOutput.sgst + netOutput.igst),'Quarter output']))
     sections.push('')
 
     sections.push(row(['PURCHASES / ITC']))
