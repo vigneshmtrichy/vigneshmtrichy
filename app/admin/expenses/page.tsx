@@ -29,8 +29,9 @@ const parseInvoiceText=(text:string)=>{
 
   const gstinCandidates=[...normalized.matchAll(/(?:GSTIN|GST\s*No\.?|GST\s*Number)?\s*[:#-]?\s*([0-9A-Z][0-9A-Z\s-]{12,20}[0-9A-Z])/gi)]
     .map(m=>m[1].replace(/[^0-9A-Z]/gi,'').toUpperCase())
+  const compactAlphaNum=normalized.replace(/[^0-9A-Z]/gi,'').toUpperCase()
   const gstin=(gstinCandidates.find(v=>/^\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]$/.test(v)) ||
-    (normalized.replace(/[^0-9A-Z]/gi,'').match(/\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]/i)?.[0]||'')).toUpperCase()
+    compactAlphaNum.match(/\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]/)?.[0]||'').toUpperCase()
 
   const parseDateValue=(value:string)=>{
     const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
@@ -165,6 +166,26 @@ const parseInvoiceText=(text:string)=>{
     if(calculated>0)invoiceTotal=String(calculated)
   }
   if(igst===null&&((cgst||0)>0||(sgst||0)>0))igst=0
+
+  // If the invoice exposes a reliable grand total, use it as a reconciliation
+  // check. OCR can mistake a nearby product/tax-table amount for SGST/CGST.
+  // When one tax amount is known, derive the other from the invoice total.
+  if(invoiceTotal&&taxable!==null){
+    const grand=Number(invoiceTotal)
+    const knownCgst=cgst||0
+    const knownSgst=sgst||0
+    const expectedTax=grand-taxable-(igst||0)
+    if(expectedTax>=0&&Math.abs((knownCgst+knownSgst)-expectedTax)>0.01){
+      if(knownCgst>0&&knownSgst>0){
+        const reconciledSgst=expectedTax-knownCgst
+        if(reconciledSgst>=0)sgst=Math.round(reconciledSgst*100)/100
+      }else if(knownCgst>0){
+        sgst=Math.round((expectedTax-knownCgst)*100)/100
+      }else if(knownSgst>0){
+        cgst=Math.round((expectedTax-knownSgst)*100)/100
+      }
+    }
+  }
 
   const supplierCandidates=lines.slice(0,Math.min(lines.length,20)).filter(x=>
     /\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) &&
