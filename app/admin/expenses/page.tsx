@@ -223,6 +223,7 @@ export default function BusinessExpensesPage(){
     if(!text.trim()){
       const detail=Array.isArray(json.ErrorMessage)?json.ErrorMessage.join(' '):json.ErrorMessage;
       throw Error(detail||json.ErrorDetails||'No readable text found in the invoice. Please try the upload once more.');
+    }
     const parsed=parseInvoiceText(text);
     setForm(prev=>({...prev,supplier_name:parsed.supplier_name||prev.supplier_name,supplier_gstin:parsed.supplier_gstin||prev.supplier_gstin,invoice_number:parsed.invoice_number||prev.invoice_number,invoice_date:parsed.invoice_date||prev.invoice_date,taxable_amount:parsed.taxable_amount||prev.taxable_amount,cgst:parsed.cgst||prev.cgst,sgst:parsed.sgst||prev.sgst,igst:parsed.igst!==''?parsed.igst:prev.igst}));
     if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total));
