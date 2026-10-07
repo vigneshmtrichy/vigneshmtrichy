@@ -141,9 +141,9 @@ const parseInvoiceText=(text:string)=>{
   }
 
   if(taxable!==null){
-    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\\.\d+)?)\s*\(?\s*%/i)
-    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\\.\d+)?)\s*\(?\s*%/i)
-    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\\.\d+)?)\s*\(?\s*%/i)
+    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
     if(cgst===null&&cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
     if(sgst===null&&sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
     if(igst===null&&igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
