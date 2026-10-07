@@ -116,7 +116,7 @@ export default function GstReportsPage() {
   const current = getCurrentQuarter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [fyYear, setFyYear] = useState(current.year)
-  const [quarter, setQuarter] = useState(current.quarter)
+  const [quarterKey, setQuarterKey] = useState(current.quarter)
   const [tab, setTab] = useState('overview')
   const [sales, setSales] = useState<SalesRow[]>([])
   const [expenses, setExpenses] = useState<ExpenseRow[]>([])
@@ -143,7 +143,7 @@ export default function GstReportsPage() {
     reason: '',
   })
 
-  const quarter = quarterOptions(fyYear).find((item) => item.value === quarter) || quarterOptions(fyYear)[0]
+  const quarterConfig = quarterOptions(fyYear).find((item) => item.value === quarterKey) || quarterOptions(fyYear)[0]
   const fyLabel = `FY ${fyYear}-${String(fyYear + 1).slice(-2)}`
 
   useEffect(() => {
@@ -176,7 +176,7 @@ export default function GstReportsPage() {
         fetchAll('gst_quarter_closings', '*'),
       ])
 
-      const isInQuarter = (date: string) => date >= quarter.start && date <= quarter.end
+      const isInQuarter = (date: string) => date >= quarterConfig.start && date <= quarterConfig.end
       const nextSales: SalesRow[] = []
 
       ;(onlineRows || []).forEach((row: any) => {
@@ -261,7 +261,7 @@ export default function GstReportsPage() {
         }
       })
 
-      const closing = (closingRows || []).find((row: any) => row.financial_year === fyLabel && row.quarter === quarter.value)
+      const closing = (closingRows || []).find((row: any) => row.financial_year === fyLabel && row.quarter === quarterConfig.value)
       setSales(nextSales.sort((a, b) => b.date.localeCompare(a.date)))
       setExpenses(nextExpenses.sort((a, b) => b.invoice_date.localeCompare(a.invoice_date)))
       setNotes(nextNotes.sort((a, b) => b.note_date.localeCompare(a.note_date)))
@@ -279,7 +279,7 @@ export default function GstReportsPage() {
 
   useEffect(() => {
     if (authorized) void load()
-  }, [authorized, fyYear, quarter.value])
+  }, [authorized, fyYear, quarterConfig.value])
 
   const output = useMemo(() => sales.reduce((sum, row) => ({
     taxable: sum.taxable + row.taxable,
@@ -437,7 +437,7 @@ export default function GstReportsPage() {
     const allDone = checklistItems.every(([key]) => checklist[key])
     const payload = {
       financial_year: fyLabel,
-      quarter: quarter.value,
+      quarter: quarterConfig.value,
       checklist,
       notes: closingNotes.trim() || null,
       closed_at: allDone ? new Date().toISOString() : null,
@@ -450,7 +450,7 @@ export default function GstReportsPage() {
 
   const exportCsv = () => {
     const sections: string[] = []
-    sections.push(['TENOO GST WORKING SUMMARY', `${fyLabel} ${quarter.value}`].map(csvEscape).join(','))
+    sections.push(['TENOO GST WORKING SUMMARY', `${fyLabel} ${quarterConfig.value}`].map(csvEscape).join(','))
     sections.push('')
     sections.push(['SALES SUMMARY','Channel','Taxable','CGST','SGST','IGST','Total'].map(csvEscape).join(','))
     ;['Online','Retailer'].forEach((channel) => {
@@ -481,7 +481,7 @@ export default function GstReportsPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `tenoo-gst-${fyLabel.replace(/[^0-9-]/g, '')}-${quarter.value.toLowerCase()}.csv`
+    link.download = `tenoo-gst-${fyLabel.replace(/[^0-9-]/g, '')}-${quarterConfig.value.toLowerCase()}.csv`
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -514,19 +514,19 @@ export default function GstReportsPage() {
             <label className="text-xs font-semibold text-muted-foreground">
               Financial Year
               <select value={fyYear} onChange={(e) => setFyYear(Number(e.target.value))} className="mt-1 h-11 w-full rounded-xl border bg-background px-3 text-sm text-foreground">
-                {[2025,2026,2027].map((year) => <option key={year} value={year}>${year}-${String(year + 1).slice(-2)}</option>)}
+                {[2025, 2026, 2027].map((year) => <option key={year} value={year}>{year}-{String(year + 1).slice(-2)}</option>)}
               </select>
             </label>
             <label className="text-xs font-semibold text-muted-foreground">
               Quarter
-              <select value={quarter.value} onChange={(e) => setQuarter(e.target.value)} className="mt-1 h-11 w-full rounded-xl border bg-background px-3 text-sm text-foreground">
+              <select value={quarterKey} onChange={(e) => setQuarterKey(e.target.value)} className="mt-1 h-11 w-full rounded-xl border bg-background px-3 text-sm text-foreground">
                 {quarterOptions(fyYear).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
             </label>
             <div className="flex items-end rounded-xl border bg-muted/30 px-4 py-3">
               <div>
                 <p className="text-xs text-muted-foreground">Period</p>
-                <p className="mt-1 text-sm font-semibold">{indiaDate(quarter.start)} – {indiaDate(quarter.end)}</p>
+                <p className="mt-1 text-sm font-semibold">{indiaDate(quarterConfig.start)} – {indiaDate(quarterConfig.end)}</p>
               </div>
             </div>
           </div>
