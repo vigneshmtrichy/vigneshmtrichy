@@ -7,10 +7,8 @@ import {
   applyProductControls,
 } from '@/lib/site'
 import { createClient } from '@supabase/supabase-js'
-import { unstable_cache } from 'next/cache'
 
-const getProductStatuses = unstable_cache(
-  async () => {
+const getProductStatuses = async () => {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -45,10 +43,7 @@ const getProductStatuses = unstable_cache(
       },
     ]),
   )
-  },
-  ['home-product-status'],
-  { revalidate: 60 },
-)
+}
 
 export async function Generations() {
   const productStatuses = await getProductStatuses()
