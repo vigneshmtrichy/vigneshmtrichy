@@ -27,7 +27,7 @@ const parseInvoiceText=(text:string)=>{
   const flat=lines.join(' | ')
   const pick=(re:RegExp)=>{const m=joined.match(re);return m?.[1]?.trim()||''}
 
-  const gstin=(joined.replace(/\s+/g,'').match(/\b\d{2}[A-Z]{5}\d{4}[A-Z]\d[A-Z]\d[A-Z]\b/i)?.[0]||'').toUpperCase()
+  const gstin=(joined.replace(/\s+/g,'').match(/\b\d{2}[A-Z]{5}\d{4}[A-Z]Z[A-Z0-9]\b/i)?.[0]||'').toUpperCase()
 
   const parseDateValue=(value:string)=>{
     const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
@@ -87,64 +87,78 @@ const parseInvoiceText=(text:string)=>{
     return values
   }
 
-  let taxable=findLineAfter(/(?:taxable\s*(?:value|amount)|taxable)/i)
-  let cgst=findLineAfter(/(?:CGST|central\s*GST)/i)
-  let sgst=findLineAfter(/(?:SGST|state\s*GST)/i)
-  let igst=findLineAfter(/(?:IGST|integrated\s*GST)/i)
+  const explicitAmount=(label:RegExp)=>{
+    const patterns=[
+      new RegExp(label.source+'\\s*[:#-]?\\s*(?:₹|Rs\\.?|INR)?\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i'),
+      new RegExp(label.source+'[^\\n]{0,40}?(?:₹|Rs\\.?|INR)\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)','i')
+    ]
+    for(const re of patterns){
+      const m=joined.match(re)
+      if(m){const n=parseMoney(m[1]);if(n!==null)return n}
+    }
+    return null
+  }
 
-  // OCR commonly returns this invoice tax block as:
-  // "9 (%) CGST", "9 (%) SGST", "₹189.00", "₹189.00".
-  // In that layout the tax amounts are shared by the two labels, so map
-  // the first two non-rate currency values to CGST and SGST respectively.
-  const taxBlock=lines.map((line,i)=>({line,i})).find(x=>/(?:CGST|SGST)/i.test(x.line))
-  if(taxBlock){
+  let taxable=explicitAmount(/(?:taxable\\s*(?:value|amount)|taxable)/)
+  let cgst=explicitAmount(/(?:CGST|central\\s*GST)/)
+  let sgst=explicitAmount(/(?:SGST|state\\s*GST)/)
+  let igst=explicitAmount(/(?:IGST|integrated\\s*GST)/)
+
+  // In OCR output, "9 (%) CGST / 9 (%) SGST" can appear separately from
+  // the following ₹189 / ₹189 amounts. Never use the 9% rate as a currency value.
+  if(cgst===5||cgst===9||cgst===18)cgst=null
+  if(sgst===5||sgst===9||sgst===18)sgst=null
+  if(igst===5||igst===9||igst===18)igst=null
+
+  const taxBlockIndex=lines.findIndex(x=>/(?:CGST|SGST)/i.test(x))
+  if(taxBlockIndex>=0){
     const blockAmounts:number[]=[]
-    for(let j=taxBlock.i;j<Math.min(taxBlock.i+6,lines.length);j++){
-      for(const n of moneyValues(lines[j]))if(n>0&&!blockAmounts.includes(n))blockAmounts.push(n)
+    for(let j=taxBlockIndex;j<Math.min(taxBlockIndex+8,lines.length);j++){
+      for(const n of moneyValues(lines[j]))if(n>18&&!blockAmounts.includes(n))blockAmounts.push(n)
     }
-    const usable=blockAmounts.filter(n=>n!==5&&n!==9&&n!==18)
-    if(cgst===null&&usable.length>=1)cgst=usable[0]
-    if(sgst===null&&usable.length>=2)sgst=usable[1]
+    // This invoice's tax block is: CGST rate, SGST rate, 189, 189.
+    // The two identical amounts therefore map to CGST and SGST.
+    if(cgst===null&&blockAmounts.length>=1)cgst=blockAmounts[0]
+    if(sgst===null&&blockAmounts.length>=2)sgst=blockAmounts[1]
   }
 
-  // Product/cart table fallback: this invoice exposes
-  // "Quantity Rate Total" followed by "6 ₹350.00 ₹2,100.00".
-  // Prefer the last monetary value on that product row as taxable value.
+  // Explicit "Total : ₹2,100.00" is the taxable/cart total on this invoice.
   if(taxable===null){
-    const productRow=lines.find(line=>{
+    const total=explicitAmount(/^total/)
+    if(total!==null)taxable=total
+  }
+
+  // Product-table fallback: pick the largest monetary value from a row that
+  // contains a quantity/rate-style numeric sequence.
+  if(taxable===null){
+    for(const line of lines){
       const values=moneyValues(line)
-      return values.length>=2 && /(?:quantity|rate|total)/i.test(line)===false && /\b\d+\b/.test(line)
-    })
-    if(productRow){
-      const values=moneyValues(productRow)
-      taxable=values[values.length-1]
+      if(values.length>=2 && /\\b\\d+\\b/.test(line)){
+        const candidate=values[values.length-1]
+        if(candidate>18){taxable=candidate;break}
+      }
     }
   }
 
-  if(taxable===null){
-    const totalIndex=lines.findIndex(x=>/^total\s*:/i.test(x))
-    if(totalIndex>=0){
-      const values=moneyValues(lines[totalIndex])
-      if(values.length)taxable=values[values.length-1]
-    }
-  }
-
-  // If GST amounts are missing but rates are visible, calculate from taxable.
   if(taxable!==null){
-    const cgstRateMatch=joined.match(/(?:CGST|central\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    const sgstRateMatch=joined.match(/(?:SGST|state\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
-    const igstRateMatch=joined.match(/(?:IGST|integrated\s*GST)[^\n]{0,30}?(\d+(?:\.\d+)?)\s*\(?\s*%/i)
+    const cgstRateMatch=joined.match(/(?:CGST|central\\s*GST)[^\\n]{0,30}?(\\d+(?:\\.\\d+)?)\\s*\\(?\\s*%/i)
+    const sgstRateMatch=joined.match(/(?:SGST|state\\s*GST)[^\\n]{0,30}?(\\d+(?:\\.\\d+)?)\\s*\\(?\\s*%/i)
+    const igstRateMatch=joined.match(/(?:IGST|integrated\\s*GST)[^\\n]{0,30}?(\\d+(?:\\.\\d+)?)\\s*\\(?\\s*%/i)
     if(cgst===null&&cgstRateMatch)cgst=Math.round(taxable*Number(cgstRateMatch[1]))/100
     if(sgst===null&&sgstRateMatch)sgst=Math.round(taxable*Number(sgstRateMatch[1]))/100
     if(igst===null&&igstRateMatch)igst=Math.round(taxable*Number(igstRateMatch[1]))/100
   }
 
-  const finalPrice=findLineAfter(/(?:final\s*price|grand\s*total|amount\s*payable|net\s*amount)/i)
-  let invoiceTotal=finalPrice!==null?String(finalPrice):''
+  // "Final Price" is the strongest invoice-total signal. Do not fall back to
+  // a nearby tax amount when this explicit label exists.
+  const finalPrice=explicitAmount(/final\\s*price/)
+  const grandTotal=explicitAmount(/(?:grand\\s*total|invoice\\s*total|amount\\s*payable|net\\s*amount)/)
+  let invoiceTotal=finalPrice!==null?String(finalPrice):grandTotal!==null?String(grandTotal):''
   if(!invoiceTotal&&taxable!==null){
     const calculated=taxable+(cgst||0)+(sgst||0)+(igst||0)
     if(calculated>0)invoiceTotal=String(calculated)
   }
+  if(igst===null&&((cgst||0)>0||(sgst||0)>0))igst=0
 
   const supplierCandidates=lines.slice(0,Math.min(lines.length,20)).filter(x=>
     /\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) &&
@@ -193,7 +207,7 @@ export default function BusinessExpensesPage(){
     const text=(json.ParsedResults||[]).map((x:{ParsedText?:string})=>x.ParsedText||'').join('\n');
     if(!text.trim())throw Error(json.ErrorMessage||'No readable text found in the invoice.');
     const parsed=parseInvoiceText(text);
-    setForm(prev=>({...prev,supplier_name:parsed.supplier_name||prev.supplier_name,supplier_gstin:parsed.supplier_gstin||prev.supplier_gstin,invoice_number:parsed.invoice_number||prev.invoice_number,invoice_date:parsed.invoice_date||prev.invoice_date,taxable_amount:parsed.taxable_amount||prev.taxable_amount,cgst:parsed.cgst||prev.cgst,sgst:parsed.sgst||prev.sgst,igst:parsed.igst||prev.igst}));
+    setForm(prev=>({...prev,supplier_name:parsed.supplier_name||prev.supplier_name,supplier_gstin:parsed.supplier_gstin||prev.supplier_gstin,invoice_number:parsed.invoice_number||prev.invoice_number,invoice_date:parsed.invoice_date||prev.invoice_date,taxable_amount:parsed.taxable_amount||prev.taxable_amount,cgst:parsed.cgst||prev.cgst,sgst:parsed.sgst||prev.sgst,igst:parsed.igst!==''?parsed.igst:prev.igst}));
     if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total));
     const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst,parsed.invoice_total].filter(Boolean).length;
     setOcrNote(count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text found, but fields could not be identified. Please enter them manually.');
