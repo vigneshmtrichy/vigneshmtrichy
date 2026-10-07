@@ -25,18 +25,95 @@ const parseInvoiceText=(text:string)=>{
   const joined=lines.join('\n')
   const pick=(re:RegExp)=>{const m=joined.match(re);return m?.[1]?.trim()||''}
   const gstin=(joined.match(/\b\d{2}[A-Z0-9]{5}\d{4}[A-Z0-9]{1}[A-Z0-9]\dZ[A-Z0-9]\b/i)?.[0]||'').toUpperCase()
-  const invoiceNumber=pick(/(?:invoice(?:\s*(?:no\.?|number|#))?|inv\.?\s*(?:no\.?|#))\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i)
-  const rawDate=pick(/(?:invoice\s*date|date\s*of\s*invoice|invoice\s*dt)\s*[:\-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/i)
-  const dateMatch=rawDate.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/)
-  const invoiceDate=dateMatch?(dateMatch[3].length===2?'20'+dateMatch[3]:dateMatch[3])+'-'+dateMatch[2].padStart(2,'0')+'-'+dateMatch[1].padStart(2,'0'):''
-  const findAmount=(patterns:RegExp[])=>{for(const re of patterns){const m=joined.match(re);if(m?.[1]){const n=parseMoney(m[1]);if(n!==null)return String(n)}}return ''}
-  const taxable=findAmount([/(?:taxable\s*(?:value|amount)|taxable)\s*[:\-]?\s*[₹Rs.]*\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i])
-  const cgst=findAmount([/(?:cgst|central\s*gst)\s*(?:@\s*[\d.]+%?)?\s*[:\-]?\s*[₹Rs.]*\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i])
-  const sgst=findAmount([/(?:sgst|state\s*gst)\s*(?:@\s*[\d.]+%?)?\s*[:\-]?\s*[₹Rs.]*\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i])
-  const igst=findAmount([/(?:igst|integrated\s*gst)\s*(?:@\s*[\d.]+%?)?\s*[:\-]?\s*[₹Rs.]*\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i])
-  const invoiceTotal=findAmount([/(?:grand\s*total|invoice\s*total|total\s*amount|net\s*amount|amount\s*payable|total)\s*[:\-]?\s*[₹Rs.]*\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i])
-  const supplier=pick(/(?:supplier|vendor|seller|billed\s*by|from)\s*[:\-]?\s*([^\n]{2,80})/i) || (lines.find(x=>!/(invoice|tax|gst|amount|date|phone|email|bill|total)/i.test(x) && /[A-Za-z]{3}/.test(x) && x.length<=80) || '')
-  return {supplier_name:supplier.replace(/^(name|company)\s*[:\-]?\s*/i,''),supplier_gstin:gstin,invoice_number:invoiceNumber,invoice_date:invoiceDate,taxable_amount:taxable,cgst,sgst,igst,invoice_total:invoiceTotal}
+
+  const parseDateValue=(value:string)=>{
+    const s=value.replace(/,/g,' ').replace(/\s+/g,' ').trim()
+    let m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/)
+    if(m)return `${m[3].length===2?'20'+m[3]:m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`
+    m=s.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/)
+    if(m){
+      const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],month=months.indexOf(m[2].slice(0,3).toLowerCase())
+      if(month>=0)return `${m[3]}-${String(month+1).padStart(2,'0')}-${m[1].padStart(2,'0')}`
+    }
+    m=s.match(/^([A-Za-z]{3,9})\s+(\d{1,2})\s+(\d{4})$/)
+    if(m){
+      const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],month=months.indexOf(m[1].slice(0,3).toLowerCase())
+      if(month>=0)return `${m[3]}-${String(month+1).padStart(2,'0')}-${m[2].padStart(2,'0')}`
+    }
+    return ''
+  }
+
+  const invoiceNumber=
+    pick(/invoice\s*no\.?\s*#?\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
+    pick(/invoice\s*(?:number|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
+    pick(/inv\.?\s*(?:no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i)
+
+  let invoiceDate=''
+  const explicitDate=pick(/(?:invoice\s*date|date\s*of\s*invoice|invoice\s*dt)\s*[:\-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4})/i)
+  if(explicitDate)invoiceDate=parseDateValue(explicitDate)
+  if(!invoiceDate){
+    const dateLineIndex=lines.findIndex(x=>/date\s+print\s+date\s+ship\s+date\s+delivery\s+date/i.test(x))
+    if(dateLineIndex>=0){
+      const candidate=(lines[dateLineIndex+1]||'').match(/\b\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4}\b|\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/)
+      if(candidate)invoiceDate=parseDateValue(candidate[0])
+    }
+  }
+
+  const amountFromLine=(line:string)=>{
+    const matches=line.match(/(?:₹|Rs\.?|INR)\s*[0-9][0-9,]*(?:\.\d{1,2})?|\b[0-9][0-9,]*\.\d{2}\b/g)||[]
+    for(const value of matches){
+      const n=parseMoney(value)
+      if(n!==null)return n
+    }
+    return null
+  }
+  const findLabeledAmount=(label:RegExp)=>{
+    for(let i=0;i<lines.length;i++){
+      if(!label.test(lines[i]))continue
+      const same=amountFromLine(lines[i])
+      if(same!==null&&!/%/.test(lines[i]))return String(same)
+      for(let j=i+1;j<=Math.min(i+3,lines.length-1);j++){
+        if(/(?:CGST|SGST|IGST|TOTAL|FINAL\s+PRICE|PAYMENT|SHIPPING)/i.test(lines[j])&&j!==i+1)break
+        const n=amountFromLine(lines[j])
+        if(n!==null&&!/%/.test(lines[j]))return String(n)
+      }
+    }
+    return ''
+  }
+
+  const taxable=findLabeledAmount(/(?:taxable\s*(?:value|amount)|taxable)/i)
+  const cgst=findLabeledAmount(/(?:CGST|central\s*GST)/i)
+  const sgst=findLabeledAmount(/(?:SGST|state\s*GST)/i)
+  const igst=findLabeledAmount(/(?:IGST|integrated\s*GST)/i)
+
+  let invoiceTotal=findLabeledAmount(/(?:final\s*price|grand\s*total|invoice\s*total|total\s*amount|amount\s*payable|net\s*amount)/i)
+  if(!invoiceTotal){
+    const finalIndex=lines.findIndex(x=>/final\s*price|grand\s*total|amount\s*payable/i.test(x))
+    if(finalIndex>=0)invoiceTotal=String(amountFromLine(lines[finalIndex])??'')
+  }
+
+  let taxableAmount=taxable
+  if(!taxableAmount){
+    const totalIndex=lines.findIndex(x=>/^total\s*[:\-]?/i.test(x))
+    if(totalIndex>=0)taxableAmount=String(amountFromLine(lines[totalIndex])??'')
+  }
+
+  const supplier=
+    pick(/(?:supplier|vendor|seller|billed\s*by|from)\s*[:\-]?\s*([^\n]{2,80})/i) ||
+    (lines.find(x=>/\b(private|pvt|ltd|limited|llp|industries|enterprises|traders|company)\b/i.test(x) && !/(invoice|total|gst|date|phone|email|address)/i.test(x)) || '') ||
+    (lines.find(x=>!/(invoice|tax|gst|amount|date|phone|email|bill|total|state|code|payment|shipping|customer|billing)/i.test(x) && /[A-Za-z]{3}/.test(x) && x.length<=80) || '')
+
+  return {
+    supplier_name:supplier.replace(/^(name|company)\s*[:\-]?\s*/i,''),
+    supplier_gstin:gstin,
+    invoice_number:invoiceNumber,
+    invoice_date:invoiceDate,
+    taxable_amount:taxableAmount,
+    cgst,
+    sgst,
+    igst,
+    invoice_total:invoiceTotal
+  }
 }
 
 export default function BusinessExpensesPage(){
