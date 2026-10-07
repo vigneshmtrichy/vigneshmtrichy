@@ -475,12 +475,12 @@ export default function GstReportsPage() {
     const whole = (value: number) => Number.isFinite(Number(value)) ? String(Math.round(Number(value))) : '0'
 
     // Every row uses the same 11 columns so Excel/WPS cannot shift later sections.
-    row(['TENOO GST WORKING SUMMARY', `${fyLabel} ${quarterConfig.value}`]))
-    row(['Period', `${indiaDate(quarterConfig.start)} - ${indiaDate(quarterConfig.end)}`]))
+    row(['TENOO GST WORKING SUMMARY', `${fyLabel} ${quarterConfig.value}`])
+    row(['Period', `${indiaDate(quarterConfig.start)} - ${indiaDate(quarterConfig.end)}`])
     rows.push(Array(11).fill(''))
-    row(['Section','Item / Party','GSTIN / Number','Date / State','UQC / Rate','Taxable','CGST','SGST','IGST','GST / Total','Status / Notes']))
+    row(['Section','Item / Party','GSTIN / Number','Date / State','UQC / Rate','Taxable','CGST','SGST','IGST','GST / Total','Status / Notes'])
 
-    row(['SALES SUMMARY']))
+    row(['SALES SUMMARY'])
     ;['Online','Retailer'].forEach((channel) => {
       const rows = sales.filter((item) => item.channel === channel)
       const values = rows.reduce((sum, item) => ({
@@ -490,12 +490,12 @@ export default function GstReportsPage() {
         igst: sum.igst + item.igst,
         total: sum.total + item.total,
       }), { taxable:0,cgst:0,sgst:0,igst:0,total:0 })
-      row(['Sales Summary', channel, '', '', '', amount(values.taxable), amount(values.cgst), amount(values.sgst), amount(values.igst), amount(values.total), `${rows.length} invoices`]))
+      row(['Sales Summary', channel, '', '', '', amount(values.taxable), amount(values.cgst), amount(values.sgst), amount(values.igst), amount(values.total), `${rows.length} invoices`])
     })
-    row(['Sales Summary','TOTAL OUTPUT','','','',amount(netOutput.taxable),amount(netOutput.cgst),amount(netOutput.sgst),amount(netOutput.igst),amount(netOutput.taxable + netOutput.cgst + netOutput.sgst + netOutput.igst),'Quarter output']))
+    row(['Sales Summary','TOTAL OUTPUT','','','',amount(netOutput.taxable),amount(netOutput.cgst),amount(netOutput.sgst),amount(netOutput.igst),amount(netOutput.taxable + netOutput.cgst + netOutput.sgst + netOutput.igst),'Quarter output'])
     rows.push(Array(11).fill(''))
 
-    row(['PURCHASES / ITC']))
+    row(['PURCHASES / ITC'])
     expenses.forEach((item) => row([
       'Purchases / ITC',
       item.supplier_name,
@@ -508,11 +508,11 @@ export default function GstReportsPage() {
       amount(item.igst),
       amount(item.total_amount),
       `${item.itc_status} · ${item.gstr2b_status}`,
-    ])))
-    if (expenses.length === 0) row(['Purchases / ITC','','','','','','','','','','No purchase / expense bills in this quarter.']))
+    ]))
+    if (expenses.length === 0) row(['Purchases / ITC','','','','','','','','','','No purchase / expense bills in this quarter.'])
     rows.push(Array(11).fill(''))
 
-    row(['HSN SUMMARY']))
+    row(['HSN SUMMARY'])
     hsnRows.forEach((item) => row([
       'HSN Summary',
       item.hsn,
@@ -525,11 +525,11 @@ export default function GstReportsPage() {
       '',
       amount(item.b2bGst + item.b2cGst),
       `B2B Qty ${qty(item.b2bQty)} · B2C Qty ${qty(item.b2cQty)} · B2B Taxable ${amount(item.b2bTaxable)} · B2C Taxable ${amount(item.b2cTaxable)}`,
-    ])))
-    if (hsnRows.length === 0) row(['HSN Summary','','','','','','','','','','No HSN sales in this quarter.']))
+    ]))
+    if (hsnRows.length === 0) row(['HSN Summary','','','','','','','','','','No HSN sales in this quarter.'])
     rows.push(Array(11).fill(''))
 
-    row(['B2B SUMMARY']))
+    row(['B2B SUMMARY'])
     b2bRows.forEach((item) => row([
       'B2B Summary',
       item.name,
@@ -542,11 +542,11 @@ export default function GstReportsPage() {
       '',
       amount(item.gst),
       `Total ${amount(item.total)}`,
-    ])))
-    if (b2bRows.length === 0) row(['B2B Summary','','','','','','','','','','No B2B sales in this quarter.']))
+    ]))
+    if (b2bRows.length === 0) row(['B2B Summary','','','','','','','','','','No B2B sales in this quarter.'])
     rows.push(Array(11).fill(''))
 
-    row(['STATE SUMMARY']))
+    row(['STATE SUMMARY'])
     stateRows.forEach((item) => row([
       'State Summary',
       item.state,
@@ -559,11 +559,11 @@ export default function GstReportsPage() {
       amount(item.igst),
       amount(item.total),
       '',
-    ])))
-    if (stateRows.length === 0) row(['State Summary','','','','','','','','','','No state-wise sales in this quarter.']))
+    ]))
+    if (stateRows.length === 0) row(['State Summary','','','','','','','','','','No state-wise sales in this quarter.'])
     rows.push(Array(11).fill(''))
 
-    row(['CREDIT / DEBIT NOTES']))
+    row(['CREDIT / DEBIT NOTES'])
     notes.forEach((item) => row([
       'Credit / Debit Note',
       item.party_name,
@@ -576,8 +576,8 @@ export default function GstReportsPage() {
       amount(item.igst),
       amount(item.taxable_amount + item.cgst + item.sgst + item.igst),
       `${item.note_type} · Ref ${item.reference_invoice || '—'}`,
-    ])))
-    if (notes.length === 0) row(['Credit / Debit Note','','','','','','','','','','No credit / debit notes in this quarter.']))
+    ]))
+    if (notes.length === 0) row(['Credit / Debit Note','','','','','','','','','','No credit / debit notes in this quarter.'])
 
     return rows
   }
