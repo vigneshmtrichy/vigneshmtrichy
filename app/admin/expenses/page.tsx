@@ -198,39 +198,77 @@ export default function BusinessExpensesPage(){
  const runInvoiceOcr=async(selected:File|null)=>{
   setFile(selected);setOcrNote('');setOcrInvoiceTotal(null);
   if(!selected)return;
-  if(selected.size>1048576){setOcrNote('OCR skipped: files over 1 MB are saved normally, but automatic reading needs a smaller file. You can still fill the fields manually.');return}
   setOcrBusy(true);
   try{
-    const makeRequest=async(engine:'2'|'3')=>{
-      const fd=new FormData();
-      fd.append('file',selected);
-      fd.append('language','auto');
-      fd.append('OCREngine',engine);
-      fd.append('isTable','true');
-      fd.append('detectOrientation','true');
-      fd.append('scale','true');
-      const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',headers:{apikey:'helloworld'},body:fd});
-      const json=await res.json();
-      const text=(json.ParsedResults||[]).map((x:{ParsedText?:string})=>x.ParsedText||'').join('\n');
-      return {json,text};
-    };
-    let result=await makeRequest('3');
-    // OCR.space can occasionally return an empty result for a PDF with Engine 3.
-    // Retry once with Engine 2 before asking the user to enter the bill manually.
-    if(!result.text.trim())result=await makeRequest('2');
-    const {json}=result;
-    const text=result.text;
-    if(!text.trim()){
-      const detail=Array.isArray(json.ErrorMessage)?json.ErrorMessage.join(' '):json.ErrorMessage;
-      throw Error(detail||json.ErrorDetails||'No readable text found in the invoice. Please try the upload once more.');
+    let text=''
+    let pdfError=''
+
+    if(selected.type==='application/pdf'){
+      if(selected.size>10485760)throw Error('Invoice PDF must be 10 MB or smaller.')
+
+      const fd=new FormData()
+      fd.append('file',selected)
+      const res=await fetch('/api/ocr-invoice',{method:'POST',body:fd})
+      const json=await res.json().catch(()=>({}))
+      if(res.ok)text=typeof json.text==='string'?json.text:''
+      else pdfError=json.error||'Unable to read the invoice PDF.'
+
+      // If the PDF is image-only/scanned, fall back to OCR.space for small PDFs.
+      // Text-based PDFs are handled entirely by our own server.
+      if(!text.trim()&&selected.size<=1048576){
+        const ocrFd=new FormData()
+        ocrFd.append('file',selected)
+        ocrFd.append('language','auto')
+        ocrFd.append('OCREngine','3')
+        ocrFd.append('isTable','true')
+        ocrFd.append('detectOrientation','true')
+        ocrFd.append('scale','true')
+        const ocrRes=await fetch('https://api.ocr.space/parse/image',{method:'POST',headers:{apikey:'helloworld'},body:ocrFd})
+        const ocrJson=await ocrRes.json().catch(()=>({}))
+        text=(ocrJson.ParsedResults||[]).map((x:{ParsedText?:string})=>x.ParsedText||'').join('\n')
+      }
+    }else{
+      if(selected.size>1048576){
+        setOcrNote('Automatic reading skipped for files over 1 MB. You can still save the bill and enter the fields manually.')
+        return
+      }
+      const fd=new FormData()
+      fd.append('file',selected)
+      fd.append('language','auto')
+      fd.append('OCREngine','3')
+      fd.append('isTable','true')
+      fd.append('detectOrientation','true')
+      fd.append('scale','true')
+      const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',headers:{apikey:'helloworld'},body:fd})
+      const json=await res.json().catch(()=>({}))
+      text=(json.ParsedResults||[]).map((x:{ParsedText?:string})=>x.ParsedText||'').join('\n')
+      if(!text.trim()){
+        const detail=Array.isArray(json.ErrorMessage)?json.ErrorMessage.join(' '):json.ErrorMessage
+        throw Error(detail||json.ErrorDetails||'No readable text found in the invoice.')
+      }
     }
-    const parsed=parseInvoiceText(text);
-    setForm(prev=>({...prev,supplier_name:parsed.supplier_name||prev.supplier_name,supplier_gstin:parsed.supplier_gstin||prev.supplier_gstin,invoice_number:parsed.invoice_number||prev.invoice_number,invoice_date:parsed.invoice_date||prev.invoice_date,taxable_amount:parsed.taxable_amount||prev.taxable_amount,cgst:parsed.cgst||prev.cgst,sgst:parsed.sgst||prev.sgst,igst:parsed.igst!==''?parsed.igst:prev.igst}));
-    if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total));
-    const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst,parsed.invoice_total].filter(Boolean).length;
-    setOcrNote(count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text found, but fields could not be identified. Please enter them manually.');
-  }catch(e:any){setOcrNote(e.message||'Automatic invoice reading failed. You can continue with manual entry.')}
-  finally{setOcrBusy(false)}
+
+    if(!text.trim())throw Error(pdfError||'No readable text found in the invoice. You can continue with manual entry.')
+
+    const parsed=parseInvoiceText(text)
+    setForm(prev=>({...prev,
+      supplier_name:parsed.supplier_name||prev.supplier_name,
+      supplier_gstin:parsed.supplier_gstin||prev.supplier_gstin,
+      invoice_number:parsed.invoice_number||prev.invoice_number,
+      invoice_date:parsed.invoice_date||prev.invoice_date,
+      taxable_amount:parsed.taxable_amount||prev.taxable_amount,
+      cgst:parsed.cgst||prev.cgst,
+      sgst:parsed.sgst||prev.sgst,
+      igst:parsed.igst!==''?parsed.igst:prev.igst
+    }))
+    if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total))
+    const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst,parsed.invoice_total].filter(Boolean).length
+    setOcrNote(count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text was read, but the fields could not be identified. Please enter them manually.')
+  }catch(e:any){
+    setOcrNote(e.message||'Automatic invoice reading failed. You can continue with manual entry.')
+  }finally{
+    setOcrBusy(false)
+  }
 }
 const openFile=async(b:Bill)=>{if(!b.invoice_file_path)return;const {data,error:e}=await supabase.storage.from(BUCKET).createSignedUrl(b.invoice_file_path,300);if(e||!data?.signedUrl){setError(e?.message||'Unable to open file.');return}window.open(data.signedUrl,'_blank','noopener,noreferrer')}
  const remove=async(b:Bill)=>{if(!confirm(`Delete ${b.invoice_number||'this bill'}?`))return;if(b.invoice_file_path)await supabase.storage.from(BUCKET).remove([b.invoice_file_path]);const {error:e}=await supabase.from('business_expenses').delete().eq('id',b.id);if(e)setError(e.message);else{setBills(x=>x.filter(v=>v.id!==b.id));setMessage('Business bill deleted.');setTimeout(()=>setMessage(''),3000)}}
