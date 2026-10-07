@@ -121,7 +121,7 @@ export default function GstReportsPage() {
   const [sales, setSales] = useState<SalesRow[]>([])
   const [expenses, setExpenses] = useState<ExpenseRow[]>([])
   const [notes, setNotes] = useState<NoteRow[]>([])
-  const [productMaster, setProductMaster] = useState<Record<string, { hsn: string; uqc: string }>>({})
+  const [productMaster, setProductMaster] = useState<Record<string, { hsn: string; uqc: string; rate: number }>>({})
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
   const [closingNotes, setClosingNotes] = useState('')
   const [closedAt, setClosedAt] = useState<string | null>(null)
@@ -258,6 +258,7 @@ export default function GstReportsPage() {
         master[row.product_slug] = {
           hsn: row.hsn_code || '',
           uqc: row.uqc || 'PCS',
+          rate: Number(row.gst_rate ?? 5),
         }
       })
 
@@ -323,14 +324,21 @@ export default function GstReportsPage() {
     sales.forEach((sale) => {
       sale.items.forEach((item: any) => {
         const slug = item.product_slug || item.slug || ''
-        const master = productMaster[slug] || { hsn: '', uqc: 'PCS' }
+        const master = productMaster[slug] || { hsn: '', uqc: 'PCS', rate: 5 }
         const hsn = master.hsn || 'UNMAPPED'
         const uqc = master.uqc || 'PCS'
         const qty = Number(item.quantity || 0)
-        const taxable = sale.channel === 'Retailer'
+        const directTaxable = sale.channel === 'Retailer'
           ? Number(item.line_total || 0)
-          : Number(item.taxable_amount || item.line_total || item.total || 0)
-        const rate = Number(item.gst_rate ?? 5)
+          : Number(item.taxable_amount || 0)
+        const grossLine = Number(item.line_total || item.total || item.price || 0) * Math.max(qty, 1)
+        const grossBase = sale.items.reduce((sum: number, current: any) => sum + (Number(current.line_total || current.total || current.price || 0) * Math.max(Number(current.quantity || 0), 1)), 0)
+        const taxable = directTaxable > 0
+          ? directTaxable
+          : grossBase > 0
+            ? sale.taxable * grossLine / grossBase
+            : 0
+        const rate = Number(item.gst_rate ?? master.rate ?? 5)
         const key = [hsn, uqc, rate].join('|')
         const current = map.get(key) || {
           key, hsn, uqc, rate, b2bQty: 0, b2bTaxable: 0, b2bGst: 0, b2cQty: 0, b2cTaxable: 0, b2cGst: 0,
@@ -381,7 +389,7 @@ export default function GstReportsPage() {
   }, [sales])
 
   const saveProductMaster = async (slug: string) => {
-    const item = productMaster[slug] || { hsn: '', uqc: 'PCS' }
+    const item = productMaster[slug] || { hsn: '', uqc: 'PCS', rate: 5 }
     const { error } = await supabase.from('product_status').update({
       hsn_code: item.hsn.trim() || null,
       uqc: item.uqc.trim() || 'PCS',
@@ -587,7 +595,7 @@ export default function GstReportsPage() {
               <div className="rounded-2xl border bg-background p-5">
                 <h2 className="font-semibold">Product GST master</h2>
                 <p className="mt-1 text-xs text-muted-foreground">HSN/UQC are kept in your product master so the quarter report can group sales correctly. Verify the classification against the GST portal/your CA before filing.</p>
-                <div className="mt-4 grid gap-3">{ALL_PRODUCTS.map((product) => { const value=productMaster[product.slug]||{hsn:'',uqc:'PCS'}; return <div key={product.slug} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_180px_100px_auto] sm:items-end"><div><p className="text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.slug}</p></div><label className="text-xs font-semibold text-muted-foreground">HSN Code<input value={value.hsn} onChange={(e)=>setProductMaster((current)=>({...current,[product.slug]:{...value,hsn:e.target.value}}))} placeholder="e.g. 21069099" className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" /></label><label className="text-xs font-semibold text-muted-foreground">UQC<input value={value.uqc} onChange={(e)=>setProductMaster((current)=>({...current,[product.slug]:{...value,uqc:e.target.value.toUpperCase()}}))} placeholder="PCS" className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" /></label><button type="button" onClick={()=>saveProductMaster(product.slug)} className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"><Save className="mr-1 inline h-4 w-4" />Save</button></div>})}</div>
+                <div className="mt-4 grid gap-3">{ALL_PRODUCTS.map((product) => { const value=productMaster[product.slug]||{hsn:'',uqc:'PCS',rate:5}; return <div key={product.slug} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_180px_100px_auto] sm:items-end"><div><p className="text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.slug}</p></div><label className="text-xs font-semibold text-muted-foreground">HSN Code<input value={value.hsn} onChange={(e)=>setProductMaster((current)=>({...current,[product.slug]:{...value,hsn:e.target.value}}))} placeholder="e.g. 21069099" className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" /></label><label className="text-xs font-semibold text-muted-foreground">UQC<input value={value.uqc} onChange={(e)=>setProductMaster((current)=>({...current,[product.slug]:{...value,uqc:e.target.value.toUpperCase()}}))} placeholder="PCS" className="mt-1 h-10 w-full rounded-lg border px-3 text-sm" /></label><button type="button" onClick={()=>saveProductMaster(product.slug)} className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"><Save className="mr-1 inline h-4 w-4" />Save</button></div>})}</div>
               </div>
               <div className="rounded-2xl border bg-background p-5"><h2 className="font-semibold">HSN-wise outward summary</h2><p className="mt-1 text-xs text-muted-foreground">B2B and B2C are split because the GST portal's current Table 12 workflow separates them.</p><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[980px] text-xs"><thead><tr className="border-b text-left text-muted-foreground"><th className="px-2 py-2">HSN</th><th className="px-2 py-2">UQC</th><th className="px-2 py-2">Rate</th><th className="px-2 py-2 text-right">B2B Qty</th><th className="px-2 py-2 text-right">B2B Taxable</th><th className="px-2 py-2 text-right">B2B GST</th><th className="px-2 py-2 text-right">B2C Qty</th><th className="px-2 py-2 text-right">B2C Taxable</th><th className="px-2 py-2 text-right">B2C GST</th></tr></thead><tbody>{hsnRows.map(row=><tr key={row.key} className={`border-b ${row.hsn==='UNMAPPED'?'bg-amber-50':''}`}><td className="px-2 py-2 font-semibold">{row.hsn}</td><td className="px-2 py-2">{row.uqc}</td><td className="px-2 py-2">{row.rate}%</td><td className="px-2 py-2 text-right">{number(row.b2bQty)}</td><td className="px-2 py-2 text-right">{money(row.b2bTaxable)}</td><td className="px-2 py-2 text-right">{money(row.b2bGst)}</td><td className="px-2 py-2 text-right">{number(row.b2cQty)}</td><td className="px-2 py-2 text-right">{money(row.b2cTaxable)}</td><td className="px-2 py-2 text-right">{money(row.b2cGst)}</td></tr>)}</tbody></table></div></div>
               <div className="rounded-2xl border bg-background p-5"><h2 className="font-semibold">B2B recipient summary</h2><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="px-3 py-2">Retailer</th><th className="px-3 py-2">GSTIN</th><th className="px-3 py-2">State</th><th className="px-3 py-2 text-right">Invoices</th><th className="px-3 py-2 text-right">Taxable</th><th className="px-3 py-2 text-right">GST</th><th className="px-3 py-2 text-right">Total</th></tr></thead><tbody>{b2bRows.map(row=><tr key={row.gstin||row.name} className="border-b"><td className="px-3 py-2">{row.name}</td><td className="px-3 py-2">{row.gstin||<span className="text-amber-700">GSTIN missing</span>}</td><td className="px-3 py-2">{row.state||'—'}</td><td className="px-3 py-2 text-right">{row.invoices}</td><td className="px-3 py-2 text-right">{money(row.taxable)}</td><td className="px-3 py-2 text-right">{money(row.gst)}</td><td className="px-3 py-2 text-right">{money(row.total)}</td></tr>)}</tbody></table></div></div>
