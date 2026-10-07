@@ -215,6 +215,7 @@ useEffect(() => {
             { href: '/admin/products', label: 'Products' },
             { href: '/admin/retailers', label: 'Retailers' },
             { href: '/admin/retailer-orders', label: 'Retailer Orders' },
+            { href: '/admin/expenses', label: 'GST / Expenses' },
             { href: '/admin/manufacturers', label: 'Manufacturers' },
           ].map((link) => {
             const active =
@@ -574,6 +575,14 @@ useEffect(() => {
             >
               Retailer Orders
             </Link>
+            <Link
+              href="/admin/expenses"
+              onClick={() => setOpen(false)}
+              className="flex min-h-10 items-center rounded-xl px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-secondary hover:text-primary"
+            >
+              GST / Expenses
+            </Link>
+
             <Link
               href="/admin/manufacturers"
               onClick={() => setOpen(false)}
