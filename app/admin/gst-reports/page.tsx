@@ -648,7 +648,7 @@ export default function GstReportsPage() {
             ].map(([label, value]) => <div key={label} className="rounded-2xl border bg-background p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>)}
           </div>
 
-          <div className="sticky top-[104px] z-[45] -mx-4 mt-6 border-y border-border/70 bg-background px-4 shadow-md backdrop-blur-md sm:-mx-6 sm:px-6">
+          <div className="sticky z-[45] -mx-4 mt-6 border-y border-border/70 bg-background px-4 shadow-md backdrop-blur-md sm:-mx-6 sm:px-6" style={{ top: "var(--tenoo-site-header-height, 104px)" }}>
             <div className="flex gap-2 overflow-x-auto">
               {[
                 ['overview','Overview'],['gstr1','GSTR-1 Working'],['gstr3b','GSTR-3B Working'],['hsn','HSN / B2B / State'],['itc','ITC / GSTR-2B'],['notes','Credit / Debit Notes'],['closing','Quarter Closing'],
