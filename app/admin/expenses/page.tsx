@@ -52,25 +52,62 @@ const parseInvoiceText=(text:string)=>{
     return ''
   }
 
-  const invoiceNumber=
-    pick(/invoice\s*no\.?\s*#?\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
-    pick(/invoice\s*(?:number|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
-    pick(/order\s*id\s*#?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i)
+  const datePattern='(\\d{1,2}[\\/.-]\\d{1,2}[\\/.-]\\d{2,4}|\\d{1,2}\\s+[A-Za-z]{3,9}\\s*,?\\s+\\d{4})'
+  const labeledDate=(labels:RegExp)=>{
+    for(let i=0;i<lines.length;i++){
+      if(!labels.test(lines[i]))continue
+      const same=lines[i].match(new RegExp(labels.source+'\\s*[:#-]?\\s*'+datePattern,'i'))
+      if(same){
+        const parsed=parseDateValue(same[same.length-1])
+        if(parsed)return parsed
+      }
+      for(let j=i+1;j<Math.min(i+3,lines.length);j++){
+        const candidate=lines[j].match(new RegExp('\\b'+datePattern+'\\b','i'))
+        if(candidate){
+          const parsed=parseDateValue(candidate[1]||candidate[0])
+          if(parsed)return parsed
+        }
+      }
+    }
+    return ''
+  }
 
-  let invoiceDate=''
-  const explicitDate=pick(/(?:invoice\s*date|date\s*of\s*invoice|invoice\s*dt)\s*[:\-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4})/i)
-  if(explicitDate)invoiceDate=parseDateValue(explicitDate)
+  // Only accept identifiers explicitly described as invoice/bill/receipt
+  // numbers. Order IDs and transaction IDs are not invoice numbers.
+  const invoiceNumber=
+    pick(/(?:tax\s*invoice|invoice|bill|receipt)\s*(?:no\.?|number|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9./_-]{2,})/i) ||
+    pick(/(?:tax\s*invoice|invoice|bill|receipt)\s*[:#-]\s*([A-Z0-9][A-Z0-9./_-]{2,})/i)
+
+  // Date extraction is label-aware. This prevents ship/delivery/order dates
+  // from being mistaken for the invoice date.
+  let invoiceDate=labeledDate(/(?:tax\s*invoice\s*date|invoice\s*date|date\s*of\s*invoice|bill\s*date|bill\s*dt|document\s*date)/i)
   if(!invoiceDate){
-    const dateHeaderIndex=lines.findIndex(x=>/date\s+print\s+date\s+ship\s+date\s+delivery\s+date/i.test(x))
-    if(dateHeaderIndex>=0){
-      const candidate=(lines[dateHeaderIndex+1]||'').match(/\b\d{1,2}\s+[A-Za-z]{3,9}\s*,?\s+\d{4}\b|\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/)
-      if(candidate)invoiceDate=parseDateValue(candidate[0])
+    const headerIndex=lines.findIndex(x=>/^(?:invoice|tax\s*invoice|bill|receipt)\b/i.test(x) && /\bdate\b/i.test(x))
+    if(headerIndex>=0){
+      const candidate=(lines[headerIndex].match(new RegExp('\\b'+datePattern+'\\b','i'))||[])[1]
+      if(candidate)invoiceDate=parseDateValue(candidate)
     }
   }
-  if(!invoiceDate){
-    const candidate=joined.match(/\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s+(20\d{2})\b/i)
-    if(candidate)invoiceDate=parseDateValue(candidate[0])
+
+  // Payment date must come from payment-related context. Never use the
+  // delivery/ship/order date as a payment date.
+  let paymentDate=labeledDate(/(?:payment\s*date|paid\s*on|paid\s*date|date\s*paid|payment\s*made\s*on)/i)
+  if(!paymentDate){
+    const paymentSection=lines.findIndex(x=>/payment\s*(?:details|information|summary)|transaction\s*details/i.test(x))
+    if(paymentSection>=0){
+      for(let i=paymentSection;i<Math.min(paymentSection+10,lines.length);i++){
+        if(/(?:transaction\s*date|paid\s*on|date\s*paid)/i.test(lines[i])){
+          const m=lines[i].match(new RegExp('\\b'+datePattern+'\\b','i'))
+          if(m){paymentDate=parseDateValue(m[1]||m[0]);if(paymentDate)break}
+        }
+      }
+    }
   }
+
+  const paymentMode=
+    pick(/payment\s*(?:method|mode)\s*[:\-]?\s*([^\\n|]{2,40})/i) ||
+    pick(/(?:paid\s*(?:via|by)|mode\s*of\s*payment)\s*[:\-]?\s*([^\\n|]{2,40})/i) ||
+    ''
 
   const moneyValues=(value:string)=>{
     const matches=value.match(/(?:₹|Rs\.?|INR)\s*[0-9][0-9,]*(?:\.\d{1,2})?|\b[0-9][0-9,]*\.\d{2}\b/g)||[]
@@ -229,6 +266,8 @@ const parseInvoiceText=(text:string)=>{
     sgst:sgst!==null?String(sgst):'',
     igst:igst!==null?String(igst):'',
     invoice_total:invoiceTotal,
+    payment_date:paymentDate,
+    payment_mode:paymentMode.trim(),
     document_warning:isQuotation?'This document appears to be a quotation, not a tax invoice. Verify the final invoice before claiming ITC.':''
   }
 }
@@ -313,12 +352,14 @@ export default function BusinessExpensesPage(){
       taxable_amount:parsed.taxable_amount||prev.taxable_amount,
       cgst:parsed.cgst||prev.cgst,
       sgst:parsed.sgst||prev.sgst,
-      igst:parsed.igst!==''?parsed.igst:prev.igst
+      igst:parsed.igst!==''?parsed.igst:prev.igst,
+      payment_date:parsed.payment_date||prev.payment_date,
+      payment_mode:parsed.payment_mode||prev.payment_mode
     }))
     if(parsed.invoice_total)setOcrInvoiceTotal(Number(parsed.invoice_total))
     // Count only the editable form fields. invoice_total is derived/display-only,
     // so it should not inflate the "auto-filled fields" count.
-    const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst].filter(Boolean).length
+    const count=[parsed.supplier_name,parsed.supplier_gstin,parsed.invoice_number,parsed.invoice_date,parsed.taxable_amount,parsed.cgst,parsed.sgst,parsed.igst,parsed.payment_date,parsed.payment_mode].filter(Boolean).length
     const autoMessage=count?'Auto-filled '+count+' invoice fields. Please verify them before saving.':'Invoice text was read, but the fields could not be identified. Please enter them manually.'
     setOcrNote(parsed.document_warning ? parsed.document_warning+' '+autoMessage : autoMessage)
   }catch(e:any){
