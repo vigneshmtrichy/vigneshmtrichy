@@ -316,7 +316,16 @@ const handleCashfreePayment = async () => {
         return
       }
 
-      const cashfree = cashfreeFactory({ mode: 'sandbox' })
+      const cashfreeMode = result.mode === 'production' || result.mode === 'sandbox'
+        ? result.mode
+        : null
+
+      if (!cashfreeMode) {
+        setError('Payment configuration mismatch. Please refresh and try again.')
+        return
+      }
+
+      const cashfree = cashfreeFactory({ mode: cashfreeMode })
       const checkoutResult = await cashfree.checkout({
         paymentSessionId: result.payment_session_id,
         redirectTarget: '_modal',
