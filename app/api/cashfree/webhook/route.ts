@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 import { finalizeCashfreePayment, verifyCashfreeWebhookSignature } from '@/lib/cashfree-server'
 
-const escapeHtml = (value: unknown) =>
-  String(value ?? '').replace(/[&<>"']/g, (char) => ({
+const escapeHtml = (value: unknown) => {
+  const entities: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;',
-  })[char] as string)
+  }
+  return String(value ?? '').replace(/[&<>"']/g, (char) => entities[char])
+}
 
 async function notifyOwnerOfPaidOrder(input: {
   cashfreeOrderId: string
