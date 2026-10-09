@@ -114,7 +114,7 @@ export async function POST(request:Request){
         returnUrl:origin+'/checkout/payment?order_id={order_id}',
         notifyUrl:origin+'/api/cashfree/webhook'
       })
-      return NextResponse.json({success:true,order_id:cfOrderId,payment_session_id:cfOrder?.payment_session_id,amount:total})
+      return NextResponse.json({success:true,order_id:cfOrderId,payment_session_id:cfOrder?.payment_session_id,amount:total,mode:process.env.CASHFREE_ENV==='production'?'production':'sandbox'})
     }catch(error){
       await db.from('cashfree_payment_intents').update({status:'failed',updated_at:new Date().toISOString()}).eq('id',intent.id)
       throw error
