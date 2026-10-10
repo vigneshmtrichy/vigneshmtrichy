@@ -52,6 +52,29 @@ export default function LoginPage() {
     }
   }
 
+
+  const handleGoogleSignIn = async () => {
+    setMessage('')
+    setLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      })
+
+      if (error) {
+        setMessage('Google sign-in could not be started. Please try again.')
+        setLoading(false)
+      }
+    } catch {
+      setMessage('Google sign-in could not be started. Please try again.')
+      setLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
   setMessage('')
@@ -312,6 +335,30 @@ export default function LoginPage() {
                       : 'SIGN IN'}
                 </button>
               </form>
+
+              {!isSignup && (
+                <div className="mx-auto mt-5 max-w-[490px]">
+                  <div className="mb-4 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#68736e]">
+                    <span className="h-px flex-1 bg-black/10" />
+                    <span>Or continue with</span>
+                    <span className="h-px flex-1 bg-black/10" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={loading}
+                    className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-white/80 bg-white/65 px-5 text-sm font-semibold text-[#263832] shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 48 48" className="h-5 w-5">
+                      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.01 13.22l7.98 6.19C11.9 13.72 17.48 9.5 24 9.5Z" transform="translate(0 4)" />
+                      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.74 7.18l7.72 5.99c4.51-4.17 7.06-10.31 7.06-17.64Z" />
+                      <path fill="#FBBC05" d="M9.99 28.59A14.4 14.4 0 0 1 9.22 24c0-1.59.27-3.13.76-4.59L2.01 13.22A23.9 23.9 0 0 0 0 24c0 3.86.92 7.51 2.54 10.78l7.45-6.19Z" transform="translate(0 0)" />
+                      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.81l-7.72-5.99c-2.14 1.44-4.89 2.3-8.18 2.3-6.52 0-12.1-4.22-14.01-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" transform="translate(0 -2)" />
+                    </svg>
+                    Continue with Google
+                  </button>
+                </div>
+              )}
 
               <div className="mx-auto mt-6 grid max-w-[420px] grid-cols-3 items-start gap-2 border-t border-black/10 pt-4 text-[9px] text-[#66736d] sm:mt-7 sm:flex sm:items-center sm:justify-center sm:gap-5 sm:pt-5 sm:text-[11px]">
                 <span className="inline-flex items-center justify-center gap-1.5 text-center">
