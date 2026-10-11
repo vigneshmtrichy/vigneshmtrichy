@@ -76,7 +76,7 @@ const generateDesign=(variant=variation)=>{
  const w=Math.max(40,Number(brief.width)||130),h=Math.max(50,Number(brief.height)||210);
  const palettes:{[k:string]:string[]}={green:['#263f35','#a8bd75','#f5f0df','#ffffff'],earth:['#6d4936','#c5a477','#f3e7d2','#fffaf0'],berry:['#742e48','#d99eae','#fff0f1','#ffffff'],blue:['#24486a','#83b5c5','#edf6f7','#ffffff'],black:['#242522','#c5a15d','#f2eee4','#fffdf8'],orange:['#803b22','#f0a34a','#fff2df','#ffffff']};
  const c=palettes[brief.palette]||palettes.green;
- const layouts=[
+ const layouts:Array<[string,number,number,number,number]>=[
  ['Botanical arch',.19,.36,.49,0],['Editorial minimal',.08,.27,.41,1],['Bold colour block',.32,.43,.56,2],['Heritage seal',.16,.40,.53,3],['Diagonal modern',.14,.32,.45,4],['Premium dark',.25,.39,.52,5],['Organic frame',.12,.31,.45,6],['Typography first',.07,.25,.41,7],['Ribbon label',.22,.41,.54,8],['Modern split',.12,.32,.46,9],['Classic medallion',.18,.41,.54,10],['Fresh market',.28,.39,.52,11],['Soft luxury',.10,.29,.43,12],['Geometric grid',.14,.33,.47,13],['Botanical border',.12,.32,.46,14],['Contemporary badge',.20,.39,.52,15],['Natural kraft',.17,.35,.48,16],['Colour pop',.30,.41,.54,17],['Clean pharmacy',.13,.30,.44,18],['Artisan stamp',.19,.39,.52,19]];
  const [layoutName,band,titleY,subY,kind]=layouts[((variant%layouts.length)+layouts.length)%layouts.length];
  const pad=w*.07,inner=w-pad*2, layers:Layer[]=[];
