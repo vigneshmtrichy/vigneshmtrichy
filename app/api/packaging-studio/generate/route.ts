@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ error: 'AI design is not connected yet. Add OPENAI_API_KEY to this Vercel Preview project environment variables, then redeploy. The template generator still works.' }, { status: 503 })
+      return NextResponse.json({ error: 'AI design is not connected yet. Add OPENAI_API_KEY to the Vercel environment for this deployment (Preview or Production), then redeploy. The template generator still works.' }, { status: 503 })
     }
 
     const brief = await request.json()
@@ -63,16 +63,16 @@ export async function POST(request: Request) {
 
     const systemPrompt = `You are an expert packaging layout designer. Return ONLY valid JSON: {"layers":[...]} for an editable flat 2D vector label layout in millimetres. Create an attractive, print-conscious composition with a background rectangle, brand header/accent shapes, strong readable product title, descriptor, category, net-weight line, and include MRP/ingredients/nutrition text only when the user provided those facts. Do not invent ingredients, nutrition, health claims, certifications, FSSAI numbers, barcodes, origin claims, or prices. The allowed layer fields are kind (text|rect|circle|line), name, x,y,w,h,fill,text,fontSize,fontFamily,fontWeight,align,opacity. Use only simple hex fill colors. Keep all positions within widthMm/heightMm, with a 4mm safe margin where possible. Text layers should fit their assigned boxes; use short display text and avoid dense ingredient/nutrition blocks in the front panel. Return 8-16 layers. All coordinates and font sizes are millimetres. For text use fontSize in mm, fontFamily Georgia or Arial, fontWeight 400 or 700, align start/middle/end. The result is a design draft, not legal compliance advice.`
 
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const aiResponse = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: process.env.OPENAI_PACKAGING_MODEL || 'gpt-4.1-mini',
         temperature: 0.7,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: JSON.stringify(userFacts) },
+        text: { format: { type: 'json_object' } },
+        input: [
+          { role: 'system', content: [{ type: 'input_text', text: systemPrompt }] },
+          { role: 'user', content: [{ type: 'input_text', text: JSON.stringify(userFacts) }] },
         ],
       }),
       signal: AbortSignal.timeout(25000),
@@ -84,7 +84,10 @@ export async function POST(request: Request) {
     }
 
     const payload = await aiResponse.json()
-    const raw = payload.choices?.[0]?.message?.content
+    const raw = typeof payload.output_text === 'string'
+      ? payload.output_text
+      : payload.output?.flatMap((item: any) => item.content || [])
+          .find((item: any) => item.type === 'output_text')?.text
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : null
     if (!parsed || !Array.isArray(parsed.layers)) throw new Error('AI response did not contain layers')
     const palette = new Set(['#ffffff','#000000','#263f35','#a8bd75','#f5f0df','#6d4936','#c5a477','#f3e7d2','#742e48','#d99eae','#fff0f1','#24486a','#83b5c5','#edf6f7','#263238','#66736f','#8fbd24','#f8f6ee'])
