@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowDown, ArrowUp, Check, Circle, Copy, Download, Eye, EyeOff, FileImage, FileText, Grid3X3, ImagePlus, Layers, Lock, LockOpen, Minus, Package, Redo2, Ruler, Save, Settings2, ShieldCheck, Square, Trash2, Type, Undo2, Upload, ZoomIn, ZoomOut, AlignCenter, AlignLeft, RotateCcw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
