@@ -103,16 +103,16 @@ const generateDesign=(variant=variation)=>{
 
 
  const generateWithAI=async()=>{
-  setAiLoading(true);setNotice('Connecting to the AI packaging designer…');
+  setAiLoading(true);setNotice('Creating your packaging design with AI. This may take a few seconds…');
   try{
    const {data:{session}}=await supabase.auth.getSession();
    if(!session?.access_token)throw new Error('Your session expired. Please sign in again.');
    const response=await fetch('/api/packaging-studio/generate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify(brief)});
-   const payload=await response.json();
+   const payload=await response.json().catch(()=>({error:'The AI service returned an unreadable response. Please check the deployment logs.'}));
    if(!response.ok)throw new Error(payload.error||'AI generation failed');
    const layers:Layer[]=payload.layers.map((l:any)=>({...l,id:uid(),visible:true,locked:false}));
    const p:Project={name:(brief.productName||'AI packaging design')+' · AI draft',pack:brief.pack,width:payload.width,height:payload.height,diameter:['bottle','jar','can'].includes(brief.pack)?Math.round(payload.width/Math.PI):0,overlap:3,bleed:3,safe:4,background:brief.palette==='earth'?'#f3e7d2':brief.palette==='berry'?'#fff0f1':brief.palette==='blue'?'#edf6f7':'#f5f0df',layers};
-   setProject(p);setHistory([]);setFuture([]);setSelectedId(layers.find(l=>l.kind==='text')?.id||layers[0]?.id||null);setMode('manual');setNotice('AI layout generated. Review the text and layout before printing.');
+   setProject(p);setHistory([]);setFuture([]);setSelectedId(layers.find(l=>l.kind==='text')?.id||layers[0]?.id||null);setMode('manual');setNotice('AI design created successfully. Review the text, nutrition and print layout before production.');
   }catch(e){setNotice(e instanceof Error?e.message:'AI generation failed. You can still use the template generator.')}
   finally{setAiLoading(false)}
  }
@@ -130,7 +130,7 @@ return <><SiteHeader/><main className="min-h-screen bg-[#f4f6f3] px-3 py-5 text-
  <label className="text-xs font-semibold">Visual style<select value={brief.style} onChange={e=>setBrief(v=>({...v,style:e.target.value}))} className="mt-1 w-full rounded-lg border p-2"><option>premium natural</option><option>minimal modern</option><option>bold energetic</option><option>traditional botanical</option></select></label>
  <label className="text-xs font-semibold">Palette<select value={brief.palette} onChange={e=>setBrief(v=>({...v,palette:e.target.value}))} className="mt-1 w-full rounded-lg border p-2"><option value="green">Forest green & cream</option><option value="earth">Earth & beige</option><option value="berry">Berry & blush</option><option value="blue">Ocean blue</option></select></label>
  <label className="text-xs font-semibold">Layout variation<select value={variation} onChange={e=>setVariation(Number(e.target.value))} className="mt-1 w-full rounded-lg border p-2"><option value={0}>Classic</option><option value={1}>Minimal</option><option value={2}>Bold header</option></select></label>
- <div className="flex flex-col justify-end gap-2"><button onClick={generateWithAI} disabled={aiLoading} className="w-full rounded-xl bg-[#263f35] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{aiLoading?'Generating AI layout…':'Generate with AI'}</button><button onClick={()=>generateDesign()} className="w-full rounded-xl border border-[#263f35] px-4 py-3 text-sm font-bold text-[#263f35]">Use template generator</button></div>
+ <div className="flex flex-col justify-end gap-2"><button onClick={generateWithAI} disabled={aiLoading} aria-live="polite" className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#263f35] px-4 py-3 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-70">{aiLoading&&<span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"/>}{aiLoading?'Creating packaging design with AI…':'Generate with AI'}</button><button onClick={()=>generateDesign()} disabled={aiLoading} className="w-full rounded-xl border border-[#263f35] px-4 py-3 text-sm font-bold text-[#263f35] disabled:opacity-50">Use template generator</button></div>
  </div>}
  {mode==='manual'&&<div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-gray-600">Use the canvas below to select layers and edit text, dimensions, colors, position and order.</p><button onClick={()=>setMode('automatic')} className="rounded-xl border px-4 py-2 text-sm font-semibold">Edit product brief / regenerate</button></div>}
  <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">Generate with AI uses the configured server-side AI provider when available. If it is not configured, use the template generator. AI layouts are editable drafts; user-provided ingredients, nutrition and MRP are not independently verified. Check text fit, label compliance, bleed and printer specifications before printing.</p>
