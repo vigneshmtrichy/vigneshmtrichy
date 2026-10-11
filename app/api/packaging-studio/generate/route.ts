@@ -79,8 +79,28 @@ export async function POST(request: Request) {
     })
     if (!aiResponse.ok) {
       const detail = await aiResponse.text().catch(() => '')
-      console.error('Packaging AI provider error', aiResponse.status, detail.slice(0, 500))
-      return NextResponse.json({ error: aiResponse.status === 401 ? 'AI provider key is invalid. Check OPENAI_API_KEY in Vercel.' : 'The AI provider could not generate a design right now. Please retry or use the template generator.' }, { status: 502 })
+      let providerMessage = ''
+      let providerCode = ''
+      try {
+        const parsedError = JSON.parse(detail)
+        providerMessage = String(parsedError?.error?.message || '')
+        providerCode = String(parsedError?.error?.code || parsedError?.error?.type || '')
+      } catch {}
+      // Keep provider diagnostics in server logs only. Never return secrets to the browser.
+      console.error('Packaging AI provider error', {
+        status: aiResponse.status,
+        code: providerCode.slice(0, 100),
+        message: providerMessage.slice(0, 400),
+      })
+      let message = 'The AI provider could not generate a design. Please retry in a moment.'
+      if (aiResponse.status === 401) message = 'The OpenAI API key was rejected. Check the OPENAI_API_KEY value in Vercel and redeploy.'
+      else if (aiResponse.status === 403) message = 'The OpenAI API project does not have permission to use this model. Check API project permissions.'
+      else if (aiResponse.status === 404) message = 'The configured AI model was not found. Check OPENAI_PACKAGING_MODEL or use gpt-4.1-mini.'
+      else if (aiResponse.status === 429 && /quota|billing|credit/i.test(providerMessage + ' ' + providerCode)) message = 'OpenAI API quota or billing limit reached. Check API billing and usage limits.'
+      else if (aiResponse.status === 429) message = 'The AI service is receiving too many requests. Wait a moment and retry.'
+      else if (aiResponse.status >= 500) message = 'The AI provider is temporarily unavailable. Please retry shortly.'
+      else if (providerMessage) message = 'OpenAI API error: ' + providerMessage.slice(0, 220)
+      return NextResponse.json({ error: message }, { status: 502 })
     }
 
     const payload = await aiResponse.json()
