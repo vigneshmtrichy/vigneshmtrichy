@@ -11,6 +11,7 @@ export function Hero() {
           width={2048}
           height={768}
           preload
+          fetchPriority="high"
           sizes="100vw"
           className="block h-auto w-full"
         />
