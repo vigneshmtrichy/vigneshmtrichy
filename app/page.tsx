@@ -1,4 +1,3 @@
-import { FallingLeaves } from '@/components/home/falling-leaves'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ScrollReveal } from '@/components/scroll-reveal'
@@ -12,46 +11,42 @@ import { TrustBar } from '@/components/home/trust-bar'
 
 export default function HomePage() {
   return (
-    <>
-      <FallingLeaves />
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
 
-      <div className="flex min-h-screen flex-col">
-        <SiteHeader />
+      <main>
+        <ScrollReveal duration={700} distance={20}>
+          <div className="mx-auto w-full max-w-7xl overflow-hidden">
+            <Hero />
+          </div>
+        </ScrollReveal>
 
-        <main>
-          <ScrollReveal duration={700} distance={20}>
-            <div className="mx-auto w-full max-w-7xl overflow-hidden">
-              <Hero />
-            </div>
-          </ScrollReveal>
+        <ScrollReveal delay={50}>
+          <FeatureStrip />
+        </ScrollReveal>
 
-          <ScrollReveal delay={50}>
-            <FeatureStrip />
-          </ScrollReveal>
+        <ScrollReveal delay={50}>
+          <Generations />
+        </ScrollReveal>
 
-          <ScrollReveal delay={50}>
-            <Generations />
-          </ScrollReveal>
+        <ScrollReveal duration={750} distance={28}>
+          <FamilyBanner />
+        </ScrollReveal>
 
-          <ScrollReveal duration={750} distance={28}>
-            <FamilyBanner />
-          </ScrollReveal>
+        <ScrollReveal>
+          <Story />
+        </ScrollReveal>
 
-          <ScrollReveal>
-            <Story />
-          </ScrollReveal>
+        <ScrollReveal delay={50} distance={20}>
+          <CtaBanner />
+        </ScrollReveal>
 
-          <ScrollReveal delay={50} distance={20}>
-            <CtaBanner />
-          </ScrollReveal>
+        <ScrollReveal delay={50}>
+          <TrustBar />
+        </ScrollReveal>
+      </main>
 
-          <ScrollReveal delay={50}>
-            <TrustBar />
-          </ScrollReveal>
-        </main>
-
-        <SiteFooter />
-      </div>
-    </>
+      <SiteFooter />
+    </div>
   )
 }
