@@ -1,4 +1,3 @@
-import { IntroAnimation } from '@/components/home/intro-animation'
 import { FallingLeaves } from '@/components/home/falling-leaves'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -11,12 +10,9 @@ import { Story } from '@/components/home/story'
 import { CtaBanner } from '@/components/home/cta-banner'
 import { TrustBar } from '@/components/home/trust-bar'
 
-export const dynamic = 'force-dynamic'
-
 export default function HomePage() {
   return (
     <>
-      <IntroAnimation />
       <FallingLeaves />
 
       <div className="flex min-h-screen flex-col">
