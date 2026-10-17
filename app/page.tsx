@@ -1,3 +1,4 @@
+import { FallingLeaves } from '@/components/home/falling-leaves'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ScrollReveal } from '@/components/scroll-reveal'
@@ -11,7 +12,9 @@ import { TrustBar } from '@/components/home/trust-bar'
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
+      <FallingLeaves />
+      <div className="flex min-h-screen flex-col">
       <SiteHeader />
 
       <main>
@@ -47,6 +50,7 @@ export default function HomePage() {
       </main>
 
       <SiteFooter />
-    </div>
+      </div>
+    </>
   )
 }
