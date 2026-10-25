@@ -405,6 +405,12 @@ export default function AdminDashboardPage() {
               <h2 className="text-lg font-semibold">Quick actions</h2>
               <div className="mt-4 grid gap-2">
                 <Link
+                  href="/admin/packaging-studio"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
+                >
+                  Packaging Studio · Design labels & pouches
+                </Link>
+                <Link
                   href="/admin/orders"
                   className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
                 >
