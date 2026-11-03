@@ -450,6 +450,8 @@ BEGIN
     WHERE ps.product_slug = item_slug
     FOR UPDATE OF ps;
 
+    product_found := FOUND;
+
     IF item_sku IS NOT NULL THEN
       SELECT product_slug, status INTO sku_parent, sku_status
       FROM public.product_skus WHERE id = item_sku FOR UPDATE;
@@ -465,14 +467,12 @@ BEGIN
       END IF;
     END IF;
 
-    product_found := FOUND;
-
     IF NOT product_found OR item_price IS NULL OR item_price <= 0
       OR current_status IN ('hidden', 'coming-soon') OR (item_sku IS NULL AND current_status = 'out-of-stock') THEN
       RAISE EXCEPTION 'Product % is unavailable for retailer ordering', item_slug USING ERRCODE = 'P0001';
     END IF;
 
-    IF current_stock IS NOT NULL AND current_stock < item_quantity THEN
+    IF item_sku IS NULL AND current_stock IS NOT NULL AND current_stock < item_quantity THEN
       RAISE EXCEPTION 'Not enough stock for %', item_slug USING ERRCODE = 'P0001';
     END IF;
   END LOOP;
@@ -518,7 +518,7 @@ BEGIN
     ) THEN
       UPDATE public.sku_inventory SET stock_quantity = stock_quantity - item_quantity WHERE sku_id = item_sku;
       INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, notes)
-      VALUES (item_sku, 'retailer_sale', -item_quantity, 'retailer_order', 'Reserved for retailer order');
+      VALUES (item_sku, 'retailer_sale', -item_quantity, 'retailer_order', order_id::text, 'Reserved for retailer order');
     ELSE
       UPDATE public.product_status
       SET stock_quantity = stock_quantity - item_quantity,
@@ -620,6 +620,52 @@ BEGIN
     'total', round(gross_total, 2),
     'initial_payment', round(p_initial_payment, 2)
   );
+END;
+$function$;
+
+-- SKU-aware retailer cancellation restores only the reserved SKU once.
+CREATE OR REPLACE FUNCTION public.sync_retailer_order_inventory()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  item record;
+BEGIN
+  IF OLD.order_status IS NOT DISTINCT FROM NEW.order_status THEN RETURN NEW; END IF;
+  IF OLD.order_status = 'cancelled' AND NEW.order_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'Cancelled retailer orders cannot be reopened; create a new order instead' USING ERRCODE = 'P0001';
+  END IF;
+  IF NEW.order_status = 'cancelled' AND OLD.order_status <> 'cancelled' AND OLD.inventory_reserved THEN
+    FOR item IN
+      SELECT product_slug, sku_id, quantity
+      FROM public.retailer_order_items
+      WHERE retailer_order_id = OLD.id
+      ORDER BY COALESCE(sku_id::text, product_slug)
+    LOOP
+      IF item.sku_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.sku_inventory WHERE sku_id = item.sku_id AND stock_quantity IS NOT NULL
+      ) THEN
+        UPDATE public.sku_inventory
+        SET stock_quantity = stock_quantity + item.quantity
+        WHERE sku_id = item.sku_id;
+        INSERT INTO public.sku_stock_movements(
+          sku_id, movement_type, quantity_delta, reference_type, reference_id, notes
+        ) VALUES (
+          item.sku_id, 'return', item.quantity, 'retailer_order', OLD.id::text,
+          'Restored after retailer order cancellation'
+        );
+      ELSE
+        UPDATE public.product_status
+        SET stock_quantity = stock_quantity + item.quantity,
+            status = CASE WHEN status = 'out-of-stock' AND stock_quantity = 0 THEN 'active' ELSE status END
+        WHERE product_slug = item.product_slug AND stock_quantity IS NOT NULL;
+      END IF;
+    END LOOP;
+    NEW.inventory_reserved := false;
+  END IF;
+  RETURN NEW;
 END;
 $function$;
 
