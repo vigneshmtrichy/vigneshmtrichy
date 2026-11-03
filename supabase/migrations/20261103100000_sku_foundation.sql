@@ -113,7 +113,7 @@ CREATE OR REPLACE FUNCTION public.tenoo_admin_set_sku_stock(
 )
 RETURNS jsonb
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $function$
 DECLARE
