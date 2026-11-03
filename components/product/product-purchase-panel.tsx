@@ -131,7 +131,7 @@ status = 'active',
   {/* ADD TO CART */}
   <div
     className={
-      status !== 'active'
+      purchaseStatus !== 'active' || skuLoading
         ? 'pointer-events-none opacity-50'
         : ''
     }
