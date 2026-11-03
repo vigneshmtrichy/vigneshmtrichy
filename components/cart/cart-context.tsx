@@ -23,7 +23,7 @@ type CartItem = {
 type CartContextType = {
   items: CartItem[]
   addToCart: (product: Product, quantity?: number) => void
-  removeFromCart: (slug: string) => void
+  removeFromCart: (slug: string, skuId?: string) => void
   updateQuantity: (slug: string, quantity: number) => void
   clearCart: () => void
   cartCount: number
@@ -115,12 +115,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setItems((current) => {
       const existing = current.find(
-        (item) => item.product.slug === product.slug,
+        (item) => item.product.slug === product.slug && item.product.skuId === product.skuId,
       )
 
       if (existing) {
         return current.map((item) =>
-          item.product.slug === product.slug
+          item.product.slug === product.slug && item.product.skuId === product.skuId
             ? {
                 ...item,
                 quantity: item.quantity + safeQuantity,
@@ -139,21 +139,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const removeFromCart = (slug: string) => {
+  const removeFromCart = (slug: string, skuId?: string) => {
     setItems((current) =>
-      current.filter((item) => item.product.slug !== slug),
+      current.filter((item) => !(item.product.slug === slug && (skuId === undefined || item.product.skuId === skuId))),
     )
   }
 
-  const updateQuantity = (slug: string, quantity: number) => {
+  const updateQuantity = (slug: string, quantity: number, skuId?: string) => {
     if (quantity <= 0) {
-      removeFromCart(slug)
+      removeFromCart(slug, skuId)
       return
     }
 
     setItems((current) =>
       current.map((item) =>
-        item.product.slug === slug
+        item.product.slug === slug && (skuId === undefined || item.product.skuId === skuId)
           ? {
               ...item,
               quantity,
