@@ -64,7 +64,7 @@ BEGIN
     FROM public.product_status ps
     WHERE ps.product_slug = item_slug
     FOR UPDATE;
-    IF NOT FOUND OR current_status IN ('hidden', 'coming-soon', 'out-of-stock') THEN
+    IF NOT FOUND OR current_status IN ('hidden', 'coming-soon') THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'A product in your cart is no longer available. Please refresh your cart.');
     END IF;
 
@@ -86,10 +86,10 @@ BEGIN
         IF sku_stock < item_quantity THEN
           RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock for the selected pack.');
         END IF;
-      ELSIF current_stock IS NOT NULL AND current_stock < item_quantity THEN
+      ELSIF current_status = 'out-of-stock' OR (current_stock IS NOT NULL AND current_stock < item_quantity) THEN
         RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock for one of the products in your cart.');
       END IF;
-    ELSIF current_stock IS NOT NULL AND current_stock < item_quantity THEN
+    ELSIF current_status = 'out-of-stock' OR (current_stock IS NOT NULL AND current_stock < item_quantity) THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock for one of the products in your cart.');
     END IF;
   END LOOP;
@@ -278,7 +278,7 @@ BEGIN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'Invalid item in paid order.');
     END IF;
     SELECT stock_quantity, status INTO parent_stock, current_status FROM public.product_status WHERE product_slug = slug FOR UPDATE;
-    IF NOT FOUND OR current_status IN ('hidden','coming-soon','out-of-stock') THEN
+    IF NOT FOUND OR current_status IN ('hidden','coming-soon') THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'A product in this order is no longer available.');
     END IF;
     IF sku IS NOT NULL THEN
@@ -291,10 +291,10 @@ BEGIN
         IF stock < qty THEN
           RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid pack.');
         END IF;
-      ELSIF parent_stock IS NOT NULL AND parent_stock < qty THEN
+      ELSIF current_status = 'out-of-stock' OR (parent_stock IS NOT NULL AND parent_stock < qty) THEN
         RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid order.');
       END IF;
-    ELSIF parent_stock IS NOT NULL AND parent_stock < qty THEN
+    ELSIF current_status = 'out-of-stock' OR (parent_stock IS NOT NULL AND parent_stock < qty) THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid order.');
     END IF;
   END LOOP;
@@ -368,6 +368,7 @@ DECLARE
   sku_parent text;
   item_gst numeric;
   stock_found boolean;
+  product_found boolean;
   current_status text;
   order_id bigint;
   payment_id bigint;
@@ -459,13 +460,15 @@ BEGIN
       stock_found := FOUND;
       IF stock_found AND sku_stock IS NOT NULL THEN
         IF sku_stock < item_quantity THEN RAISE EXCEPTION 'Not enough SKU stock for %', item_slug USING ERRCODE = 'P0001'; END IF;
-      ELSIF current_stock IS NOT NULL AND current_stock < item_quantity THEN
+      ELSIF current_status = 'out-of-stock' OR (current_stock IS NOT NULL AND current_stock < item_quantity) THEN
         RAISE EXCEPTION 'Not enough stock for %', item_slug USING ERRCODE = 'P0001';
       END IF;
     END IF;
 
-    IF NOT FOUND OR item_price IS NULL OR item_price <= 0
-      OR current_status IN ('hidden', 'coming-soon', 'out-of-stock') THEN
+    product_found := FOUND;
+
+    IF NOT product_found OR item_price IS NULL OR item_price <= 0
+      OR current_status IN ('hidden', 'coming-soon') OR (item_sku IS NULL AND current_status = 'out-of-stock') THEN
       RAISE EXCEPTION 'Product % is unavailable for retailer ordering', item_slug USING ERRCODE = 'P0001';
     END IF;
 
