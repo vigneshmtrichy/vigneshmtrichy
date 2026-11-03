@@ -252,7 +252,7 @@ export async function POST(request: Request) {
         gstRate = Number(sku.gst_rate)
         const inventory = Array.isArray(sku.sku_inventory) ? sku.sku_inventory[0] : sku.sku_inventory
         const available = inventory?.stock_quantity ?? managed.stock_quantity
-        if (available != null && available < quantity) {
+        if ((managed.status === 'out-of-stock' && inventory?.stock_quantity == null) || (available != null && available < quantity)) {
           return NextResponse.json({ success: false, message: 'There is not enough stock for the selected pack.' }, { status: 409 })
         }
         Object.assign(snapshot, {
