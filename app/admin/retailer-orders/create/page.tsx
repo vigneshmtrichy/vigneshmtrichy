@@ -435,7 +435,7 @@ export default function CreateRetailerOrderPage() {
                   </label>
                   <p className="pb-2 text-right text-sm font-semibold">
                     {Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0) > 0
-                      ? <span>{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] ?? 5)}% GST</span></span>
+                      ? <span>{money(Number(line.quantity || 0) * Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] ?? 5)}% GST</span></span>
                       : 'Retailer price not set'}
                   </p>
                   <button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] disabled:opacity-30">Remove</button>
