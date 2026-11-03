@@ -21,7 +21,12 @@ type ProductSku = {
   shipping_weight_kg: number | null
   status: 'active' | 'inactive' | 'archived'
   is_default: boolean
-  sku_inventory?: { stock_quantity: number | null; reorder_level: number }[] | null
+  sku_inventory?: { stock_quantity: number | null; reorder_level: number } | { stock_quantity: number | null; reorder_level: number }[] | null
+}
+
+function getSkuInventory(item: ProductSku) {
+  const inventory = item.sku_inventory
+  return Array.isArray(inventory) ? inventory[0] ?? null : inventory ?? null
 }
 
 type FormState = {
@@ -108,7 +113,7 @@ export default function AdminSkuManagementPage() {
     total: items.length,
     active: items.filter((item) => item.status === 'active').length,
     low: items.filter((item) => {
-      const inv = item.sku_inventory?.[0]
+      const inv = getSkuInventory(item)
       return inv?.stock_quantity != null && inv.stock_quantity <= inv.reorder_level
     }).length,
     noBarcode: items.filter((item) => !item.barcode).length,
@@ -231,7 +236,7 @@ export default function AdminSkuManagementPage() {
         </section>}
         <section className="mt-5 overflow-hidden rounded-2xl border bg-card">
           <div className="border-b px-4 py-3"><h2 className="font-semibold">SKU directory</h2><p className="text-xs text-muted-foreground">Pack variants are children of the existing product record.</p></div>
-          {loading ? <p className="p-8 text-center text-sm text-muted-foreground">Loading…</p> : filtered.length === 0 ? <div className="p-10 text-center"><Barcode className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-3 text-sm font-medium">No SKUs found</p><p className="mt-1 text-xs text-muted-foreground">Create a SKU for an existing Tenoo product.</p></div> : <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-sm"><thead className="bg-muted/50 text-left text-xs text-muted-foreground"><tr>{['Parent product','Pack size','SKU code','Barcode','MRP','Online','Retailer','Stock','Status',''].map(h=><th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr></thead><tbody>{filtered.map(item=>{const product=ALL_PRODUCTS.find(p=>p.slug===item.product_slug);const inv=item.sku_inventory?.[0];return <tr key={item.id} className="border-t"><td className="px-4 py-3 font-medium">{product?.name||item.product_slug}{item.is_default&&<span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">Default</span>}</td><td className="px-4 py-3">{item.pack_size_value}{item.pack_size_unit}</td><td className="px-4 py-3 font-mono text-xs">{item.sku_code}</td><td className="px-4 py-3 font-mono text-xs">{item.barcode||'—'}</td><td className="px-4 py-3">{money(item.mrp)}</td><td className="px-4 py-3">{money(item.online_price)}</td><td className="px-4 py-3">{money(item.retailer_price)}</td><td className="px-4 py-3">{inv?.stock_quantity??'Not tracked'}{inv?.stock_quantity!=null&&inv.stock_quantity<=inv.reorder_level&&<span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">Low</span>}</td><td className="px-4 py-3">{item.status}</td><td className="px-4 py-3"><div className="flex gap-2"><button onClick={()=>startEdit(item)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold">Edit</button>{item.status==='active'?<button onClick={()=>void changeStatus(item,'inactive')} className="rounded-lg border px-3 py-1.5 text-xs">Disable</button>:<button onClick={()=>void changeStatus(item,'active')} className="rounded-lg border px-3 py-1.5 text-xs">Activate</button>}</div></td></tr>})}</tbody></table></div>}
+          {loading ? <p className="p-8 text-center text-sm text-muted-foreground">Loading…</p> : filtered.length === 0 ? <div className="p-10 text-center"><Barcode className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-3 text-sm font-medium">No SKUs found</p><p className="mt-1 text-xs text-muted-foreground">Create a SKU for an existing Tenoo product.</p></div> : <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-sm"><thead className="bg-muted/50 text-left text-xs text-muted-foreground"><tr>{['Parent product','Pack size','SKU code','Barcode','MRP','Online','Retailer','Stock','Status',''].map(h=><th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr></thead><tbody>{filtered.map(item=>{const product=ALL_PRODUCTS.find(p=>p.slug===item.product_slug);const inv=getSkuInventory(item);return <tr key={item.id} className="border-t"><td className="px-4 py-3 font-medium">{product?.name||item.product_slug}{item.is_default&&<span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">Default</span>}</td><td className="px-4 py-3">{item.pack_size_value}{item.pack_size_unit}</td><td className="px-4 py-3 font-mono text-xs">{item.sku_code}</td><td className="px-4 py-3 font-mono text-xs">{item.barcode||'—'}</td><td className="px-4 py-3">{money(item.mrp)}</td><td className="px-4 py-3">{money(item.online_price)}</td><td className="px-4 py-3">{money(item.retailer_price)}</td><td className="px-4 py-3">{inv?.stock_quantity??'Not tracked'}{inv?.stock_quantity!=null&&inv.stock_quantity<=inv.reorder_level&&<span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">Low</span>}</td><td className="px-4 py-3">{item.status}</td><td className="px-4 py-3"><div className="flex gap-2"><button onClick={()=>startEdit(item)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold">Edit</button>{item.status==='active'?<button onClick={()=>void changeStatus(item,'inactive')} className="rounded-lg border px-3 py-1.5 text-xs">Disable</button>:<button onClick={()=>void changeStatus(item,'active')} className="rounded-lg border px-3 py-1.5 text-xs">Activate</button>}</div></td></tr>})}</tbody></table></div>}
         </section>
         <p className="mt-4 text-xs text-muted-foreground">Phase 1 adds SKU catalogue and separate SKU stock records. Existing product-level inventory and all historical online/retailer orders remain unchanged; Phase 2 must explicitly migrate order item identifiers and stock deduction in one controlled rollout.</p>
       </div>
