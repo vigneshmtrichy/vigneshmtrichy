@@ -133,7 +133,6 @@ const { data: activeSkuRows } = await skuClient
   .from('product_skus')
   .select('id')
   .eq('product_slug', product.slug)
-  .eq('status', 'active')
   .limit(1)
 const hasSkuVariants = (activeSkuRows || []).length > 0
 
