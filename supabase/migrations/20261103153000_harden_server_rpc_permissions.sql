@@ -1,0 +1,13 @@
+BEGIN;
+REVOKE ALL ON FUNCTION public.create_order_with_stock(jsonb,jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_order_with_stock(jsonb,jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.create_paid_order_with_stock(bigint,text,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_paid_order_with_stock(bigint,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.log_retailer_order_status_change() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.sync_order_inventory() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.sync_retailer_order_inventory() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+CREATE INDEX IF NOT EXISTS retailer_order_items_retailer_order_id_idx ON public.retailer_order_items(retailer_order_id);
+CREATE INDEX IF NOT EXISTS retailer_sku_prices_sku_id_idx ON public.retailer_sku_prices(sku_id);
+CREATE INDEX IF NOT EXISTS sku_stock_movements_created_by_idx ON public.sku_stock_movements(created_by);
+COMMIT;
