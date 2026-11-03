@@ -125,6 +125,17 @@ if (!product) {
 
 const productStatus = await getProductStatus(product.slug)
 const displayProduct = applyProductControls(product, productStatus)
+const skuClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+)
+const { data: activeSkuRows } = await skuClient
+  .from('product_skus')
+  .select('id')
+  .eq('product_slug', product.slug)
+  .eq('status', 'active')
+  .limit(1)
+const hasSkuVariants = (activeSkuRows || []).length > 0
 
 if (productStatus.status === 'hidden') {
   notFound()
@@ -299,7 +310,7 @@ return (
                 </div>
 
              {/* Pack Size */}
-{product.packSize && (
+{!hasSkuVariants && product.packSize && (
   <div className="mt-6">
     <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
       Net Weight: {product.packSize}
@@ -307,7 +318,7 @@ return (
   </div>
 )}
 {/* PRICE */}
-{displayProduct.price && (
+{!hasSkuVariants && displayProduct.price && (
   <div className="mt-5 flex items-center gap-3">
     {displayProduct.mrp && (
       <span className="text-base text-muted-foreground line-through">
