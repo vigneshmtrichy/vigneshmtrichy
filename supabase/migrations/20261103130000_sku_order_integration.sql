@@ -257,6 +257,7 @@ DECLARE
   sku uuid;
   qty integer;
   stock integer;
+  parent_stock integer;
   current_status text;
   sku_status text;
   sku_parent text;
@@ -276,7 +277,7 @@ BEGIN
     IF slug IS NULL OR qty IS NULL OR qty < 1 THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'Invalid item in paid order.');
     END IF;
-    SELECT stock_quantity, status INTO stock, current_status FROM public.product_status WHERE product_slug = slug FOR UPDATE;
+    SELECT stock_quantity, status INTO parent_stock, current_status FROM public.product_status WHERE product_slug = slug FOR UPDATE;
     IF NOT FOUND OR current_status IN ('hidden','coming-soon','out-of-stock') THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'A product in this order is no longer available.');
     END IF;
@@ -286,12 +287,14 @@ BEGIN
         RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'A selected pack is no longer available.');
       END IF;
       SELECT stock_quantity INTO stock FROM public.sku_inventory WHERE sku_id = sku FOR UPDATE;
-      IF FOUND AND stock IS NOT NULL AND stock < qty THEN
-        RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid pack.');
-      ELSIF (NOT FOUND OR stock IS NULL) AND stock IS NOT NULL AND stock < qty THEN
+      IF FOUND AND stock IS NOT NULL THEN
+        IF stock < qty THEN
+          RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid pack.');
+        END IF;
+      ELSIF parent_stock IS NOT NULL AND parent_stock < qty THEN
         RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid order.');
       END IF;
-    ELSIF stock IS NOT NULL AND stock < qty THEN
+    ELSIF parent_stock IS NOT NULL AND parent_stock < qty THEN
       RETURN pg_catalog.jsonb_build_object('success', false, 'message', 'There is not enough stock to fulfil this paid order.');
     END IF;
   END LOOP;
