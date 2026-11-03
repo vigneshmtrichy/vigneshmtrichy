@@ -72,7 +72,7 @@ status = 'active',
     gstRate: Number(selectedSku.gst_rate),
     shippingWeightKg: selectedSku.shipping_weight_kg ?? product.shippingWeightKg,
   } : product
-  const purchaseStatus = selectedSku && selectedStock === 0 ? 'out-of-stock' : status
+  const purchaseStatus = selectedSku && selectedStock !== null ? (selectedStock > 0 ? 'active' : 'out-of-stock') : status
 
   const handleBuyNow = () => {
     if (status !== 'active') return
