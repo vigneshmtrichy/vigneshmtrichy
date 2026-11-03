@@ -56,14 +56,14 @@ export async function POST(request:Request){
 
     const [{data:statuses,error:statusError},{data:skuRows,error:skuError}] = await Promise.all([
       db.from('product_status').select('product_slug,status,stock_quantity,mrp,price,gst_rate').in('product_slug',slugs),
-      db.from('product_skus').select('id,product_slug,sku_code,pack_size_value,pack_size_unit,mrp,online_price,gst_rate,shipping_weight_kg,status,sku_inventory(stock_quantity)').in('product_slug',slugs).eq('status','active')
+      db.from('product_skus').select('id,product_slug,sku_code,pack_size_value,pack_size_unit,mrp,online_price,gst_rate,shipping_weight_kg,status,sku_inventory(stock_quantity)').in('product_slug',slugs)
     ])
     if(statusError) throw statusError
     if(skuError) throw skuError
 
     const bySlug=new Map((statuses||[]).map((x:any)=>[x.product_slug,x]))
     const bySku=new Map((skuRows||[]).map((x:any)=>[x.id,x]))
-    const activeSkuSlugs=new Set((skuRows||[]).map((x:any)=>x.product_slug))
+    const skuProductSlugs=new Set((skuRows||[]).map((x:any)=>x.product_slug))
     const seen=new Set<string>()
     const items:any[]=[]
 
@@ -104,7 +104,7 @@ export async function POST(request:Request){
           pack_size_value:Number(sku.pack_size_value),pack_size_unit:sku.pack_size_unit,
           shipping_weight_kg:sku.shipping_weight_kg==null?null:Number(sku.shipping_weight_kg)
         }
-      } else if(activeSkuSlugs.has(slug)){
+      } else if(skuProductSlugs.has(slug)){
         return NextResponse.json({success:false,message:'Please select a pack size for '+product.name+'. Refresh the product page and choose a pack.'},{status:409})
       } else if(parent.status==='out-of-stock' || (parent.stock_quantity!=null&&Number(parent.stock_quantity)<quantity)){
         return NextResponse.json({success:false,message:'There is not enough stock for one of the products in your cart.'},{status:409})
