@@ -77,7 +77,7 @@ export async function POST(request:Request){
       const product=ALL_PRODUCTS.find(p=>p.slug===slug)
       const parent=bySlug.get(slug)
       if(!product||!parent) return NextResponse.json({success:false,message:'A product in your cart could not be verified.'},{status:409})
-      if(['hidden','coming-soon','out-of-stock'].includes(parent.status))
+      if(['hidden','coming-soon'].includes(parent.status))
         return NextResponse.json({success:false,message:'A product in your cart is no longer available.'},{status:409})
 
       let unitPrice=Number(parent.price ?? product.price)
@@ -106,7 +106,7 @@ export async function POST(request:Request){
         }
       } else if(activeSkuSlugs.has(slug)){
         return NextResponse.json({success:false,message:'Please select a pack size for '+product.name+'. Refresh the product page and choose a pack.'},{status:409})
-      } else if(parent.stock_quantity!=null&&Number(parent.stock_quantity)<quantity){
+      } else if(parent.status==='out-of-stock' || (parent.stock_quantity!=null&&Number(parent.stock_quantity)<quantity)){
         return NextResponse.json({success:false,message:'There is not enough stock for one of the products in your cart.'},{status:409})
       }
 
