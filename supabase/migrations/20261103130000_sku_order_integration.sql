@@ -434,7 +434,7 @@ DECLARE
   normalized_payment_type text;
   normalized_payment_method text;
 BEGIN
-  IF (SELECT auth.jwt() ->> 'email') <> 'info@tenoo.in' THEN
+  IF (SELECT auth.jwt() ->> 'email') IS DISTINCT FROM 'info@tenoo.in' THEN
     RAISE EXCEPTION 'Admin access required' USING ERRCODE = '42501';
   END IF;
 
