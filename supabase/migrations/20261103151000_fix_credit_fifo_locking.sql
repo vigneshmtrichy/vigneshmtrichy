@@ -18,7 +18,7 @@ BEGIN
   normalized_payment_type:=CASE WHEN p_payment_type IN('prepaid','credit','partial','cod') THEN p_payment_type ELSE 'credit' END;
   normalized_payment_method:=CASE WHEN p_initial_payment_method IN('cash','upi','bank-transfer','cheque','other') THEN p_initial_payment_method ELSE 'other' END;
   SELECT payment_terms_days,credit_limit,state INTO payment_days,credit_limit_value,retailer_state FROM public.retailers WHERE id=p_retailer_id FOR UPDATE;
-  FOR item IN SELECT element FROM pg_catalog.jsonb_array_elements(p_items) AS items(element) ORDER BY COALESCE(element->>'sku_id',element->>'product_slug) LOOP
+  FOR item IN SELECT element FROM pg_catalog.jsonb_array_elements(p_items) AS items(element) ORDER BY COALESCE(element->>'sku_id',element->>'product_slug') LOOP
     item_slug:=item->>'product_slug'; item_sku:=NULLIF(item->>'sku_id','')::uuid; item_quantity:=NULLIF(item->>'quantity','')::integer;
     IF item_slug IS NULL OR item_quantity IS NULL OR item_quantity<1 THEN RAISE EXCEPTION 'Invalid product or quantity' USING ERRCODE='P0001'; END IF;
     SELECT ps.stock_quantity,ps.status,COALESCE(rsp.unit_price,rpp.unit_price,s.retailer_price,ps.retailer_price,ps.price),
@@ -42,7 +42,7 @@ BEGIN
   END LOOP;
   INSERT INTO public.retailer_orders(retailer_id,payment_type,payment_status,due_date,notes,place_of_supply_state)
   VALUES(p_retailer_id,normalized_payment_type,'unpaid',COALESCE(p_due_date,CASE WHEN payment_days>0 THEN current_date+payment_days ELSE NULL END),NULLIF(btrim(COALESCE(p_notes,'')),''),NULLIF(btrim(retailer_state),'')) RETURNING id INTO order_id;
-  FOR item IN SELECT element FROM pg_catalog.jsonb_array_elements(p_items) AS items(element) ORDER BY COALESCE(element->>'sku_id',element->>'product_slug) LOOP
+  FOR item IN SELECT element FROM pg_catalog.jsonb_array_elements(p_items) AS items(element) ORDER BY COALESCE(element->>'sku_id',element->>'product_slug') LOOP
     item_slug:=item->>'product_slug'; item_sku:=NULLIF(item->>'sku_id','')::uuid; item_quantity:=(item->>'quantity')::integer;
     SELECT COALESCE(rsp.unit_price,rpp.unit_price,s.retailer_price,ps.retailer_price,ps.price),
       COALESCE(ps.display_name,ps.product_slug)||CASE WHEN s.id IS NULL THEN '' ELSE ' · '||s.pack_size_value::text||s.pack_size_unit END,COALESCE(s.gst_rate,ps.gst_rate,5)
