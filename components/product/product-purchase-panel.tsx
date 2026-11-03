@@ -46,8 +46,17 @@ status = 'active',
       } else {
         const rows = (data || []) as typeof skuOptions
         const { data: availability } = await supabase.rpc('get_public_sku_availability', { p_product_slug: product.slug })
-        setHasSkuRecords((availability || []).some((row: any) => row.is_configured))
-        const availabilityById = new Map((availability || []).filter((row: any) => row.sku_id).map((row: any) => [row.sku_id, row.is_available]))
+        const availabilityRows = (availability || []) as Array<{
+          sku_id: string | null
+          is_available: boolean | null
+          is_configured: boolean
+        }>
+        setHasSkuRecords(availabilityRows.some((row) => row.is_configured))
+        const availabilityById = new Map<string, boolean | null>(
+          availabilityRows
+            .filter((row): row is typeof row & { sku_id: string } => Boolean(row.sku_id))
+            .map((row) => [row.sku_id, row.is_available]),
+        )
         const rowsWithAvailability = rows.map((sku) => ({ ...sku, is_available: availabilityById.get(sku.id) ?? null }))
         setSkuOptions(rowsWithAvailability)
         setSelectedSkuId(rows[0]?.id || '')
