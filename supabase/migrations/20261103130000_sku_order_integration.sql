@@ -505,7 +505,7 @@ BEGIN
   FOR item IN
     SELECT element
     FROM pg_catalog.jsonb_array_elements(p_items) AS items(element)
-    ORDER BY element ->> 'product_slug'
+    ORDER BY COALESCE(element ->> 'sku_id', element ->> 'product_slug')
   LOOP
     item_slug := item ->> 'product_slug';
     item_sku := NULLIF(item ->> 'sku_id', '')::uuid;
