@@ -127,7 +127,7 @@ export default function AdminSkuManagementPage() {
   }
 
   const startEdit = (item: ProductSku) => {
-    const inv = item.sku_inventory?.[0]
+    const inv = getSkuInventory(item)
     setEditingId(item.id)
     setForm({
       product_slug: item.product_slug, sku_code: item.sku_code, barcode: item.barcode || '',
