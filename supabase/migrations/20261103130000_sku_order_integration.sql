@@ -517,7 +517,7 @@ BEGIN
       SELECT 1 FROM public.sku_inventory WHERE sku_id = item_sku AND stock_quantity IS NOT NULL
     ) THEN
       UPDATE public.sku_inventory SET stock_quantity = stock_quantity - item_quantity WHERE sku_id = item_sku;
-      INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, notes)
+      INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, reference_id, notes)
       VALUES (item_sku, 'retailer_sale', -item_quantity, 'retailer_order', order_id::text, 'Reserved for retailer order');
     ELSE
       UPDATE public.product_status
