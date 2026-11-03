@@ -93,14 +93,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .eq('status', 'active')
         .order('is_default', { ascending: false })
       const defaultSkuBySlug = new Map<string, any>()
+      const skuById = new Map<string, any>()
       ;(skuRows || []).forEach((sku: any) => {
+        skuById.set(sku.id, sku)
         if (!defaultSkuBySlug.has(sku.product_slug)) defaultSkuBySlug.set(sku.product_slug, sku)
       })
 
       const refreshedItems = savedItems.map((item) => {
-        if (item.product.skuId) return item
         const baseProduct = applyProductControls(item.product, pricingBySlug.get(item.product.slug))
-        const sku = defaultSkuBySlug.get(item.product.slug)
+        const sku = (item.product.skuId ? skuById.get(item.product.skuId) : null) || defaultSkuBySlug.get(item.product.slug)
         if (!sku) return { ...item, product: baseProduct }
         return {
           ...item,
