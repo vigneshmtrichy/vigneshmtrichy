@@ -136,8 +136,6 @@ BEGIN
       UPDATE public.sku_inventory
       SET stock_quantity = stock_quantity - item_quantity
       WHERE sku_id = item_sku;
-      INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, notes)
-      VALUES (item_sku, 'sale', -item_quantity, 'online_order', 'Reserved for online order');
     ELSE
       UPDATE public.product_status
       SET stock_quantity = stock_quantity - item_quantity,
@@ -163,6 +161,18 @@ BEGIN
     'WhatsApp', 'pending', true
   )
   RETURNING id INTO created_order_id;
+
+  FOR item IN
+    SELECT element FROM pg_catalog.jsonb_array_elements(p_items) AS items(element)
+    WHERE NULLIF(element ->> 'sku_id', '') IS NOT NULL
+  LOOP
+    item_sku := (item ->> 'sku_id')::uuid;
+    item_quantity := (item ->> 'quantity')::integer;
+    IF EXISTS (SELECT 1 FROM public.sku_inventory WHERE sku_id = item_sku AND stock_quantity IS NOT NULL) THEN
+      INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, reference_id, notes)
+      VALUES (item_sku, 'sale', -item_quantity, 'online_order', created_order_id::text, 'Reserved for online order');
+    END IF;
+  END LOOP;
 
   RETURN pg_catalog.jsonb_build_object('success', true, 'order_id', created_order_id);
 END;
@@ -336,8 +346,6 @@ BEGIN
     qty := (item ->> 'quantity')::integer;
     IF sku IS NOT NULL AND EXISTS (SELECT 1 FROM public.sku_inventory WHERE sku_id = sku AND stock_quantity IS NOT NULL) THEN
       UPDATE public.sku_inventory SET stock_quantity = stock_quantity - qty WHERE sku_id = sku;
-      INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, notes)
-      VALUES (sku, 'sale', -qty, 'online_order', 'Reserved for Cashfree-paid order');
     ELSE
       UPDATE public.product_status SET stock_quantity = stock_quantity - qty,
         status = CASE WHEN stock_quantity - qty = 0 THEN 'out-of-stock' ELSE status END
@@ -356,6 +364,18 @@ BEGIN
     intent.cgst, intent.sgst, intent.igst, intent.delivery_charge, intent.total,
     'Cashfree', 'confirmed', true, NULL
   ) RETURNING id INTO created_id;
+
+  FOR item IN
+    SELECT element FROM pg_catalog.jsonb_array_elements(intent.items) AS items(element)
+    WHERE NULLIF(element ->> 'sku_id', '') IS NOT NULL
+  LOOP
+    sku := (item ->> 'sku_id')::uuid;
+    qty := (item ->> 'quantity')::integer;
+    IF EXISTS (SELECT 1 FROM public.sku_inventory WHERE sku_id = sku AND stock_quantity IS NOT NULL) THEN
+      INSERT INTO public.sku_stock_movements(sku_id, movement_type, quantity_delta, reference_type, reference_id, notes)
+      VALUES (sku, 'sale', -qty, 'online_order', created_id::text, 'Reserved for Cashfree-paid order');
+    END IF;
+  END LOOP;
 
   UPDATE public.cashfree_payment_intents SET status = 'paid', order_id = created_id,
     cashfree_payment_id = COALESCE(p_cashfree_payment_id, cashfree_payment_id),
