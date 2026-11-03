@@ -24,7 +24,7 @@ type CartContextType = {
   items: CartItem[]
   addToCart: (product: Product, quantity?: number) => void
   removeFromCart: (slug: string, skuId?: string) => void
-  updateQuantity: (slug: string, quantity: number) => void
+  updateQuantity: (slug: string, quantity: number, skuId?: string) => void
   clearCart: () => void
   cartCount: number
   cartTotal: number
