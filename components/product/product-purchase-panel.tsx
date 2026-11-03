@@ -75,7 +75,7 @@ status = 'active',
   const purchaseStatus = selectedSku && selectedStock !== null ? (selectedStock > 0 ? 'active' : 'out-of-stock') : status
 
   const handleBuyNow = () => {
-    if (status !== 'active') return
+    if (purchaseStatus !== 'active' || skuLoading) return
 
     addToCart(cartProduct, 1)
     router.push('/cart')
