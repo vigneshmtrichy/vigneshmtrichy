@@ -153,7 +153,7 @@ export default function AdminSkuManagementPage() {
     if (stock != null && (!Number.isSafeInteger(stock) || stock < 0)) return setMessage('Stock must be a whole number zero or above.')
     if (!Number.isSafeInteger(reorder) || reorder < 0) return setMessage('Reorder level must be a whole number zero or above.')
     if (weight != null && (!Number.isFinite(weight) || weight <= 0)) return setMessage('Enter a valid shipping weight.')
-    if (form.barcode.trim() && !/^\\d{8,14}$/.test(form.barcode.trim())) return setMessage('Barcode must contain 8–14 digits.')
+    if (form.barcode.trim() && !/^(?:[0-9]{8}|[0-9]{12}|[0-9]{13}|[0-9]{14})$/.test(form.barcode.trim())) return setMessage('Enter a valid 8, 12, 13 or 14 digit barcode.')
     setSaving(true); setMessage('')
     const payload = {
       product_slug: form.product_slug, sku_code: form.sku_code.trim().toUpperCase(),
@@ -172,17 +172,13 @@ export default function AdminSkuManagementPage() {
       : await supabase.from('product_skus').insert(payload).select('id').single()
     if (result.error || !result.data) { setSaving(false); return setMessage(result.error?.message || 'Unable to save SKU.') }
     skuId = result.data.id
-    const { error: inventoryError } = await supabase.from('sku_inventory').upsert({
-      sku_id: skuId, stock_quantity: stock, reorder_level: reorder, updated_at: new Date().toISOString(),
-    }, { onConflict: 'sku_id' })
+    const { error: inventoryError } = await supabase.rpc('tenoo_admin_set_sku_stock', {
+      p_sku_id: skuId,
+      p_stock_quantity: stock,
+      p_reorder_level: reorder,
+      p_notes: editingId ? 'SKU stock updated from admin' : 'Opening stock entered during SKU creation',
+    })
     if (inventoryError) { setSaving(false); return setMessage('SKU saved, but inventory save failed: ' + inventoryError.message) }
-    if (stock != null && !editingId) {
-      const { error: movementError } = await supabase.from('sku_stock_movements').insert({
-        sku_id: skuId, movement_type: 'opening', quantity_delta: stock,
-        notes: 'Opening stock entered during SKU creation',
-      })
-      if (movementError) { setSaving(false); return setMessage('SKU and stock saved, but audit movement failed: ' + movementError.message) }
-    }
     setSaving(false); setShowForm(false); setEditingId(null); setMessage('SKU saved successfully. Existing order stock flows remain unchanged until Phase 2 integration.')
     await load()
   }
