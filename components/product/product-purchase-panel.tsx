@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, MapPin, ShoppingBag, Truck, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import type { Product } from '@/lib/site'
 import { useCart } from '@/components/cart/cart-context'
 import { AddToCartButton } from '@/components/cart/add-to-cart-button'
+import { supabase } from '@/lib/supabase'
 
 export function ProductPurchasePanel({
   product,
@@ -20,11 +21,63 @@ status = 'active',
 
   const [pincode, setPincode] = useState('')
   const [deliveryMessage, setDeliveryMessage] = useState('')
+  const [skuOptions, setSkuOptions] = useState<Array<{
+    id: string; sku_code: string; pack_size_value: number; pack_size_unit: string;
+    mrp: number; online_price: number; gst_rate: number; shipping_weight_kg: number | null;
+    is_default: boolean; sku_inventory?: { stock_quantity: number | null } | { stock_quantity: number | null }[] | null
+  }>>([])
+  const [selectedSkuId, setSelectedSkuId] = useState('')
+  const [skuLoading, setSkuLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    const loadSkus = async () => {
+      const { data, error } = await supabase
+        .from('product_skus')
+        .select('id, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, is_default, sku_inventory(stock_quantity)')
+        .eq('product_slug', product.slug)
+        .eq('status', 'active')
+        .order('is_default', { ascending: false })
+        .order('pack_size_value', { ascending: true })
+      if (!active) return
+      if (error) {
+        console.error('Unable to load product pack variants:', error)
+        setSkuOptions([])
+      } else {
+        const rows = (data || []) as typeof skuOptions
+        setSkuOptions(rows)
+        setSelectedSkuId(rows[0]?.id || '')
+      }
+      setSkuLoading(false)
+    }
+    void loadSkus()
+    return () => { active = false }
+  }, [product.slug])
+
+  const selectedSku = useMemo(
+    () => skuOptions.find((sku) => sku.id === selectedSkuId) || null,
+    [skuOptions, selectedSkuId],
+  )
+  const selectedInventory = selectedSku?.sku_inventory
+  const selectedStock = Array.isArray(selectedInventory)
+    ? selectedInventory[0]?.stock_quantity ?? null
+    : selectedInventory?.stock_quantity ?? null
+  const cartProduct: Product = selectedSku ? {
+    ...product,
+    skuId: selectedSku.id,
+    skuCode: selectedSku.sku_code,
+    packSize: String(selectedSku.pack_size_value) + selectedSku.pack_size_unit,
+    mrp: String(selectedSku.mrp),
+    price: String(selectedSku.online_price),
+    gstRate: Number(selectedSku.gst_rate),
+    shippingWeightKg: selectedSku.shipping_weight_kg ?? product.shippingWeightKg,
+  } : product
+  const purchaseStatus = selectedSku && selectedStock === 0 ? 'out-of-stock' : status
 
   const handleBuyNow = () => {
     if (status !== 'active') return
 
-    addToCart(product, 1)
+    addToCart(cartProduct, 1)
     router.push('/cart')
   }
 
@@ -61,6 +114,16 @@ status = 'active',
 
   return (
     <div className="mt-7">
+      {skuOptions.length > 0 && (
+        <div className="mb-4 max-w-[320px]">
+          <label className="block text-xs font-semibold text-muted-foreground">Pack size</label>
+          <select value={selectedSkuId} onChange={(event) => setSelectedSkuId(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium text-primary">
+            {skuOptions.map((sku) => <option key={sku.id} value={sku.id}>{sku.pack_size_value}{sku.pack_size_unit} · ₹{Number(sku.online_price).toLocaleString('en-IN')}</option>)}
+          </select>
+          {selectedSku && <p className="mt-2 text-sm text-primary"><span className="font-semibold">₹{Number(selectedSku.online_price).toLocaleString('en-IN')}</span> <span className="ml-2 text-muted-foreground line-through">₹{Number(selectedSku.mrp).toLocaleString('en-IN')}</span></p>}
+          {selectedSku && selectedStock !== null && <p className="mt-1 text-xs text-muted-foreground">{selectedStock > 0 ? selectedStock + ' packs available' : 'Currently out of stock'}</p>}
+        </div>
+      )}
 
       {/* PURCHASE BUTTONS */}
 <div className="w-full max-w-[260px]">
@@ -73,14 +136,14 @@ status = 'active',
         : ''
     }
   >
-    <AddToCartButton product={product} />
+    <AddToCartButton product={cartProduct} />
   </div>
 
   {/* BUY IT NOW */}
   <button
   type="button"
   onClick={handleBuyNow}
-  disabled={status !== 'active'}
+  disabled={purchaseStatus !== 'active' || skuLoading}
   style={{
     width: '260px',
     maxWidth: '100%',
@@ -111,7 +174,7 @@ status = 'active',
   "
 >
   <ShoppingBag className="h-5 w-5" />
- {status === 'active'
+ {purchaseStatus === 'active'
   ? 'BUY IT NOW'
   : status === 'coming-soon'
     ? 'COMING SOON'
@@ -121,7 +184,7 @@ status = 'active',
 
       {/* STOCK STATUS */}
       <div className="mt-4 flex items-center gap-2">
-        {status === 'active' ? (
+        {purchaseStatus === 'active' ? (
           <>
             <span
               className="
