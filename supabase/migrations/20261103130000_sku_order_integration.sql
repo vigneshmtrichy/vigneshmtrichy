@@ -23,7 +23,7 @@ GRANT SELECT ON public.product_skus TO anon, authenticated;
 
 -- Storefronts can learn whether a pack is available without exposing exact stock counts.
 CREATE OR REPLACE FUNCTION public.get_public_sku_availability(p_product_slug text)
-RETURNS TABLE(sku_id uuid, is_available boolean)
+RETURNS TABLE(sku_id uuid, is_available boolean, is_configured boolean)
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = ''
@@ -32,10 +32,15 @@ AS $function$
     CASE
       WHEN i.sku_id IS NULL OR i.stock_quantity IS NULL THEN NULL
       ELSE i.stock_quantity > 0
-    END
+    END,
+    true
   FROM public.product_skus s
   LEFT JOIN public.sku_inventory i ON i.sku_id = s.id
-  WHERE s.product_slug = p_product_slug AND s.status = 'active';
+  WHERE s.product_slug = p_product_slug AND s.status = 'active'
+  UNION ALL
+  SELECT NULL::uuid, NULL::boolean, true
+  WHERE EXISTS (SELECT 1 FROM public.product_skus WHERE product_slug = p_product_slug)
+    AND NOT EXISTS (SELECT 1 FROM public.product_skus WHERE product_slug = p_product_slug AND status = 'active');
 $function$;
 
 REVOKE ALL ON FUNCTION public.get_public_sku_availability(text) FROM PUBLIC;
