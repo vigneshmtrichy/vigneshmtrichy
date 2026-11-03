@@ -44,11 +44,10 @@ status = 'active',
         console.error('Unable to load product pack variants:', error)
         setSkuOptions([])
       } else {
-        const allRows = (data || []) as typeof skuOptions
-        setHasSkuRecords(allRows.length > 0)
-        const rows = allRows.filter((sku) => (sku as any).status === 'active')
+        const rows = (data || []) as typeof skuOptions
         const { data: availability } = await supabase.rpc('get_public_sku_availability', { p_product_slug: product.slug })
-        const availabilityById = new Map((availability || []).map((row: any) => [row.sku_id, row.is_available]))
+        setHasSkuRecords((availability || []).some((row: any) => row.is_configured))
+        const availabilityById = new Map((availability || []).filter((row: any) => row.sku_id).map((row: any) => [row.sku_id, row.is_available]))
         const rowsWithAvailability = rows.map((sku) => ({ ...sku, is_available: availabilityById.get(sku.id) ?? null }))
         setSkuOptions(rowsWithAvailability)
         setSelectedSkuId(rows[0]?.id || '')
