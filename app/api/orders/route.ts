@@ -230,7 +230,7 @@ export async function POST(request: Request) {
       if (!product || !managed) {
         return NextResponse.json({ success: false, message: 'Your cart contains a product we could not verify.' }, { status: 409 })
       }
-      if (['hidden', 'coming-soon', 'out-of-stock'].includes(managed.status)) {
+      if (['hidden', 'coming-soon'].includes(managed.status)) {
         return NextResponse.json({ success: false, message: 'A product in your cart is no longer available. Please refresh your cart.' }, { status: 409 })
       }
 
@@ -262,7 +262,7 @@ export async function POST(request: Request) {
         })
       } else if (activeSkuSlugs.has(slug)) {
         return NextResponse.json({ success: false, message: 'Please select a pack size for ' + product.name + '. Refresh the product page and choose a pack.' }, { status: 409 })
-      } else if (managed.stock_quantity != null && managed.stock_quantity < quantity) {
+      } else if (managed.status === 'out-of-stock' || (managed.stock_quantity != null && managed.stock_quantity < quantity)) {
         return NextResponse.json({ success: false, message: 'There is not enough stock for one of the products in your cart.' }, { status: 409 })
       }
 
