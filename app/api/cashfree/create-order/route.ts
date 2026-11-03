@@ -51,41 +51,72 @@ export async function POST(request:Request){
     if(!Array.isArray(b?.items)||b.items.length<1||b.items.length>20)
       return NextResponse.json({success:false,message:'Your cart is invalid. Please refresh and try again.'},{status:400})
 
-    const seen=new Set<string>()
-    const items:any[]=[]
-    for(const submitted of b.items){
-      const slug=txt(submitted?.product_slug,100)
-      const quantity=submitted?.quantity
-      if(!slug||!Number.isSafeInteger(quantity)||quantity<1||quantity>100||seen.has(slug))
-        return NextResponse.json({success:false,message:'Your cart has an invalid product or quantity.'},{status:400})
-      const product=ALL_PRODUCTS.find(p=>p.slug===slug)
-      if(!product) return NextResponse.json({success:false,message:'Your cart contains a product we could not verify.'},{status:400})
-      seen.add(slug)
-      items.push({
-        product_slug:product.slug,product_name:product.name,quantity,
-        unit_price:Number(product.price),mrp:Number(product.mrp||product.price),
-        gst_rate:Number(product.gstRate||0),image:product.image,shipping_weight_kg:null
-      })
-    }
+    const slugs = [...new Set<string>(b.items.map((item: any) => txt(item?.product_slug, 100)).filter((value: string | null): value is string => Boolean(value)))]
+    if (slugs.length !== b.items.length) return NextResponse.json({success:false,message:'Your cart has an invalid product.'},{status:400})
 
-    const {data:statuses,error}=await db.from('product_status')
-      .select('product_slug,status,stock_quantity,mrp,price,gst_rate')
-      .in('product_slug',[...seen])
-    if(error) throw error
+    const [{data:statuses,error:statusError},{data:skuRows,error:skuError}] = await Promise.all([
+      db.from('product_status').select('product_slug,status,stock_quantity,mrp,price,gst_rate').in('product_slug',slugs),
+      db.from('product_skus').select('id,product_slug,sku_code,pack_size_value,pack_size_unit,mrp,online_price,gst_rate,shipping_weight_kg,status,sku_inventory(stock_quantity)').in('product_slug',slugs).eq('status','active')
+    ])
+    if(statusError) throw statusError
+    if(skuError) throw skuError
 
     const bySlug=new Map((statuses||[]).map((x:any)=>[x.product_slug,x]))
-    for(const item of items){
-      const p=bySlug.get(item.product_slug)
-      if(!p) return NextResponse.json({success:false,message:'A product in your cart could not be verified. Please refresh and try again.'},{status:409})
-      if(['hidden','coming-soon','out-of-stock'].includes(p.status))
-        return NextResponse.json({success:false,message:'A product in your cart is no longer available. Please refresh your cart.'},{status:409})
-      if(p.price!=null) item.unit_price=Number(p.price)
-      if(p.mrp!=null) item.mrp=Number(p.mrp)
-      if(p.gst_rate!=null) item.gst_rate=Number(p.gst_rate)
-      if(p.stock_quantity!=null&&p.stock_quantity<item.quantity)
+    const bySku=new Map((skuRows||[]).map((x:any)=>[x.id,x]))
+    const activeSkuSlugs=new Set((skuRows||[]).map((x:any)=>x.product_slug))
+    const seen=new Set<string>()
+    const items:any[]=[]
+
+    for(const submitted of b.items){
+      const slug=txt(submitted?.product_slug,100)
+      const skuId=txt(submitted?.sku_id,64)
+      const quantity=submitted?.quantity
+      const key=slug+':'+(skuId||'legacy')
+      if(!slug||!Number.isSafeInteger(quantity)||quantity<1||quantity>100||seen.has(key))
+        return NextResponse.json({success:false,message:'Your cart has an invalid product or quantity.'},{status:400})
+      const product=ALL_PRODUCTS.find(p=>p.slug===slug)
+      const parent=bySlug.get(slug)
+      if(!product||!parent) return NextResponse.json({success:false,message:'A product in your cart could not be verified.'},{status:409})
+      if(['hidden','coming-soon','out-of-stock'].includes(parent.status))
+        return NextResponse.json({success:false,message:'A product in your cart is no longer available.'},{status:409})
+
+      let unitPrice=Number(parent.price ?? product.price)
+      let mrp=Number(parent.mrp ?? product.mrp ?? product.price)
+      let gstRate=Number(parent.gst_rate ?? product.gstRate ?? 0)
+      let snapshot:any={
+        product_slug:slug,product_name:product.name,quantity,unit_price:unitPrice,mrp,
+        gst_rate:gstRate,image:product.image,shipping_weight_kg:null
+      }
+
+      if(skuId){
+        const sku=bySku.get(skuId)
+        if(!sku||sku.product_slug!==slug||sku.status!=='active')
+          return NextResponse.json({success:false,message:'The selected pack is no longer available. Please refresh your cart.'},{status:409})
+        unitPrice=Number(sku.online_price)
+        mrp=Number(sku.mrp)
+        gstRate=Number(sku.gst_rate)
+        const inv=Array.isArray(sku.sku_inventory)?sku.sku_inventory[0]:sku.sku_inventory
+        const available=inv?.stock_quantity
+        if(available!=null&&available<quantity)
+          return NextResponse.json({success:false,message:'There is not enough stock for the selected pack.'},{status:409})
+        snapshot={
+          ...snapshot,sku_id:sku.id,sku_code:sku.sku_code,
+          pack_size_value:Number(sku.pack_size_value),pack_size_unit:sku.pack_size_unit,
+          shipping_weight_kg:sku.shipping_weight_kg==null?null:Number(sku.shipping_weight_kg)
+        }
+      } else if(activeSkuSlugs.has(slug)){
+        return NextResponse.json({success:false,message:'Please select a pack size for '+product.name+'. Refresh the product page and choose a pack.'},{status:409})
+      } else if(parent.stock_quantity!=null&&Number(parent.stock_quantity)<quantity){
         return NextResponse.json({success:false,message:'There is not enough stock for one of the products in your cart.'},{status:409})
-      if(!Number.isFinite(item.unit_price)||item.unit_price<=0||!Number.isFinite(item.mrp)||item.mrp<item.unit_price||!Number.isFinite(item.gst_rate)||item.gst_rate<0||item.gst_rate>100)
+      }
+
+      if(!Number.isFinite(unitPrice)||unitPrice<=0||!Number.isFinite(mrp)||mrp<unitPrice||!Number.isFinite(gstRate)||gstRate<0||gstRate>100)
         return NextResponse.json({success:false,message:'A product in your cart has invalid pricing.'},{status:409})
+      snapshot.unit_price=unitPrice
+      snapshot.mrp=mrp
+      snapshot.gst_rate=gstRate
+      items.push(snapshot)
+      seen.add(key)
     }
 
     const productTotal=round(items.reduce((s,i)=>s+i.unit_price*i.quantity,0))
