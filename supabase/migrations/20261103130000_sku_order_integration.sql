@@ -19,14 +19,27 @@ CREATE TABLE IF NOT EXISTS public.retailer_sku_prices (
 ALTER TABLE public.retailer_sku_prices ENABLE ROW LEVEL SECURITY;
 CREATE POLICY product_skus_public_active_select ON public.product_skus
   FOR SELECT TO anon, authenticated USING (status = 'active');
-CREATE POLICY sku_inventory_public_active_select ON public.sku_inventory
-  FOR SELECT TO anon, authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.product_skus s
-    WHERE s.id = sku_inventory.sku_id AND s.status = 'active'
-  ));
 GRANT SELECT ON public.product_skus TO anon, authenticated;
-GRANT SELECT ON public.sku_inventory TO anon, authenticated;
+
+-- Storefronts can learn whether a pack is available without exposing exact stock counts.
+CREATE OR REPLACE FUNCTION public.get_public_sku_availability(p_product_slug text)
+RETURNS TABLE(sku_id uuid, is_available boolean)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT s.id,
+    CASE
+      WHEN i.sku_id IS NULL OR i.stock_quantity IS NULL THEN NULL
+      ELSE i.stock_quantity > 0
+    END
+  FROM public.product_skus s
+  LEFT JOIN public.sku_inventory i ON i.sku_id = s.id
+  WHERE s.product_slug = p_product_slug AND s.status = 'active';
+$function$;
+
+REVOKE ALL ON FUNCTION public.get_public_sku_availability(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_public_sku_availability(text) TO anon, authenticated;
 
 CREATE POLICY retailer_sku_prices_admin_all ON public.retailer_sku_prices
   FOR ALL TO authenticated
