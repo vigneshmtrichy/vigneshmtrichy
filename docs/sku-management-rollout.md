@@ -34,5 +34,5 @@ Do not infer pack sizes for older orders. Existing order JSON and retailer order
 
 ## Safety
 - This migration is additive; it does not update or delete existing product/order/stock/payment rows.
-- No production SQL was executed and no deployment was triggered.
+- The Phase 1 foundation migration was applied to the connected Supabase project after manual preview verification. The Phase 2 migration remains unapplied; no production deployment or merge has been performed.
 - RLS uses the same admin email guard found in existing admin code and migrations.
