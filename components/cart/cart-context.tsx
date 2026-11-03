@@ -88,7 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const refreshedItems = savedItems.map((item) => ({
         ...item,
-        product: applyProductControls(
+        product: item.product.skuId ? item.product : applyProductControls(
           item.product,
           pricingBySlug.get(item.product.slug),
         ),
