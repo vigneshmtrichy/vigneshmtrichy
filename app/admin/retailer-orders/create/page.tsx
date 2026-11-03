@@ -243,7 +243,7 @@ export default function CreateRetailerOrderPage() {
   )
 
   const estimatedTotal = Math.round((estimatedTaxableTotal + estimatedGstTotal) * 100) / 100
-  const missingRetailerPrice = lines.some((line) => Number(prices[line.product_slug] || 0) <= 0)
+  const missingRetailerPrice = lines.some((line) => Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0) <= 0)
   const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
 
   const creditRequired = paymentType === 'prepaid'
