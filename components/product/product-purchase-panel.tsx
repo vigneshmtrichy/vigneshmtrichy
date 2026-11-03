@@ -27,6 +27,7 @@ status = 'active',
     is_default: boolean; is_available?: boolean | null
   }>>([])
   const [selectedSkuId, setSelectedSkuId] = useState('')
+  const [hasSkuRecords, setHasSkuRecords] = useState(false)
   const [skuLoading, setSkuLoading] = useState(true)
 
   useEffect(() => {
@@ -36,7 +37,6 @@ status = 'active',
         .from('product_skus')
         .select('id, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, is_default')
         .eq('product_slug', product.slug)
-        .eq('status', 'active')
         .order('is_default', { ascending: false })
         .order('pack_size_value', { ascending: true })
       if (!active) return
@@ -44,7 +44,9 @@ status = 'active',
         console.error('Unable to load product pack variants:', error)
         setSkuOptions([])
       } else {
-        const rows = (data || []) as typeof skuOptions
+        const allRows = (data || []) as typeof skuOptions
+        setHasSkuRecords(allRows.length > 0)
+        const rows = allRows.filter((sku) => (sku as any).status === 'active')
         const { data: availability } = await supabase.rpc('get_public_sku_availability', { p_product_slug: product.slug })
         const availabilityById = new Map((availability || []).map((row: any) => [row.sku_id, row.is_available]))
         const rowsWithAvailability = rows.map((sku) => ({ ...sku, is_available: availabilityById.get(sku.id) ?? null }))
@@ -72,7 +74,7 @@ status = 'active',
     gstRate: Number(selectedSku.gst_rate),
     shippingWeightKg: selectedSku.shipping_weight_kg ?? product.shippingWeightKg,
   } : product
-  const purchaseStatus = status === 'hidden' || status === 'coming-soon' ? status : selectedSku && selectedStock !== null ? (selectedStock > 0 ? 'active' : 'out-of-stock') : status
+  const purchaseStatus = status === 'hidden' || status === 'coming-soon' ? status : hasSkuRecords && !selectedSku ? 'out-of-stock' : selectedSku && selectedStock !== null ? (selectedStock > 0 ? 'active' : 'out-of-stock') : status
 
   const handleBuyNow = () => {
     if (purchaseStatus !== 'active' || skuLoading) return
