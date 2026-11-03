@@ -130,11 +130,8 @@ const skuClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
 )
 const { data: activeSkuRows } = await skuClient
-  .from('product_skus')
-  .select('id')
-  .eq('product_slug', product.slug)
-  .limit(1)
-const hasSkuVariants = (activeSkuRows || []).length > 0
+  .rpc('get_public_sku_availability', { p_product_slug: product.slug })
+const hasSkuVariants = (activeSkuRows || []).some((row: any) => row.is_configured)
 
 if (productStatus.status === 'hidden') {
   notFound()
