@@ -10,7 +10,7 @@ import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'luc
 
 type Retailer = { id: string; business_name: string; payment_terms_days: number; credit_limit: number }
 type OrderLine = { product_slug: string; sku_id?: string; quantity: string }
-type SkuOption = { id: string; product_slug: string; sku_code: string; pack_size_value: number; pack_size_unit: string; retailer_price: number | null; gst_rate: number; status: string }
+type SkuOption = { id: string; product_slug: string; sku_code: string; pack_size_value: number; pack_size_unit: string; retailer_price: number | null; gst_rate: number; status: string; is_default: boolean }
 
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
@@ -139,9 +139,10 @@ export default function CreateRetailerOrderPage() {
     if (!authorized) return
     const loadSkus = async () => {
       const { data, error } = await supabase.from('product_skus')
-        .select('id, product_slug, sku_code, pack_size_value, pack_size_unit, retailer_price, gst_rate, status')
+        .select('id, product_slug, sku_code, pack_size_value, pack_size_unit, retailer_price, gst_rate, status, is_default')
         .eq('status', 'active')
         .order('product_slug')
+        .order('is_default', { ascending: false })
         .order('pack_size_value')
       if (error) { setMessage(error.message); return }
       const rows = (data || []) as SkuOption[]
