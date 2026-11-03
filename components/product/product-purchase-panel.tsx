@@ -24,7 +24,7 @@ status = 'active',
   const [skuOptions, setSkuOptions] = useState<Array<{
     id: string; sku_code: string; pack_size_value: number; pack_size_unit: string;
     mrp: number; online_price: number; gst_rate: number; shipping_weight_kg: number | null;
-    is_default: boolean; sku_inventory?: { stock_quantity: number | null } | { stock_quantity: number | null }[] | null
+    is_default: boolean; is_available?: boolean | null
   }>>([])
   const [selectedSkuId, setSelectedSkuId] = useState('')
   const [skuLoading, setSkuLoading] = useState(true)
@@ -34,7 +34,7 @@ status = 'active',
     const loadSkus = async () => {
       const { data, error } = await supabase
         .from('product_skus')
-        .select('id, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, is_default, sku_inventory(stock_quantity)')
+        .select('id, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, is_default')
         .eq('product_slug', product.slug)
         .eq('status', 'active')
         .order('is_default', { ascending: false })
@@ -45,7 +45,10 @@ status = 'active',
         setSkuOptions([])
       } else {
         const rows = (data || []) as typeof skuOptions
-        setSkuOptions(rows)
+        const { data: availability } = await supabase.rpc('get_public_sku_availability', { p_product_slug: product.slug })
+        const availabilityById = new Map((availability || []).map((row: any) => [row.sku_id, row.is_available]))
+        const rowsWithAvailability = rows.map((sku) => ({ ...sku, is_available: availabilityById.get(sku.id) ?? null }))
+        setSkuOptions(rowsWithAvailability)
         setSelectedSkuId(rows[0]?.id || '')
       }
       setSkuLoading(false)
@@ -58,10 +61,7 @@ status = 'active',
     () => skuOptions.find((sku) => sku.id === selectedSkuId) || null,
     [skuOptions, selectedSkuId],
   )
-  const selectedInventory = selectedSku?.sku_inventory
-  const selectedStock = Array.isArray(selectedInventory)
-    ? selectedInventory[0]?.stock_quantity ?? null
-    : selectedInventory?.stock_quantity ?? null
+  const selectedStock = selectedSku?.is_available === true ? 1 : selectedSku?.is_available === false ? 0 : null
   const cartProduct: Product = selectedSku ? {
     ...product,
     skuId: selectedSku.id,
@@ -121,7 +121,7 @@ status = 'active',
             {skuOptions.map((sku) => <option key={sku.id} value={sku.id}>{sku.pack_size_value}{sku.pack_size_unit} · ₹{Number(sku.online_price).toLocaleString('en-IN')}</option>)}
           </select>
           {selectedSku && <p className="mt-2 text-sm text-primary"><span className="font-semibold">₹{Number(selectedSku.online_price).toLocaleString('en-IN')}</span> <span className="ml-2 text-muted-foreground line-through">₹{Number(selectedSku.mrp).toLocaleString('en-IN')}</span></p>}
-          {selectedSku && selectedStock !== null && <p className="mt-1 text-xs text-muted-foreground">{selectedStock > 0 ? selectedStock + ' packs available' : 'Currently out of stock'}</p>}
+          {selectedSku && selectedStock !== null && <p className="mt-1 text-xs text-muted-foreground">{selectedStock > 0 ? 'In stock' : 'Currently out of stock'}</p>}
         </div>
       )}
 
