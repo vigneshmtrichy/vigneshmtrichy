@@ -33,6 +33,8 @@ export type Product = {
   imageUrl?: string
   imageUrls?: string[]
   gstRate?: number
+  skuId?: string
+  skuCode?: string
 
   allergen?: string
 storage?: string

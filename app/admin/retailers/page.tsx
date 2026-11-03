@@ -91,6 +91,8 @@ export default function RetailersPage() {
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [balances, setBalances] = useState<Record<string, any>>({})
   const [prices, setPrices] = useState<Record<string, string>>({})
+  const [skuPrices, setSkuPrices] = useState<Record<string, string>>({})
+  const [skuPriceOptions, setSkuPriceOptions] = useState<Array<{ id: string; product_slug: string; sku_code: string; pack_size_value: number; pack_size_unit: string }>>([])
   const [search, setSearch] = useState('')
   const [retailerPage, setRetailerPage] = useState(1)
   const [form, setForm] = useState(emptyForm)
@@ -414,10 +416,18 @@ export default function RetailersPage() {
   }
   const selectRetailer = async (retailer: Retailer) => {
     setSelected(retailer); setShowSpecialPrices(false); setMessage('')
-    const { data } = await supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailer.id)
+    const [{ data }, { data: skuRows }, { data: skuOverrides }] = await Promise.all([
+      supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailer.id),
+      supabase.from('product_skus').select('id, product_slug, sku_code, pack_size_value, pack_size_unit').eq('status', 'active').order('product_slug').order('pack_size_value'),
+      supabase.from('retailer_sku_prices').select('sku_id, unit_price').eq('retailer_id', retailer.id),
+    ])
     const next: Record<string, string> = {}
     data?.forEach((row: any) => { next[row.product_slug] = String(row.unit_price) })
+    const nextSkuPrices: Record<string, string> = {}
+    skuOverrides?.forEach((row: any) => { nextSkuPrices[row.sku_id] = String(row.unit_price) })
     setPrices(next)
+    setSkuPrices(nextSkuPrices)
+    setSkuPriceOptions((skuRows || []) as typeof skuPriceOptions)
   }
 
   const savePrices = async () => {
@@ -426,10 +436,16 @@ export default function RetailersPage() {
     const rows = Object.entries(prices)
       .filter(([, value]) => value.trim() !== '')
       .map(([product_slug, value]) => ({ retailer_id: selected.id, product_slug, unit_price: Number(value), updated_at: new Date().toISOString() }))
-    const { error: deleteError } = await supabase.from('retailer_product_prices').delete().eq('retailer_id', selected.id)
-    const { error } = deleteError || rows.length === 0
-      ? { error: deleteError }
-      : await supabase.from('retailer_product_prices').upsert(rows)
+    const skuRows = Object.entries(skuPrices)
+      .filter(([, value]) => value.trim() !== '')
+      .map(([sku_id, value]) => ({ retailer_id: selected.id, sku_id, unit_price: Number(value), updated_at: new Date().toISOString() }))
+    const [{ error: deleteError }, { error: deleteSkuError }] = await Promise.all([
+      supabase.from('retailer_product_prices').delete().eq('retailer_id', selected.id),
+      supabase.from('retailer_sku_prices').delete().eq('retailer_id', selected.id),
+    ])
+    const productSave = deleteError || rows.length === 0 ? { error: deleteError } : await supabase.from('retailer_product_prices').upsert(rows)
+    const skuSave = deleteSkuError || skuRows.length === 0 ? { error: deleteSkuError } : await supabase.from('retailer_sku_prices').upsert(skuRows)
+    const error = productSave.error || skuSave.error
     setSaving(false)
     if (error) {
       setSpecialPriceMessage(error.message)
@@ -789,6 +805,7 @@ export default function RetailersPage() {
                 </button>
                 <div className={`${showSpecialPrices ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
                   <div className="max-h-80 space-y-2 overflow-auto">{ALL_PRODUCTS.map((product) => <label key={product.slug} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate">{product.name}</span><input value={prices[product.slug] || ''} onChange={(e) => setPrices({ ...prices, [product.slug]: e.target.value })} placeholder="Default" type="number" min="0.01" step="0.01" className="h-9 w-28 shrink-0 rounded-lg border px-2 text-right" /></label>)}</div>
+                  {skuPriceOptions.length > 0 && <div className="mt-4 border-t pt-4"><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pack-specific overrides (optional)</p><div className="max-h-64 space-y-2 overflow-auto">{skuPriceOptions.map((sku) => <label key={sku.id} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate">{ALL_PRODUCTS.find((product) => product.slug === sku.product_slug)?.name || sku.product_slug} · {sku.pack_size_value}{sku.pack_size_unit} <span className="text-xs text-muted-foreground">({sku.sku_code})</span></span><input value={skuPrices[sku.id] || ''} onChange={(e) => setSkuPrices({ ...skuPrices, [sku.id]: e.target.value })} placeholder="SKU default" type="number" min="0.01" step="0.01" className="h-9 w-28 shrink-0 rounded-lg border px-2 text-right" /></label>)}</div></div>}
                   <button disabled={saving} onClick={() => void savePrices()} className="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-md active:scale-[0.99]">{saving ? 'Saving…' : 'Save special prices'}</button>
                 </div>
               </div>

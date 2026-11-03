@@ -417,6 +417,12 @@ export default function AdminDashboardPage() {
                   Manage products & stock
                 </Link>
                 <Link
+                  href="/admin/skus"
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
+                >
+                  SKU management & pack variants
+                </Link>
+                <Link
                   href="/admin/retailers"
                   className="rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/30 hover:bg-secondary hover:shadow-md active:scale-[0.99]"
                 >

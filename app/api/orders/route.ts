@@ -196,145 +196,84 @@ export async function POST(request: Request) {
       )
     }
 
-    const seenSlugs = new Set<string>()
-    const orderItems = []
+    const slugs = [...new Set<string>(body.items.map((item: any) => readText(item?.product_slug, 100)).filter((value: string | null): value is string => Boolean(value)))]
+    if (slugs.length !== body.items.length) {
+      return NextResponse.json({ success: false, message: 'Your cart has an invalid product.' }, { status: 400 })
+    }
+
+    const [{ data: statuses, error: statusError }, { data: skuRows, error: skuError }] = await Promise.all([
+      supabaseAdmin.from('product_status').select('product_slug, status, stock_quantity, mrp, price, gst_rate').in('product_slug', slugs),
+      supabaseAdmin.from('product_skus').select('id, product_slug, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, status, sku_inventory(stock_quantity)').in('product_slug', slugs),
+    ])
+    if (statusError || skuError) {
+      console.error('Failed to verify product/SKU availability:', statusError || skuError)
+      return NextResponse.json({ success: false, message: 'Unable to verify your cart right now. Please try again.' }, { status: 503 })
+    }
+
+    const statusBySlug = new Map((statuses || []).map((item: any) => [item.product_slug, item]))
+    const skuById = new Map((skuRows || []).map((item: any) => [item.id, item]))
+    const skuProductSlugs = new Set((skuRows || []).map((item: any) => item.product_slug))
+    const seen = new Set<string>()
+    const orderItems: any[] = []
 
     for (const submittedItem of body.items) {
       const slug = readText(submittedItem?.product_slug, 100)
+      const skuId = readText(submittedItem?.sku_id, 64)
       const quantity = submittedItem?.quantity
-
-      if (
-        !slug ||
-        !Number.isSafeInteger(quantity) ||
-        quantity < 1 ||
-        quantity > MAX_QUANTITY_PER_PRODUCT ||
-        seenSlugs.has(slug)
-      ) {
-        return NextResponse.json(
-          { success: false, message: 'Your cart has an invalid product or quantity.' },
-          { status: 400 },
-        )
+      const key = slug + ':' + (skuId || 'legacy')
+      if (!slug || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY_PER_PRODUCT || seen.has(key)) {
+        return NextResponse.json({ success: false, message: 'Your cart has an invalid product or quantity.' }, { status: 400 })
       }
 
       const product = ALL_PRODUCTS.find((item) => item.slug === slug)
-      if (!product) {
-        return NextResponse.json(
-          { success: false, message: 'Your cart contains a product we could not verify.' },
-          { status: 400 },
-        )
+      const managed = statusBySlug.get(slug)
+      if (!product || !managed) {
+        return NextResponse.json({ success: false, message: 'Your cart contains a product we could not verify.' }, { status: 409 })
+      }
+      if (['hidden', 'coming-soon'].includes(managed.status)) {
+        return NextResponse.json({ success: false, message: 'A product in your cart is no longer available. Please refresh your cart.' }, { status: 409 })
       }
 
-      const unitPrice = Number(product.price)
-      const mrp = Number(product.mrp || product.price)
-      let gstRate = Number(product.gstRate || 0)
-
-      if (
-        !Number.isFinite(unitPrice) ||
-        unitPrice <= 0 ||
-        !Number.isFinite(mrp) ||
-        mrp < unitPrice ||
-        !Number.isFinite(gstRate) ||
-        gstRate < 0 ||
-        gstRate > 100
-      ) {
-        return NextResponse.json(
-          { success: false, message: 'A product in your cart is not available to order right now.' },
-          { status: 409 },
-        )
+      let unitPrice = Number(managed.price ?? product.price)
+      let mrp = Number(managed.mrp ?? product.mrp ?? product.price)
+      let gstRate = Number(managed.gst_rate ?? product.gstRate ?? 0)
+      const snapshot: any = {
+        product_slug: slug, product_name: product.name, quantity, unit_price: unitPrice,
+        mrp, gst_rate: gstRate, image: product.image, shipping_weight_kg: null,
       }
 
-      seenSlugs.add(slug)
-      orderItems.push({
-        product_slug: product.slug,
-        product_name: product.name,
-        quantity,
-        unit_price: unitPrice,
-        mrp,
-        gst_rate: gstRate,
-        image: product.image,
-        shipping_weight_kg: null as number | null,
-      })
-    }
-
-    const supabasePublic = getSupabasePublic()
-    const { data: statuses, error: statusError } = await supabasePublic
-      .from('product_status')
-      .select('product_slug, status, stock_quantity, mrp, price, gst_rate')
-      .in('product_slug', [...seenSlugs])
-
-    if (statusError) {
-      console.error('Failed to verify product availability:', statusError)
-      return NextResponse.json(
-        { success: false, message: 'Unable to verify your cart right now. Please try again.' },
-        { status: 503 },
-      )
-    }
-
-    const statusBySlug = new Map(
-      (statuses || []).map((item) => [item.product_slug, item]),
-    )
-
-    for (const item of orderItems) {
-      const managedPricing = statusBySlug.get(item.product_slug)
-
-      if (!managedPricing) {
-        return NextResponse.json(
-          { success: false, message: 'A product in your cart could not be verified. Please refresh and try again.' },
-          { status: 409 },
-        )
+      if (skuId) {
+        const sku = skuById.get(skuId)
+        if (!sku || sku.product_slug !== slug || sku.status !== 'active') {
+          return NextResponse.json({ success: false, message: 'The selected pack is no longer available. Please refresh your cart.' }, { status: 409 })
+        }
+        unitPrice = Number(sku.online_price)
+        mrp = Number(sku.mrp)
+        gstRate = Number(sku.gst_rate)
+        const inventory = Array.isArray(sku.sku_inventory) ? sku.sku_inventory[0] : sku.sku_inventory
+        const available = inventory?.stock_quantity ?? managed.stock_quantity
+        if ((managed.status === 'out-of-stock' && inventory?.stock_quantity == null) || (available != null && available < quantity)) {
+          return NextResponse.json({ success: false, message: 'There is not enough stock for the selected pack.' }, { status: 409 })
+        }
+        Object.assign(snapshot, {
+          sku_id: sku.id, sku_code: sku.sku_code,
+          pack_size_value: Number(sku.pack_size_value), pack_size_unit: sku.pack_size_unit,
+          shipping_weight_kg: sku.shipping_weight_kg == null ? null : Number(sku.shipping_weight_kg),
+        })
+      } else if (skuProductSlugs.has(slug)) {
+        return NextResponse.json({ success: false, message: 'Please select a pack size for ' + product.name + '. Refresh the product page and choose a pack.' }, { status: 409 })
+      } else if (managed.status === 'out-of-stock' || (managed.stock_quantity != null && managed.stock_quantity < quantity)) {
+        return NextResponse.json({ success: false, message: 'There is not enough stock for one of the products in your cart.' }, { status: 409 })
       }
 
-      if (managedPricing.price !== null && managedPricing.price !== undefined) {
-        item.unit_price = Number(managedPricing.price)
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0 || !Number.isFinite(mrp) || mrp < unitPrice || !Number.isFinite(gstRate) || gstRate < 0 || gstRate > 100) {
+        return NextResponse.json({ success: false, message: 'A product in your cart has invalid pricing. Please try again.' }, { status: 409 })
       }
-
-      if (managedPricing.mrp !== null && managedPricing.mrp !== undefined) {
-        item.mrp = Number(managedPricing.mrp)
-      }
-
-      if (managedPricing.gst_rate !== null && managedPricing.gst_rate !== undefined) {
-        item.gst_rate = Number(managedPricing.gst_rate)
-      }
-
-      if (
-        !Number.isFinite(item.unit_price) ||
-        item.unit_price <= 0 ||
-        !Number.isFinite(item.mrp) ||
-        item.mrp < item.unit_price ||
-        !Number.isFinite(item.gst_rate) ||
-        item.gst_rate < 0 ||
-        item.gst_rate > 100
-      ) {
-        return NextResponse.json(
-          { success: false, message: 'A product in your cart has invalid pricing. Please try again.' },
-          { status: 409 },
-        )
-      }
-    }
-
-    const unavailable = orderItems.some((item) => {
-      const productStatus = statusBySlug.get(item.product_slug)
-      const status = productStatus?.status
-      return status === 'hidden' || status === 'coming-soon' || status === 'out-of-stock'
-    })
-
-    if (unavailable) {
-      return NextResponse.json(
-        { success: false, message: 'A product in your cart is no longer available. Please refresh your cart.' },
-        { status: 409 },
-      )
-    }
-
-    const insufficientStock = orderItems.some((item) => {
-      const stock = statusBySlug.get(item.product_slug)?.stock_quantity
-      return stock !== null && stock !== undefined && stock < item.quantity
-    })
-
-    if (insufficientStock) {
-      return NextResponse.json(
-        { success: false, message: 'There is not enough stock for one of the products in your cart. Please update the quantity and try again.' },
-        { status: 409 },
-      )
+      snapshot.unit_price = unitPrice
+      snapshot.mrp = mrp
+      snapshot.gst_rate = gstRate
+      orderItems.push(snapshot)
+      seen.add(key)
     }
 
     const productTotal = roundCurrency(
@@ -383,6 +322,7 @@ export async function POST(request: Request) {
         },
         p_items: orderItems.map((item) => ({
           product_slug: item.product_slug,
+          sku_id: item.sku_id || null,
           quantity: item.quantity,
         })),
       },

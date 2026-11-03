@@ -16,6 +16,9 @@ type OrderItem = {
   unit_price?: number
   price?: number
   image?: string
+  pack_size_value?: number
+  pack_size_unit?: string
+  sku_code?: string
   product?: {
     name?: string
     price?: number
@@ -95,7 +98,8 @@ function getStatusStep(status: string) {
 }
 
 function getItemName(item: OrderItem) {
-  return item.product_name || item.name || item.product?.name || 'Product'
+  const name = item.product_name || item.name || item.product?.name || 'Product'
+  return item.pack_size_value ? name + ' (' + item.pack_size_value + (item.pack_size_unit || '') + ')' : name
 }
 
 function getItemPrice(item: OrderItem) {

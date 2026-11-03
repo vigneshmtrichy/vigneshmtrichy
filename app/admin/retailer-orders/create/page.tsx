@@ -9,7 +9,8 @@ import { supabase } from '@/lib/supabase'
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Retailer = { id: string; business_name: string; payment_terms_days: number; credit_limit: number }
-type OrderLine = { product_slug: string; quantity: string }
+type OrderLine = { product_slug: string; sku_id?: string; quantity: string }
+type SkuOption = { id: string; product_slug: string; sku_code: string; pack_size_value: number; pack_size_unit: string; retailer_price: number | null; gst_rate: number; status: string; is_default: boolean }
 
 const money = (value: unknown) => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
@@ -118,6 +119,7 @@ export default function CreateRetailerOrderPage() {
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [retailerId, setRetailerId] = useState('')
   const [lines, setLines] = useState<OrderLine[]>([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
+  const [skuOptions, setSkuOptions] = useState<SkuOption[]>([])
   const [prices, setPrices] = useState<Record<string, number>>({})
   const [gstRates, setGstRates] = useState<Record<string, number>>({})
   const [paymentType, setPaymentType] = useState('credit')
@@ -132,6 +134,25 @@ export default function CreateRetailerOrderPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setAuthorized(user?.email === 'info@tenoo.in'))
   }, [])
+
+  useEffect(() => {
+    if (!authorized) return
+    const loadSkus = async () => {
+      const { data, error } = await supabase.from('product_skus')
+        .select('id, product_slug, sku_code, pack_size_value, pack_size_unit, retailer_price, gst_rate, status, is_default')
+        .eq('status', 'active')
+        .order('product_slug')
+        .order('is_default', { ascending: false })
+        .order('pack_size_value')
+      if (error) { setMessage(error.message); return }
+      const rows = (data || []) as SkuOption[]
+      setSkuOptions(rows)
+      if (rows.length > 0) {
+        setLines([{ product_slug: rows[0].product_slug, sku_id: rows[0].id, quantity: '1' }])
+      }
+    }
+    void loadSkus()
+  }, [authorized])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -171,10 +192,12 @@ export default function CreateRetailerOrderPage() {
     }
 
     const loadRetailerData = async () => {
-      const [{ data: balance }, { data: defaults }, { data: overrides }] = await Promise.all([
+      const [{ data: balance }, { data: defaults }, { data: overrides }, { data: skuOverrides }, { data: skuDefaults }] = await Promise.all([
         supabase.from('retailer_balances').select('outstanding_balance, unapplied_credit').eq('retailer_id', retailerId).maybeSingle(),
-        supabase.from('product_status').select('product_slug, retailer_price, gst_rate'),
+        supabase.from('product_status').select('product_slug, retailer_price, price, gst_rate'),
         supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailerId),
+        supabase.from('retailer_sku_prices').select('sku_id, unit_price').eq('retailer_id', retailerId),
+        supabase.from('product_skus').select('id, retailer_price, gst_rate').eq('status', 'active'),
       ])
 
       setRetailerBalance({
@@ -186,12 +209,18 @@ export default function CreateRetailerOrderPage() {
       const nextGstRates: Record<string, number> = {}
 
       ;(defaults || []).forEach((row: any) => {
-        nextPrices[row.product_slug] = Number(row.retailer_price || 0)
-        nextGstRates[row.product_slug] = Number(row.gst_rate ?? 5)
+        nextPrices['product:' + row.product_slug] = Number(row.retailer_price || row.price || 0)
+        nextGstRates['product:' + row.product_slug] = Number(row.gst_rate ?? 5)
       })
-
       ;(overrides || []).forEach((row: any) => {
-        nextPrices[row.product_slug] = Number(row.unit_price || 0)
+        nextPrices['product:' + row.product_slug] = Number(row.unit_price || 0)
+      })
+      ;(skuDefaults || []).forEach((row: any) => {
+        nextPrices['sku:' + row.id] = Number(row.retailer_price || nextPrices['product:' + (skuOptions.find((sku) => sku.id === row.id)?.product_slug || '')] || 0)
+        nextGstRates['sku:' + row.id] = Number(row.gst_rate ?? 5)
+      })
+      ;(skuOverrides || []).forEach((row: any) => {
+        nextPrices['sku:' + row.sku_id] = Number(row.unit_price || 0)
       })
 
       setPrices(nextPrices)
@@ -199,23 +228,23 @@ export default function CreateRetailerOrderPage() {
     }
 
     void loadRetailerData()
-  }, [retailerId])
+  }, [retailerId, skuOptions])
 
   const estimatedTaxableTotal = useMemo(
-    () => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.product_slug] || 0), 0),
+    () => lines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0), 0),
     [lines, prices]
   )
 
   const estimatedGstTotal = useMemo(
     () => lines.reduce((sum, line) => {
-      const taxable = Number(line.quantity || 0) * Number(prices[line.product_slug] || 0)
-      return sum + taxable * Number(gstRates[line.product_slug] ?? 5) / 100
+      const taxable = Number(line.quantity || 0) * Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0)
+      return sum + taxable * Number(gstRates[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] ?? 5) / 100
     }, 0),
     [lines, prices, gstRates]
   )
 
   const estimatedTotal = Math.round((estimatedTaxableTotal + estimatedGstTotal) * 100) / 100
-  const missingRetailerPrice = lines.some((line) => Number(prices[line.product_slug] || 0) <= 0)
+  const missingRetailerPrice = lines.some((line) => Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0) <= 0)
   const selectedRetailer = retailers.find((retailer) => retailer.id === retailerId)
 
   const creditRequired = paymentType === 'prepaid'
@@ -248,6 +277,7 @@ export default function CreateRetailerOrderPage() {
 
     const payload = lines.map((line) => ({
       product_slug: line.product_slug,
+      sku_id: line.sku_id || null,
       quantity: Number(line.quantity),
     }))
 
@@ -291,7 +321,7 @@ export default function CreateRetailerOrderPage() {
       return
     }
 
-    setLines([{ product_slug: ALL_PRODUCTS[0]?.slug || '', quantity: '1' }])
+    setLines([{ product_slug: skuOptions[0]?.product_slug || ALL_PRODUCTS[0]?.slug || '', sku_id: skuOptions[0]?.id, quantity: '1' }])
     setInitialPayment('')
     setInitialPaymentReference('')
     setNotes('')
@@ -384,14 +414,19 @@ export default function CreateRetailerOrderPage() {
                   <label className="text-xs font-medium text-muted-foreground">
                     Product
                     <CustomSelect
-                      value={line.product_slug}
+                      value={line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug}
                       onChange={(value) => {
-                        setLines(lines.map((item, i) => i === index ? { ...item, product_slug: value } : item))
+                        const selectedSku = value.startsWith('sku:') ? skuOptions.find((sku) => sku.id === value.slice(4)) : null
+                        const productSlug = selectedSku?.product_slug || value.replace(/^product:/, '')
+                        setLines(lines.map((item, i) => i === index ? { ...item, product_slug: productSlug, sku_id: selectedSku?.id } : item))
                         setMessage('')
                       }}
                       className="mt-1"
                       searchable
-                      options={ALL_PRODUCTS.map((product) => ({ value: product.slug, label: product.name }))}
+                      options={[
+                        ...skuOptions.map((sku) => ({ value: 'sku:' + sku.id, label: (ALL_PRODUCTS.find((p) => p.slug === sku.product_slug)?.name || sku.product_slug) + ' · ' + sku.pack_size_value + sku.pack_size_unit })),
+                        ...ALL_PRODUCTS.filter((product) => !skuOptions.some((sku) => sku.product_slug === product.slug)).map((product) => ({ value: 'product:' + product.slug, label: product.name })),
+                      ]}
                     />
                   </label>
                   <label className="text-xs font-medium text-muted-foreground">
@@ -399,8 +434,8 @@ export default function CreateRetailerOrderPage() {
                     <input type="number" min="1" step="1" value={line.quantity} onChange={(event) => setLines(lines.map((item, i) => i === index ? { ...item, quantity: event.target.value } : item))} className="mt-1 h-10 w-full rounded-lg border px-3" />
                   </label>
                   <p className="pb-2 text-right text-sm font-semibold">
-                    {Number(prices[line.product_slug] || 0) > 0
-                      ? <span>{money(Number(line.quantity || 0) * Number(prices[line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.product_slug] ?? 5)}% GST</span></span>
+                    {Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0) > 0
+                      ? <span>{money(Number(line.quantity || 0) * Number(prices[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] || 0))}<span className="ml-2 text-xs font-normal text-muted-foreground">+ {Number(gstRates[line.sku_id ? 'sku:' + line.sku_id : 'product:' + line.product_slug] ?? 5)}% GST</span></span>
                       : 'Retailer price not set'}
                   </p>
                   <button type="button" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, i) => i !== index))} className="h-10 rounded-lg border text-sm shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md active:scale-[0.99] disabled:opacity-30">Remove</button>

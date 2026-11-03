@@ -1,0 +1,2 @@
+REVOKE ALL ON FUNCTION public.record_retailer_payment(uuid,numeric,text,text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_retailer_payment(uuid,numeric,text,text,text) TO authenticated;

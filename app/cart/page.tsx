@@ -230,7 +230,7 @@ return (
 
                   return (
                     <div
-                      key={item.product.slug}
+                      key={item.product.slug + ':' + (item.product.skuId || 'legacy')}
                       className="flex gap-4 rounded-2xl border border-border bg-card p-4"
                     >
                       <Link
@@ -265,6 +265,7 @@ return (
                                 updateQuantity(
                                   item.product.slug,
                                   item.quantity - 1,
+                                  item.product.skuId,
                                 )
                               }
                               className="flex h-9 w-9 items-center justify-center text-primary"
@@ -283,6 +284,7 @@ return (
                                 updateQuantity(
                                   item.product.slug,
                                   item.quantity + 1,
+                                  item.product.skuId,
                                 )
                               }
                               className="flex h-9 w-9 items-center justify-center text-primary"
@@ -295,7 +297,7 @@ return (
                           <button
                             type="button"
                             onClick={() =>
-                              removeFromCart(item.product.slug)
+                              removeFromCart(item.product.slug, item.product.skuId)
                             }
                             className="text-muted-foreground transition-colors hover:text-red-600"
                             aria-label={`Remove ${item.product.name}`}

@@ -23,8 +23,8 @@ type CartItem = {
 type CartContextType = {
   items: CartItem[]
   addToCart: (product: Product, quantity?: number) => void
-  removeFromCart: (slug: string) => void
-  updateQuantity: (slug: string, quantity: number) => void
+  removeFromCart: (slug: string, skuId?: string) => void
+  updateQuantity: (slug: string, quantity: number, skuId?: string) => void
   clearCart: () => void
   cartCount: number
   cartTotal: number
@@ -86,13 +86,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ]),
       )
 
-      const refreshedItems = savedItems.map((item) => ({
-        ...item,
-        product: applyProductControls(
-          item.product,
-          pricingBySlug.get(item.product.slug),
-        ),
-      }))
+      const { data: skuRows } = await supabase
+        .from('product_skus')
+        .select('id, product_slug, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, is_default')
+        .in('product_slug', slugs)
+        .eq('status', 'active')
+        .order('is_default', { ascending: false })
+      const defaultSkuBySlug = new Map<string, any>()
+      const skuById = new Map<string, any>()
+      ;(skuRows || []).forEach((sku: any) => {
+        skuById.set(sku.id, sku)
+        if (!defaultSkuBySlug.has(sku.product_slug)) defaultSkuBySlug.set(sku.product_slug, sku)
+      })
+
+      const refreshedItems = savedItems.map((item) => {
+        const baseProduct = applyProductControls(item.product, pricingBySlug.get(item.product.slug))
+        const sku = (item.product.skuId ? skuById.get(item.product.skuId) : null) || defaultSkuBySlug.get(item.product.slug)
+        if (!sku) return { ...item, product: baseProduct }
+        return {
+          ...item,
+          product: {
+            ...baseProduct,
+            skuId: sku.id,
+            skuCode: sku.sku_code,
+            packSize: String(sku.pack_size_value) + sku.pack_size_unit,
+            mrp: String(sku.mrp),
+            price: String(sku.online_price),
+            gstRate: Number(sku.gst_rate),
+            shippingWeightKg: sku.shipping_weight_kg ?? baseProduct.shippingWeightKg,
+          },
+        }
+      })
 
       if (mounted) {
         setItems(refreshedItems)
@@ -115,12 +139,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setItems((current) => {
       const existing = current.find(
-        (item) => item.product.slug === product.slug,
+        (item) => item.product.slug === product.slug && item.product.skuId === product.skuId,
       )
 
       if (existing) {
         return current.map((item) =>
-          item.product.slug === product.slug
+          item.product.slug === product.slug && item.product.skuId === product.skuId
             ? {
                 ...item,
                 quantity: item.quantity + safeQuantity,
@@ -139,21 +163,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const removeFromCart = (slug: string) => {
+  const removeFromCart = (slug: string, skuId?: string) => {
     setItems((current) =>
-      current.filter((item) => item.product.slug !== slug),
+      current.filter((item) => !(item.product.slug === slug && (skuId === undefined || item.product.skuId === skuId))),
     )
   }
 
-  const updateQuantity = (slug: string, quantity: number) => {
+  const updateQuantity = (slug: string, quantity: number, skuId?: string) => {
     if (quantity <= 0) {
-      removeFromCart(slug)
+      removeFromCart(slug, skuId)
       return
     }
 
     setItems((current) =>
       current.map((item) =>
-        item.product.slug === slug
+        item.product.slug === slug && (skuId === undefined || item.product.skuId === skuId)
           ? {
               ...item,
               quantity,
