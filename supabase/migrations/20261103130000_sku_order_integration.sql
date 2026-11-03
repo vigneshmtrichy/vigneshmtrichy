@@ -17,6 +17,17 @@ CREATE TABLE IF NOT EXISTS public.retailer_sku_prices (
 );
 
 ALTER TABLE public.retailer_sku_prices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY product_skus_public_active_select ON public.product_skus
+  FOR SELECT TO anon, authenticated USING (status = 'active');
+CREATE POLICY sku_inventory_public_active_select ON public.sku_inventory
+  FOR SELECT TO anon, authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.product_skus s
+    WHERE s.id = sku_inventory.sku_id AND s.status = 'active'
+  ));
+GRANT SELECT ON public.product_skus TO anon, authenticated;
+GRANT SELECT ON public.sku_inventory TO anon, authenticated;
+
 CREATE POLICY retailer_sku_prices_admin_all ON public.retailer_sku_prices
   FOR ALL TO authenticated
   USING ((SELECT auth.jwt() ->> 'email') = 'info@tenoo.in')
