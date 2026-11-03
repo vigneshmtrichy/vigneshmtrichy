@@ -194,7 +194,7 @@ export default function CreateRetailerOrderPage() {
     const loadRetailerData = async () => {
       const [{ data: balance }, { data: defaults }, { data: overrides }, { data: skuOverrides }, { data: skuDefaults }] = await Promise.all([
         supabase.from('retailer_balances').select('outstanding_balance, unapplied_credit').eq('retailer_id', retailerId).maybeSingle(),
-        supabase.from('product_status').select('product_slug, retailer_price, gst_rate'),
+        supabase.from('product_status').select('product_slug, retailer_price, price, gst_rate'),
         supabase.from('retailer_product_prices').select('product_slug, unit_price').eq('retailer_id', retailerId),
         supabase.from('retailer_sku_prices').select('sku_id, unit_price').eq('retailer_id', retailerId),
         supabase.from('product_skus').select('id, retailer_price, gst_rate').eq('status', 'active'),
@@ -209,7 +209,7 @@ export default function CreateRetailerOrderPage() {
       const nextGstRates: Record<string, number> = {}
 
       ;(defaults || []).forEach((row: any) => {
-        nextPrices['product:' + row.product_slug] = Number(row.retailer_price || 0)
+        nextPrices['product:' + row.product_slug] = Number(row.retailer_price || row.price || 0)
         nextGstRates['product:' + row.product_slug] = Number(row.gst_rate ?? 5)
       })
       ;(overrides || []).forEach((row: any) => {
