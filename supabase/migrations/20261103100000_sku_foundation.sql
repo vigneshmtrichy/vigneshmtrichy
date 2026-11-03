@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.product_skus (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   product_slug text NOT NULL REFERENCES public.product_status(product_slug) ON UPDATE CASCADE ON DELETE RESTRICT,
   sku_code text NOT NULL UNIQUE CHECK (char_length(btrim(sku_code)) BETWEEN 3 AND 64),
-  barcode text UNIQUE CHECK (barcode IS NULL OR barcode ~ '^(\\d{8}|\\d{12}|\\d{13}|\\d{14})
+  barcode text UNIQUE CHECK (barcode IS NULL OR barcode ~ '^([0-9]{8}|[0-9]{12}|[0-9]{13}|[0-9]{14})$'),
   pack_size_value numeric(10,3) NOT NULL CHECK (pack_size_value > 0),
   pack_size_unit text NOT NULL CHECK (pack_size_unit IN ('g', 'kg', 'ml', 'l', 'unit')),
   mrp numeric(10,2) NOT NULL CHECK (mrp > 0),
