@@ -18,6 +18,7 @@ The branch now contains `20261103130000_sku_order_integration.sql` and the relat
 - Cashfree still creates the actual order and deducts stock only after server-side payment verification.
 - Online order reservation, cancellation and reopen triggers use SKU inventory when it is tracked, with legacy parent-stock fallback for older/non-SKU items.
 - Retailer trade-order creation accepts SKU IDs, applies retailer-SKU override → legacy retailer-product override → SKU retailer price → parent retailer price, and records SKU stock movements.
+- Retailer management includes optional pack-specific special prices while retaining existing product-level overrides.
 - Retailer cancellation restores the same SKU stock once; cancelled retailer orders remain non-reopenable.
 - Cart lines are keyed by parent product + SKU, and product pages expose active pack variants.
 - Online invoice and customer order history display the selected pack.
