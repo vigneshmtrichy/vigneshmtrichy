@@ -86,13 +86,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ]),
       )
 
-      const refreshedItems = savedItems.map((item) => ({
-        ...item,
-        product: item.product.skuId ? item.product : applyProductControls(
-          item.product,
-          pricingBySlug.get(item.product.slug),
-        ),
-      }))
+      const { data: skuRows } = await supabase
+        .from('product_skus')
+        .select('id, product_slug, sku_code, pack_size_value, pack_size_unit, mrp, online_price, gst_rate, shipping_weight_kg, is_default')
+        .in('product_slug', slugs)
+        .eq('status', 'active')
+        .order('is_default', { ascending: false })
+      const defaultSkuBySlug = new Map<string, any>()
+      ;(skuRows || []).forEach((sku: any) => {
+        if (!defaultSkuBySlug.has(sku.product_slug)) defaultSkuBySlug.set(sku.product_slug, sku)
+      })
+
+      const refreshedItems = savedItems.map((item) => {
+        if (item.product.skuId) return item
+        const baseProduct = applyProductControls(item.product, pricingBySlug.get(item.product.slug))
+        const sku = defaultSkuBySlug.get(item.product.slug)
+        if (!sku) return { ...item, product: baseProduct }
+        return {
+          ...item,
+          product: {
+            ...baseProduct,
+            skuId: sku.id,
+            skuCode: sku.sku_code,
+            packSize: String(sku.pack_size_value) + sku.pack_size_unit,
+            mrp: String(sku.mrp),
+            price: String(sku.online_price),
+            gstRate: Number(sku.gst_rate),
+            shippingWeightKg: sku.shipping_weight_kg ?? baseProduct.shippingWeightKg,
+          },
+        }
+      })
 
       if (mounted) {
         setItems(refreshedItems)
