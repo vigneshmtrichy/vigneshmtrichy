@@ -96,8 +96,8 @@ export async function POST(request:Request){
         mrp=Number(sku.mrp)
         gstRate=Number(sku.gst_rate)
         const inv=Array.isArray(sku.sku_inventory)?sku.sku_inventory[0]:sku.sku_inventory
-        const available=inv?.stock_quantity
-        if(available!=null&&available<quantity)
+        const available=inv?.stock_quantity ?? parent.stock_quantity
+        if((parent.status==='out-of-stock' && inv?.stock_quantity==null) || (available!=null&&available<quantity))
           return NextResponse.json({success:false,message:'There is not enough stock for the selected pack.'},{status:409})
         snapshot={
           ...snapshot,sku_id:sku.id,sku_code:sku.sku_code,
