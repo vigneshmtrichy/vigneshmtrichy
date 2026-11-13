@@ -306,13 +306,7 @@ return (
                 </div>
 
              {/* Pack Size */}
-{!hasSkuVariants && product.packSize && (
-  <div className="mt-6">
-    <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
-      Net Weight: {product.packSize}
-    </span>
-  </div>
-)}
+
 {/* PRICE */}
 {!hasSkuVariants && displayProduct.price && (
   <div className="mt-5 flex items-center gap-3">
@@ -364,13 +358,7 @@ return (
                 ===================================================== */}
             <div className="mt-6 md:hidden">
 
-              {!hasSkuVariants && product.packSize && (
-                <div>
-                  <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
-                    Net Weight: {product.packSize}
-                  </span>
-                </div>
-              )}
+              
 
      <ProductPurchasePanel
   product={displayProduct}
