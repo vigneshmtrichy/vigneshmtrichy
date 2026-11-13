@@ -71,6 +71,13 @@ status = 'active',
     () => skuOptions.find((sku) => sku.id === selectedSkuId) || null,
     [skuOptions, selectedSkuId],
   )
+
+  useEffect(() => {
+    const packSize = selectedSku
+      ? `${selectedSku.pack_size_value}${selectedSku.pack_size_unit}`
+      : (!hasSkuRecords ? product.packSize || '' : '')
+    window.dispatchEvent(new CustomEvent('tenoo:pack-size-change', { detail: packSize }))
+  }, [selectedSku, hasSkuRecords, product.packSize])
   const selectedStock = selectedSku?.is_available === true ? 1 : selectedSku?.is_available === false ? 0 : null
   const cartProduct: Product = selectedSku ? {
     ...product,
