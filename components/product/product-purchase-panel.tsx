@@ -126,6 +126,13 @@ status = 'active',
     <div className="mt-7">
       {skuOptions.length > 0 && (
         <div className="mb-4 max-w-[320px]">
+          {selectedSku && (
+            <div className="mb-4">
+              <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
+                Net Weight: {selectedSku.pack_size_value}{selectedSku.pack_size_unit}
+              </span>
+            </div>
+          )}
           <label className="block text-xs font-semibold text-muted-foreground">Pack size</label>
           <select value={selectedSkuId} onChange={(event) => setSelectedSkuId(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium text-primary">
             {skuOptions.map((sku) => <option key={sku.id} value={sku.id}>{sku.pack_size_value}{sku.pack_size_unit} · ₹{Number(sku.online_price).toLocaleString('en-IN')}</option>)}
