@@ -364,7 +364,7 @@ return (
                 ===================================================== */}
             <div className="mt-6 md:hidden">
 
-              {product.packSize && (
+              {!hasSkuVariants && product.packSize && (
                 <div>
                   <span className="inline-flex rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-primary">
                     Net Weight: {product.packSize}
