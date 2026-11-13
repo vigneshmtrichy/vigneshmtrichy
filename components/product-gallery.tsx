@@ -26,6 +26,20 @@ export function ProductGallery({
 }: ProductGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const [currentPackSize, setCurrentPackSize] = useState(packSize)
+
+  useEffect(() => {
+    setCurrentPackSize(packSize)
+  }, [packSize])
+
+  useEffect(() => {
+    const handlePackSizeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<string>
+      setCurrentPackSize(customEvent.detail || packSize)
+    }
+    window.addEventListener('tenoo:pack-size-change', handlePackSizeChange)
+    return () => window.removeEventListener('tenoo:pack-size-change', handlePackSizeChange)
+  }, [packSize])
 
   const touchStartX = useRef<number | null>(null)
   const swipeDetected = useRef(false)
@@ -336,7 +350,7 @@ export function ProductGallery({
                   {/* WEIGHT */}
                   {packSize && (
                     <p className="mt-3 text-sm font-medium text-gray-700">
-                      Net Weight: {packSize}
+                      Net Weight: {currentPackSize}
                     </p>
                   )}
 
@@ -421,7 +435,7 @@ export function ProductGallery({
               {/* WEIGHT */}
               {packSize && (
                 <p className="mt-2 text-sm font-medium text-gray-700">
-                  Net Weight: {packSize}
+                  Net Weight: {currentPackSize}
                 </p>
               )}
 
