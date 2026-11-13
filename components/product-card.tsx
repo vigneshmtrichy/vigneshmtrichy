@@ -273,45 +273,47 @@ disabled:opacity-50
 </span>
         </button>
 
-        {/* BUY IT NOW */}
-        <button
-          type="button" disabled={!isActive}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            if (skuSummary) router.push(`/products/${product.slug}`)
-            else handleBuyNow()
-          }}
-          className="
-            flex
-            h-8
-            w-full
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-primary
-            bg-background
-            px-2
-            text-[9px]
-            font-bold
-            uppercase
-            text-primary
-            transition-all
-            hover:bg-primary
-            hover:text-primary-foreground
-            disabled:cursor-not-allowed
-disabled:opacity-50
-          "
-        >
-          {status === 'active' && skuSummary
-  ? 'VIEW PACK OPTIONS'
-  : status === 'active'
-    ? 'BUY IT NOW'
-  : status === 'coming-soon'
-    ? 'COMING SOON'
-    : 'OUT OF STOCK'}
-        </button>
+        {!skuSummary && (
+          <>
+            {/* BUY IT NOW */}
+            <button
+              type="button"
+              disabled={!isActive}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleBuyNow()
+              }}
+              className="
+                flex
+                h-8
+                w-full
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-primary
+                bg-background
+                px-2
+                text-[9px]
+                font-bold
+                uppercase
+                text-primary
+                transition-all
+                hover:bg-primary
+                hover:text-primary-foreground
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              {status === 'active'
+                ? 'BUY IT NOW'
+                : status === 'coming-soon'
+                  ? 'COMING SOON'
+                  : 'OUT OF STOCK'}
+            </button>
+          </>
+        )}
 
       </div>
 
