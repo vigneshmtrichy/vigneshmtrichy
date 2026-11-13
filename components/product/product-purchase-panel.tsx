@@ -133,12 +133,16 @@ status = 'active',
               </span>
             </div>
           )}
-          {skuOptions.length > 0 && <label className="block text-xs font-semibold text-muted-foreground">Pack size</label>}
-          <select value={selectedSkuId} onChange={(event) => setSelectedSkuId(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium text-primary">
-            {skuOptions.map((sku) => <option key={sku.id} value={sku.id}>{sku.pack_size_value}{sku.pack_size_unit} · ₹{Number(sku.online_price).toLocaleString('en-IN')}</option>)}
-          </select>
-          {selectedSku && <p className="mt-2 text-sm text-primary"><span className="font-semibold">₹{Number(selectedSku.online_price).toLocaleString('en-IN')}</span> <span className="ml-2 text-muted-foreground line-through">₹{Number(selectedSku.mrp).toLocaleString('en-IN')}</span></p>}
-          {selectedSku && selectedStock !== null && <p className="mt-1 text-xs text-muted-foreground">{selectedStock > 0 ? 'In stock' : 'Currently out of stock'}</p>}
+          {skuOptions.length > 0 && (
+            <>
+              <label className="block text-xs font-semibold text-muted-foreground">Pack size</label>
+              <select value={selectedSkuId} onChange={(event) => setSelectedSkuId(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-medium text-primary">
+                {skuOptions.map((sku) => <option key={sku.id} value={sku.id}>{sku.pack_size_value}{sku.pack_size_unit} · ₹{Number(sku.online_price).toLocaleString('en-IN')}</option>)}
+              </select>
+              {selectedSku && <p className="mt-2 text-sm text-primary"><span className="font-semibold">₹{Number(selectedSku.online_price).toLocaleString('en-IN')}</span> <span className="ml-2 text-muted-foreground line-through">₹{Number(selectedSku.mrp).toLocaleString('en-IN')}</span></p>}
+              {selectedSku && selectedStock !== null && <p className="mt-1 text-xs text-muted-foreground">{selectedStock > 0 ? 'In stock' : 'Currently out of stock'}</p>}
+            </>
+          )}
         </div>
       )}
 
