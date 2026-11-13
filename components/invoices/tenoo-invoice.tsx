@@ -301,7 +301,7 @@ export default function TenooInvoice({
                         >
 
                           <td className="px-4 py-4 font-medium">
-                            {item.product_name || 'Product'}
+                            {item.product_name || 'Product'}{item.pack_size_value ? ' (' + item.pack_size_value + item.pack_size_unit + ')' : ''}
                           </td>
 
                           <td className="px-4 py-4 text-center">

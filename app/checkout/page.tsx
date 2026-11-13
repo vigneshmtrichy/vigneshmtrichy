@@ -298,6 +298,7 @@ const handleCashfreePayment = async () => {
           state,
           items: items.map((item) => ({
             product_slug: item.product.slug,
+            sku_id: item.product.skuId || null,
             quantity: item.quantity,
           })),
         }),

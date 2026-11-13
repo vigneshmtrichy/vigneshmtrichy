@@ -48,6 +48,36 @@ const getProductStatuses = async () => {
 export async function Generations() {
   const productStatuses = await getProductStatuses()
 
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  )
+  const { data: skuRows, error: skuError } = await supabase
+    .from('product_skus')
+    .select('product_slug, pack_size_value, pack_size_unit, mrp, online_price')
+    .eq('status', 'active')
+
+  if (skuError) {
+    console.error('Failed to load homepage SKU summaries:', skuError)
+  }
+
+  const skuSummaries = Object.fromEntries(
+    Object.entries(
+      (skuRows || []).reduce((groups, sku) => {
+        const group = groups[sku.product_slug] || []
+        group.push(sku)
+        groups[sku.product_slug] = group
+        return groups
+      }, {} as Record<string, Array<{ product_slug: string; pack_size_value: number; pack_size_unit: string; mrp: number; online_price: number }>>),
+    ).map(([slug, rows]) => {
+      const lowest = [...rows].sort((a, b) => Number(a.online_price) - Number(b.online_price))[0]
+      return [slug, {
+        lowestPrice: String(lowest.online_price),
+        activePackCount: rows.length,
+      }]
+    }),
+  )
+
   const ALL_PRODUCTS = Array.from(
     new Map(
       [...KIDS_PRODUCTS, ...ADULT_PRODUCTS]
@@ -159,9 +189,10 @@ export async function Generations() {
               "
             >
               <ProductCard
-  product={product}
-  status={productStatuses[product.slug]?.status}
-/>
+                product={product}
+                status={productStatuses[product.slug]?.status}
+                skuSummary={skuSummaries[product.slug]}
+              />
             </div>
           ))}
         </div>

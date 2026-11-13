@@ -16,9 +16,11 @@ import { useCart } from '@/components/cart/cart-context'
 export function ProductCard({
   product,
   status: statusProp,
+  skuSummary,
 }: {
   product: Product
   status?: ProductStatus
+  skuSummary?: { lowestPrice: string; activePackCount: number }
 }) {
   const { addToCart } = useCart()
   const router = useRouter()
@@ -141,30 +143,27 @@ const handleBuyNow = () => {
         </p>
 
         {/* PRICE */}
-        {product.price && (
+        {skuSummary && skuSummary.activePackCount > 1 ? (
+          <div className="mt-2 flex flex-col items-center gap-1">
+            <span className="text-base font-bold text-primary">
+              From ₹{Number(skuSummary.lowestPrice).toLocaleString('en-IN')}
+            </span>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+              {skuSummary.activePackCount} pack sizes
+            </span>
+          </div>
+        ) : product.price && (
           <div className="mt-2 flex items-center justify-center gap-2">
             {product.mrp && (
               <span className="text-sm text-muted-foreground line-through">
                 ₹{product.mrp}
               </span>
             )}
-
             <span className="text-base font-bold text-primary">
               ₹{product.price}
             </span>
-
             {offerText && (
-              <span
-                className="
-                  rounded-full
-                  bg-orange-100
-                  px-2
-                  py-1
-                  text-xs
-                  font-bold
-                  text-orange-600
-                "
-              >
+              <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-bold text-orange-600">
                 {offerText}
               </span>
             )}
@@ -176,7 +175,7 @@ const handleBuyNow = () => {
       <div className="mt-3 flex w-full flex-col items-center gap-2">
 
         {/* QUANTITY */}
-{isActive && (
+{isActive && !skuSummary && (
   <div className="flex h-11 w-[96px] shrink-0 items-center justify-between rounded-full border border-border bg-background">
           <button
             type="button"
@@ -238,7 +237,8 @@ const handleBuyNow = () => {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            handleAddToCart()
+            if (skuSummary) router.push(`/products/${product.slug}`)
+            else handleAddToCart()
           }}
           className="
             flex
@@ -263,50 +263,57 @@ disabled:opacity-50
           <ShoppingCart className="h-3 w-3 shrink-0" />
 
          <span className="whitespace-nowrap">
-  {status === 'active'
-    ? 'ADD TO CART'
+  {status === 'active' && skuSummary
+    ? 'CHOOSE PACK SIZE'
+    : status === 'active'
+      ? 'ADD TO CART'
     : status === 'coming-soon'
       ? 'COMING SOON'
       : 'OUT OF STOCK'}
 </span>
         </button>
 
-        {/* BUY IT NOW */}
-        <button
-          type="button" disabled={!isActive}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            handleBuyNow()
-          }}
-          className="
-            flex
-            h-8
-            w-full
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-primary
-            bg-background
-            px-2
-            text-[9px]
-            font-bold
-            uppercase
-            text-primary
-            transition-all
-            hover:bg-primary
-            hover:text-primary-foreground
-            disabled:cursor-not-allowed
-disabled:opacity-50
-          "
-        >
-          {status === 'active'
-  ? 'BUY IT NOW'
-  : status === 'coming-soon'
-    ? 'COMING SOON'
-    : 'OUT OF STOCK'}
-        </button>
+        {!skuSummary && (
+          <>
+            {/* BUY IT NOW */}
+            <button
+              type="button"
+              disabled={!isActive}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleBuyNow()
+              }}
+              className="
+                flex
+                h-8
+                w-full
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-primary
+                bg-background
+                px-2
+                text-[9px]
+                font-bold
+                uppercase
+                text-primary
+                transition-all
+                hover:bg-primary
+                hover:text-primary-foreground
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              {status === 'active'
+                ? 'BUY IT NOW'
+                : status === 'coming-soon'
+                  ? 'COMING SOON'
+                  : 'OUT OF STOCK'}
+            </button>
+          </>
+        )}
 
       </div>
 
